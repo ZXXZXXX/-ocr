@@ -2805,6 +2805,93 @@ function DetailView({
   );
 }
 
+// ---------- Compare table (KA验收单 vs SDCC订单明细) ----------
+const COMPARE_MOCK_ITEMS = [
+  { name: "统一小浣熊烤翅味 35g", code: "SKU-8830021", ka: 120 },
+  { name: "汤达人日式豚骨面 125g*5", code: "SKU-8830118", ka: 60 },
+  { name: "统一阿萨姆奶茶 500ml", code: "SKU-8830204", ka: 240 },
+  { name: "统一冰红茶 500ml", code: "SKU-8830301", ka: 300 },
+  { name: "统一绿茶 500ml", code: "SKU-8830302", ka: 180 },
+  { name: "统一鲜橙多 450ml", code: "SKU-8830405", ka: 144 },
+  { name: "老坛酸菜牛肉面 122g", code: "SKU-8830512", ka: 96 },
+];
+
+function CompareTable({
+  recordId,
+  count,
+  loading,
+}: {
+  recordId: string;
+  count: number;
+  loading: boolean;
+}) {
+  const rows = useMemo(() => {
+    const seed = recordId.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+    const total = Math.max(count + 2, 5);
+    const picks = COMPARE_MOCK_ITEMS.slice(0, Math.min(total, COMPARE_MOCK_ITEMS.length));
+    return picks.map((item, i) => {
+      const mismatched = i < count;
+      const delta = ((seed + i * 7) % 5) + 1;
+      const sdcc = mismatched ? item.ka + (i % 2 === 0 ? -delta : delta) : item.ka;
+      return { ...item, sdcc, mismatched };
+    });
+  }, [recordId, count]);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border p-10 text-xs text-muted-foreground">
+        <Loader2 className="size-5 animate-spin text-primary" />
+        正在加载对碰结果…
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-hidden rounded-lg border border-border">
+      <table className="w-full text-sm">
+        <thead className="bg-muted/50 text-xs text-muted-foreground">
+          <tr>
+            <th className="px-3 py-2 text-left font-medium">序号</th>
+            <th className="px-3 py-2 text-left font-medium">物料名称</th>
+            <th className="px-3 py-2 text-left font-medium">物料编码</th>
+            <th className="px-3 py-2 text-right font-medium">《KA验收单》签收数量</th>
+            <th className="px-3 py-2 text-right font-medium">《SDCC订单明细》数量</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r, i) => (
+            <tr
+              key={r.code}
+              className="border-t border-border"
+              style={r.mismatched ? { backgroundColor: "#fde7ec" } : undefined}
+            >
+              <td className="px-3 py-2 text-muted-foreground">{i + 1}</td>
+              <td className="px-3 py-2">{r.name}</td>
+              <td className="px-3 py-2 font-mono text-xs">{r.code}</td>
+              <td className="px-3 py-2 text-right tabular-nums">{r.ka}</td>
+              <td
+                className={cn(
+                  "px-3 py-2 text-right tabular-nums",
+                  r.mismatched && "font-medium text-[color:var(--destructive)]",
+                )}
+              >
+                {r.sdcc}
+                {r.mismatched && (
+                  <span className="ml-1 text-xs text-[color:var(--destructive)]/80">
+                    （KA验收单：{r.ka}）
+                  </span>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+
+
 function DocPanel({
   deliveryPages,
   deliveryImages,
