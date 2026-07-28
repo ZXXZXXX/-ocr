@@ -2697,33 +2697,27 @@ function DetailView({
       )}
       </SheetHeader>
 
-      <DocPanel
-        deliveryPages={deliveryPages}
-        deliveryImages={deliveryImages}
-        shippingImages={shippingImages}
-        editing={editing}
-        autoFocus={autoFocus}
-        setAutoFocus={setAutoFocus}
-        failureReason={record.failedReason}
-        onChange={(pageIdx, chunkId, v) =>
-          handleEditChange("delivery_note", pageIdx, chunkId, v)
-        }
-      />
-
-      <Dialog open={compareOpen} onOpenChange={setCompareOpen}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>KA验收单与SDCC订单明细对碰</DialogTitle>
-          </DialogHeader>
-          <div className="mt-2 max-h-[60vh] overflow-y-auto">
-            <CompareTable
-              recordId={record.id}
-              count={rejectionMismatchCount(record)}
-              loading={compareLoading}
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
+      {compareOpen ? (
+        <CompareView
+          recordId={record.id}
+          count={rejectionMismatchCount(record)}
+          loading={compareLoading}
+          onBack={() => setCompareOpen(false)}
+        />
+      ) : (
+        <DocPanel
+          deliveryPages={deliveryPages}
+          deliveryImages={deliveryImages}
+          shippingImages={shippingImages}
+          editing={editing}
+          autoFocus={autoFocus}
+          setAutoFocus={setAutoFocus}
+          failureReason={record.failedReason}
+          onChange={(pageIdx, chunkId, v) =>
+            handleEditChange("delivery_note", pageIdx, chunkId, v)
+          }
+        />
+      )}
 
 
 
