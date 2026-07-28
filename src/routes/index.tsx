@@ -2704,6 +2704,16 @@ function DetailView({
         autoFocus={autoFocus}
         setAutoFocus={setAutoFocus}
         failureReason={record.failedReason}
+        resultTab={resultTab}
+        setResultTab={setResultTab}
+        compareLoading={compareLoading}
+        recordId={record.id}
+        rejectionCount={rejectionMismatchCount(record)}
+        showCompareTab={
+          record.status === "pending_review" &&
+          record.aiVerdict === "fail" &&
+          !!record.aiRejectionReason
+        }
         onChange={(pageIdx, chunkId, v) =>
           handleEditChange("delivery_note", pageIdx, chunkId, v)
         }
