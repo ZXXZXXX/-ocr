@@ -2888,33 +2888,9 @@ function CompareTable({
               <td className="px-3 py-2">{r.name}</td>
               <td className="px-3 py-2 font-mono text-xs">{r.code}</td>
               <td className="px-3 py-2 text-right tabular-nums">{r.kaQty}</td>
-              <td
-                className={cn(
-                  "px-3 py-2 text-right tabular-nums",
-                  r.orderMismatch && "font-medium text-[color:var(--destructive)]",
-                )}
-              >
-                {r.sdccOrderQty}
-                {r.orderMismatch && (
-                  <span className="ml-1 text-xs text-[color:var(--destructive)]/80">
-                    （KA验收单：{r.kaQty}）
-                  </span>
-                )}
-              </td>
+              <td className="px-3 py-2 text-right tabular-nums">{r.sdccOrderQty}</td>
               <td className="px-3 py-2 text-right tabular-nums">{r.kaReceive}</td>
-              <td
-                className={cn(
-                  "px-3 py-2 text-right tabular-nums",
-                  r.signMismatch && "font-medium text-[color:var(--destructive)]",
-                )}
-              >
-                {r.sdccSignQty}
-                {r.signMismatch && (
-                  <span className="ml-1 text-xs text-[color:var(--destructive)]/80">
-                    （KA验收单：{r.kaReceive}）
-                  </span>
-                )}
-              </td>
+              <td className="px-3 py-2 text-right tabular-nums">{r.sdccSignQty}</td>
             </tr>
           ))}
         </tbody>
