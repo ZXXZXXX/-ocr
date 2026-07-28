@@ -3598,14 +3598,14 @@ function ChunkEditor({
           </div>
         </div>
       )}
-      {!active && (chunk.edited || (chunk.confirmed && !chunk.edited) || needsReview) && (
+      {!active && (chunk.edited || hasCellEdits || (chunk.confirmed && !chunk.edited && !hasCellEdits) || needsReview) && (
         <div className="mb-0.5 flex items-center gap-1.5 text-[10px]">
-          {chunk.edited && (
+          {(chunk.edited || hasCellEdits) && (
             <span className="inline-flex items-center gap-0.5 text-primary">
               <Pencil className="size-2.5" /> 已修改
             </span>
           )}
-          {chunk.confirmed && !chunk.edited && (
+          {chunk.confirmed && !chunk.edited && !hasCellEdits && (
             <span className="inline-flex items-center gap-0.5 text-[color:var(--success)]">
               <CheckCircle2 className="size-2.5" /> 已确认
             </span>
