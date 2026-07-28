@@ -3528,10 +3528,13 @@ function ChunkEditor({
   onFocus: () => void;
   onChange: (newContent: string) => void;
 }) {
+  const { recordId } = useContext(DetailRecordContext);
   const tone = confidenceTone(chunk.confidence);
   const isLow =
     chunk.label !== "Image" && chunk.confidence != null && chunk.confidence < LOW_CONF_THRESHOLD;
-  const needsReview = isLow && !chunk.edited && !chunk.confirmed;
+  const cellEdits = editedCellsStore.get(editedCellsKey(recordId, chunk.id));
+  const hasCellEdits = (cellEdits?.size ?? 0) > 0;
+  const needsReview = isLow && !chunk.edited && !chunk.confirmed && !hasCellEdits;
 
   const dotColor = confidenceDotClasses(tone);
 
@@ -3571,12 +3574,12 @@ function ChunkEditor({
             </span>
           </div>
           <div className="flex items-center gap-2 text-[11px]">
-            {chunk.edited && (
+            {(chunk.edited || hasCellEdits) && (
               <span className="inline-flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-primary">
                 <Pencil className="size-2.5" /> 已修改
               </span>
             )}
-            {chunk.confirmed && !chunk.edited && (
+            {chunk.confirmed && !chunk.edited && !hasCellEdits && (
               <span className="inline-flex items-center gap-1 rounded bg-[color:var(--success)]/15 px-1.5 py-0.5 text-[color:var(--success)]">
                 <CheckCircle2 className="size-2.5" /> 已确认
               </span>
@@ -3595,14 +3598,14 @@ function ChunkEditor({
           </div>
         </div>
       )}
-      {!active && (chunk.edited || (chunk.confirmed && !chunk.edited) || needsReview) && (
+      {!active && (chunk.edited || hasCellEdits || (chunk.confirmed && !chunk.edited && !hasCellEdits) || needsReview) && (
         <div className="mb-0.5 flex items-center gap-1.5 text-[10px]">
-          {chunk.edited && (
+          {(chunk.edited || hasCellEdits) && (
             <span className="inline-flex items-center gap-0.5 text-primary">
               <Pencil className="size-2.5" /> 已修改
             </span>
           )}
-          {chunk.confirmed && !chunk.edited && (
+          {chunk.confirmed && !chunk.edited && !hasCellEdits && (
             <span className="inline-flex items-center gap-0.5 text-[color:var(--success)]">
               <CheckCircle2 className="size-2.5" /> 已确认
             </span>
