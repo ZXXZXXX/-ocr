@@ -2913,12 +2913,6 @@ function DocPanel({
   autoFocus,
   setAutoFocus,
   failureReason,
-  resultTab,
-  setResultTab,
-  compareLoading,
-  recordId,
-  rejectionCount,
-  showCompareTab,
   onChange,
 }: {
   deliveryPages: DocPage[];
@@ -2928,14 +2922,9 @@ function DocPanel({
   autoFocus: boolean;
   setAutoFocus: (v: boolean) => void;
   failureReason?: string;
-  resultTab: "compare" | "ocr";
-  setResultTab: (v: "compare" | "ocr") => void;
-  compareLoading: boolean;
-  recordId: string;
-  rejectionCount: number;
-  showCompareTab: boolean;
   onChange: (pageIdx: number, chunkId: string, value: string) => void;
 }) {
+
 
   // Image (left) and result (right) navigation are linked for delivery notes:
   // switching the delivery-note image switches the recognition-result page, and vice versa.
