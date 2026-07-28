@@ -4252,8 +4252,8 @@ function FilteredTableView({
   markEdited,
 }: {
   html: string;
-  overrides: Record<string, number>;
-  onOverrideChange: (key: string, sourceIdx: number | undefined) => void;
+  overrides: Record<string, number | null>;
+  onOverrideChange: (key: string, sourceIdx: number | null | undefined) => void;
   readOnly?: boolean;
   onChange?: (v: string) => void;
   editedCells?: Set<string>;
