@@ -1814,25 +1814,27 @@ function Workbench() {
     const allTonesSelected = selectedConfidenceTones.size === 3;
     const fromT = dateFrom ? new Date(dateFrom).getTime() : -Infinity;
     const toT = dateTo ? new Date(dateTo).getTime() + 86400000 : Infinity;
-    return records.filter((r) => {
-      if (quickStatus === "unreviewed" && r.status === "verified") return false;
-      if (r.createdAt < fromT || r.createdAt > toT) return false;
-      if (r.status !== "recognizing" && r.status !== "failed" && r.status !== "queued" && r.confidence != null) {
-        const tone = confidenceTone(r.confidence / 100);
-        if (!selectedConfidenceTones.has(tone)) return false;
-      } else if (r.status === "recognizing" || r.status === "failed" || r.status === "queued") {
-        if (!allTonesSelected) return false;
-      }
-      // confidence 为 null 的 pending_review 记录不参与置信度筛选，始终保留
-      if (aiVerdictFilter !== "all" && r.aiVerdict !== aiVerdictFilter) return false;
-      if (searchQuery.trim()) {
-        const kaMatch = fuzzyMatch(searchQuery, r.id);
-        const shippingMatch = r.shippingSlipNo ? fuzzyMatch(searchQuery, r.shippingSlipNo) : false;
-        if (!kaMatch && !shippingMatch) return false;
-      }
-      return true;
-    });
-  }, [records, dateFrom, dateTo, selectedConfidenceTones, aiVerdictFilter, quickStatus, searchQuery]);
+    return records
+      .filter((r) => {
+        if (quickStatus === "unreviewed" && r.status === "verified") return false;
+        if (r.createdAt < fromT || r.createdAt > toT) return false;
+        if (r.status !== "recognizing" && r.status !== "failed" && r.status !== "queued" && r.confidence != null) {
+          const tone = confidenceTone(r.confidence / 100);
+          if (!selectedConfidenceTones.has(tone)) return false;
+        } else if (r.status === "recognizing" || r.status === "failed" || r.status === "queued") {
+          if (!allTonesSelected) return false;
+        }
+        // confidence 为 null 的 pending_review 记录不参与置信度筛选，始终保留
+        if (aiVerdictFilter !== "all" && r.aiVerdict !== aiVerdictFilter) return false;
+        if (searchQuery.trim()) {
+          const kaMatch = fuzzyMatch(searchQuery, r.id);
+          const shippingMatch = r.shippingSlipNo ? fuzzyMatch(searchQuery, r.shippingSlipNo) : false;
+          if (!kaMatch && !shippingMatch) return false;
+        }
+        return true;
+      })
+      .sort((a, b) => (sortOrder === "desc" ? b.createdAt - a.createdAt : a.createdAt - b.createdAt));
+  }, [records, dateFrom, dateTo, selectedConfidenceTones, aiVerdictFilter, quickStatus, searchQuery, sortOrder]);
 
   const filterActive =
     !!dateFrom ||
