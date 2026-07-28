@@ -4391,7 +4391,7 @@ function FilteredTableView({
                         style={{ color: "#9ca3af" }}
                         title="AI 未识别到对应列，显示 KA 验收单数据；请手动选择列进行校验"
                       >
-                        {kaVal}
+                        KA验收单：{kaVal}
                       </td>
                     );
                   }
