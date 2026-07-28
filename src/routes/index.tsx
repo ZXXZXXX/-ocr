@@ -4287,7 +4287,8 @@ function FilteredTableView({
     const autoIdx = isColumnMismatchException && EXCEPTION_UNMATCHED_COLS.has(key)
       ? undefined
       : autoMap.get(key);
-    const sourceIdx = overrideIdx !== undefined ? overrideIdx : autoIdx;
+    // null 表示用户明确选择「无匹配列」
+    const sourceIdx = overrideIdx !== undefined ? (overrideIdx ?? undefined) : autoIdx;
     const originalHeader = sourceIdx !== undefined ? headerCells[sourceIdx] : undefined;
     const isExceptionCol = isColumnMismatchException && EXCEPTION_UNMATCHED_COLS.has(key);
     return {
