@@ -2711,20 +2711,26 @@ function DetailView({
         autoFocus={autoFocus}
         setAutoFocus={setAutoFocus}
         failureReason={record.failedReason}
-        resultTab={resultTab}
-        setResultTab={setResultTab}
-        compareLoading={compareLoading}
-        recordId={record.id}
-        rejectionCount={rejectionMismatchCount(record)}
-        showCompareTab={
-          record.status === "pending_review" &&
-          record.aiVerdict === "fail" &&
-          !!record.aiRejectionReason
-        }
         onChange={(pageIdx, chunkId, v) =>
           handleEditChange("delivery_note", pageIdx, chunkId, v)
         }
       />
+
+      <Dialog open={compareOpen} onOpenChange={setCompareOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>KA验收单与SDCC订单明细对碰</DialogTitle>
+          </DialogHeader>
+          <div className="mt-2 max-h-[60vh] overflow-y-auto">
+            <CompareTable
+              recordId={record.id}
+              count={rejectionMismatchCount(record)}
+              loading={compareLoading}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+
 
 
 
