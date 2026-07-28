@@ -4175,7 +4175,7 @@ function TableChunkView({
   const { recordId, recordStatus } = useContext(DetailRecordContext);
   const storeKey = editedCellsKey(recordId, chunk.id);
   const [filterOn, setFilterOn] = useState(true);
-  const [overrides, setOverrides] = useState<Record<string, number>>({});
+  const [overrides, setOverrides] = useState<Record<string, number | null>>({});
   const [editedCells, setEditedCells] = useState<Set<string>>(
     () => new Set(editedCellsStore.get(storeKey) ?? []),
   );
@@ -4191,7 +4191,7 @@ function TableChunkView({
   };
   const locked = recordStatus === "verified";
   const lockedCells = locked ? editedCells : undefined;
-  const handleOverride = (key: string, idx: number | undefined) => {
+  const handleOverride = (key: string, idx: number | null | undefined) => {
     setOverrides((prev) => {
       const next = { ...prev };
       if (idx === undefined) delete next[key];
