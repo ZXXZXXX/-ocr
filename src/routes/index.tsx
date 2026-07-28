@@ -4316,7 +4316,13 @@ function FilteredTableView({
           <tr>
             {columns.map((col) => {
               const currentIdx = col.sourceIdx;
-              const selectValue = currentIdx !== undefined ? String(currentIdx) : "";
+              const overrideIdx = overrides[col.key];
+              const selectValue =
+                overrideIdx === null
+                  ? "__none__"
+                  : currentIdx !== undefined
+                    ? String(currentIdx)
+                    : "";
               return (
                 <th
                   key={col.key}
@@ -4339,19 +4345,26 @@ function FilteredTableView({
                     <Select
                       value={selectValue}
                       onValueChange={(v) => {
+                        if (v === "__none__") {
+                          onOverrideChange(col.key, null);
+                          return;
+                        }
                         const idx = parseInt(v, 10);
                         if (Number.isFinite(idx)) onOverrideChange(col.key, idx);
                       }}
                     >
                       <SelectTrigger
                         className="h-5 w-auto max-w-[8rem] gap-1 border-0 bg-transparent px-0 py-0 text-[11px] font-normal text-muted-foreground shadow-none hover:text-foreground focus:ring-0 focus:ring-offset-0 [&>span]:block [&>span]:truncate [&>svg]:size-3 [&>svg]:opacity-50"
-                        title={col.originalHeader || undefined}
+                        title={overrideIdx === null ? "无匹配列" : (col.originalHeader || undefined)}
                       >
                         <SelectValue placeholder="选择列">
-                          {col.originalHeader || "选择列"}
+                          {overrideIdx === null ? "无匹配列" : (col.originalHeader || "选择列")}
                         </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="__none__" className="text-xs">
+                          无匹配列
+                        </SelectItem>
                         {headerCells.map((h, i) => (
                           <SelectItem key={i} value={String(i)} className="text-xs">
                             {h || `第 ${i + 1} 列`}
