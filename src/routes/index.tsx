@@ -2808,13 +2808,13 @@ function DetailView({
 
 // ---------- Compare table (KA验收单 vs SDCC订单明细) ----------
 const COMPARE_MOCK_ITEMS = [
-  { name: "统一小浣熊烤翅味 35g", code: "SKU-8830021", ka: 120 },
-  { name: "汤达人日式豚骨面 125g*5", code: "SKU-8830118", ka: 60 },
-  { name: "统一阿萨姆奶茶 500ml", code: "SKU-8830204", ka: 240 },
-  { name: "统一冰红茶 500ml", code: "SKU-8830301", ka: 300 },
-  { name: "统一绿茶 500ml", code: "SKU-8830302", ka: 180 },
-  { name: "统一鲜橙多 450ml", code: "SKU-8830405", ka: 144 },
-  { name: "老坛酸菜牛肉面 122g", code: "SKU-8830512", ka: 96 },
+  { name: "统一小浣熊烤翅味 35g", code: "SKU-8830021", kaQty: 120, kaReceive: 118 },
+  { name: "汤达人日式豚骨面 125g*5", code: "SKU-8830118", kaQty: 60, kaReceive: 60 },
+  { name: "统一阿萨姆奶茶 500ml", code: "SKU-8830204", kaQty: 240, kaReceive: 238 },
+  { name: "统一冰红茶 500ml", code: "SKU-8830301", kaQty: 300, kaReceive: 300 },
+  { name: "统一绿茶 500ml", code: "SKU-8830302", kaQty: 180, kaReceive: 178 },
+  { name: "统一鲜橙多 450ml", code: "SKU-8830405", kaQty: 144, kaReceive: 144 },
+  { name: "老坛酸菜牛肉面 122g", code: "SKU-8830512", kaQty: 96, kaReceive: 94 },
 ];
 
 function CompareTable({
@@ -2833,8 +2833,24 @@ function CompareTable({
     return picks.map((item, i) => {
       const mismatched = i < count;
       const delta = ((seed + i * 7) % 5) + 1;
-      const sdcc = mismatched ? item.ka + (i % 2 === 0 ? -delta : delta) : item.ka;
-      return { ...item, sdcc, mismatched };
+      const mode = (seed + i) % 3;
+      // mode 0: 订单数量 mismatch; mode 1: 签收数量 mismatch; mode 2: both mismatch
+      const sdccOrderQty = mismatched && mode !== 1
+        ? item.kaQty + (i % 2 === 0 ? -delta : delta)
+        : item.kaQty;
+      const sdccSignQty = mismatched && mode !== 0
+        ? item.kaReceive + (i % 2 === 0 ? -delta : delta)
+        : item.kaReceive;
+      const orderMismatch = mismatched && mode !== 1;
+      const signMismatch = mismatched && mode !== 0;
+      return {
+        ...item,
+        sdccOrderQty,
+        sdccSignQty,
+        orderMismatch,
+        signMismatch,
+        mismatched: orderMismatch || signMismatch,
+      };
     });
   }, [recordId, count]);
 
@@ -2855,8 +2871,10 @@ function CompareTable({
             <th className="px-3 py-2 text-left font-medium">序号</th>
             <th className="px-3 py-2 text-left font-medium">物料名称</th>
             <th className="px-3 py-2 text-left font-medium">物料编码</th>
-            <th className="px-3 py-2 text-right font-medium">《KA验收单》签收数量</th>
-            <th className="px-3 py-2 text-right font-medium">《SDCC订单明细》数量</th>
+            <th className="px-3 py-2 text-right font-medium">《KA验收单》数量</th>
+            <th className="px-3 py-2 text-right font-medium">《SDCC订单明细》订单数量</th>
+            <th className="px-3 py-2 text-right font-medium">《KA验收单》实收数量</th>
+            <th className="px-3 py-2 text-right font-medium">《SDCC订单明细》签收数量</th>
           </tr>
         </thead>
         <tbody>
@@ -2869,17 +2887,31 @@ function CompareTable({
               <td className="px-3 py-2 text-muted-foreground">{i + 1}</td>
               <td className="px-3 py-2">{r.name}</td>
               <td className="px-3 py-2 font-mono text-xs">{r.code}</td>
-              <td className="px-3 py-2 text-right tabular-nums">{r.ka}</td>
+              <td className="px-3 py-2 text-right tabular-nums">{r.kaQty}</td>
               <td
                 className={cn(
                   "px-3 py-2 text-right tabular-nums",
-                  r.mismatched && "font-medium text-[color:var(--destructive)]",
+                  r.orderMismatch && "font-medium text-[color:var(--destructive)]",
                 )}
               >
-                {r.sdcc}
-                {r.mismatched && (
+                {r.sdccOrderQty}
+                {r.orderMismatch && (
                   <span className="ml-1 text-xs text-[color:var(--destructive)]/80">
-                    （KA验收单：{r.ka}）
+                    （KA验收单：{r.kaQty}）
+                  </span>
+                )}
+              </td>
+              <td className="px-3 py-2 text-right tabular-nums">{r.kaReceive}</td>
+              <td
+                className={cn(
+                  "px-3 py-2 text-right tabular-nums",
+                  r.signMismatch && "font-medium text-[color:var(--destructive)]",
+                )}
+              >
+                {r.sdccSignQty}
+                {r.signMismatch && (
+                  <span className="ml-1 text-xs text-[color:var(--destructive)]/80">
+                    （KA验收单：{r.kaReceive}）
                   </span>
                 )}
               </td>
