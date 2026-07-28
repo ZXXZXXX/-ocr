@@ -3020,49 +3020,35 @@ function DocPanel({
       {/* RIGHT: recognition results (always delivery_note) */}
       <div className="flex flex-1 flex-col overflow-hidden" style={{ minWidth: 0 }}>
         <div className="flex h-10 items-center justify-between gap-3 border-b border-border bg-background/60 px-3 py-1.5">
-          <div className="flex items-center gap-2">
-            <h3 className="text-xs font-medium text-foreground">
-              {failureReason ? "识别失败" : "识别结果 · 送货单"}
-            </h3>
-            {!failureReason && deliveryPages.length > 1 && (
-              <div className="inline-flex items-center gap-1 rounded border border-border bg-background/80 px-1 py-0.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const prev = deliveryPages[pageIdx - 1];
-                    if (!prev) return;
-                    const nextImgIdx = deliveryImages.findIndex((img) => img.id === prev.imageId);
-                    if (nextImgIdx >= 0) setDeliveryImgIdx(nextImgIdx);
-                    setActiveChunkId(null);
-                  }}
-                  disabled={pageIdx === 0}
-                  className="inline-flex h-5 w-5 items-center justify-center rounded text-muted-foreground hover:bg-accent disabled:opacity-40"
-                  aria-label="上一份"
-                >
-                  <ChevronLeft className="size-3.5" />
-                </button>
-                <span className="min-w-[3.5rem] text-center text-[11px] tabular-nums text-muted-foreground">
-                  第 {pageIdx + 1} / {deliveryPages.length} 份
-                </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const nxt = deliveryPages[pageIdx + 1];
-                    if (!nxt) return;
-                    const nextImgIdx = deliveryImages.findIndex((img) => img.id === nxt.imageId);
-                    if (nextImgIdx >= 0) setDeliveryImgIdx(nextImgIdx);
-                    setActiveChunkId(null);
-                  }}
-                  disabled={pageIdx >= deliveryPages.length - 1}
-                  className="inline-flex h-5 w-5 items-center justify-center rounded text-muted-foreground hover:bg-accent disabled:opacity-40"
-                  aria-label="下一份"
-                >
-                  <ChevronRight className="size-3.5" />
-                </button>
-              </div>
+          <div className="flex items-center gap-1">
+            {showCompareTab && (
+              <button
+                type="button"
+                onClick={() => setResultTab("compare")}
+                className={cn(
+                  "rounded px-2 py-1 text-xs",
+                  resultTab === "compare"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-accent",
+                )}
+              >
+                对碰结果
+              </button>
             )}
+            <button
+              type="button"
+              onClick={() => setResultTab("ocr")}
+              className={cn(
+                "rounded px-2 py-1 text-xs",
+                resultTab === "ocr" || !showCompareTab
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-accent",
+              )}
+            >
+              识别结果
+            </button>
           </div>
-          {!failureReason && (
+          {!failureReason && resultTab === "ocr" && (
             <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
               <span className="inline-flex items-center gap-1">
                 <span className={cn("size-2 rounded-sm", confidenceDotClasses("high"))} />高
@@ -3076,12 +3062,60 @@ function DocPanel({
             </div>
           )}
         </div>
+        <div className="flex items-center justify-between gap-3 border-b border-border bg-background/40 px-4 py-1.5">
+          <div className="text-[11px] text-muted-foreground">
+            {resultTab === "compare" && showCompareTab
+              ? "· KA验收单与SDCC订单明细对碰"
+              : failureReason
+                ? "· 识别失败"
+                : "· 送货单"}
+          </div>
+          {resultTab === "ocr" && !failureReason && deliveryPages.length > 1 && (
+            <div className="inline-flex items-center gap-1 rounded border border-border bg-background/80 px-1 py-0.5">
+              <button
+                type="button"
+                onClick={() => {
+                  const prev = deliveryPages[pageIdx - 1];
+                  if (!prev) return;
+                  const nextImgIdx = deliveryImages.findIndex((img) => img.id === prev.imageId);
+                  if (nextImgIdx >= 0) setDeliveryImgIdx(nextImgIdx);
+                  setActiveChunkId(null);
+                }}
+                disabled={pageIdx === 0}
+                className="inline-flex h-5 w-5 items-center justify-center rounded text-muted-foreground hover:bg-accent disabled:opacity-40"
+                aria-label="上一份"
+              >
+                <ChevronLeft className="size-3.5" />
+              </button>
+              <span className="min-w-[3.5rem] text-center text-[11px] tabular-nums text-muted-foreground">
+                第 {pageIdx + 1} / {deliveryPages.length} 份
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  const nxt = deliveryPages[pageIdx + 1];
+                  if (!nxt) return;
+                  const nextImgIdx = deliveryImages.findIndex((img) => img.id === nxt.imageId);
+                  if (nextImgIdx >= 0) setDeliveryImgIdx(nextImgIdx);
+                  setActiveChunkId(null);
+                }}
+                disabled={pageIdx >= deliveryPages.length - 1}
+                className="inline-flex h-5 w-5 items-center justify-center rounded text-muted-foreground hover:bg-accent disabled:opacity-40"
+                aria-label="下一份"
+              >
+                <ChevronRight className="size-3.5" />
+              </button>
+            </div>
+          )}
+        </div>
         <div
           ref={scrollRef}
           className="flex-1 overflow-y-auto"
         >
           <div className="space-y-0.5 px-4 py-3">
-            {failureReason ? (
+            {resultTab === "compare" && showCompareTab ? (
+              <CompareTable recordId={recordId} count={rejectionCount} loading={compareLoading} />
+            ) : failureReason ? (
               <div className="flex h-full flex-col items-center justify-center rounded-lg border border-dashed border-[color:var(--destructive)]/30 bg-[color:var(--destructive)]/5 p-8 text-center">
                 <AlertTriangle className="mb-2 size-8 text-[color:var(--destructive)]" />
                 <div className="text-sm font-medium text-[color:var(--destructive)]">
@@ -3140,6 +3174,7 @@ function DocPanel({
           </div>
         </div>
       </div>
+
 
     </div>
   );
