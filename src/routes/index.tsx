@@ -2147,11 +2147,24 @@ function Workbench() {
               </div>
             </div>
 
+            <div className="flex-1 overflow-auto">
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/40">
                   <TableHead className="w-[200px]">KA 订单号</TableHead>
-                  <TableHead className="w-[150px]">同步时间</TableHead>
+                  <TableHead
+                    className="w-[150px] cursor-pointer select-none"
+                    onClick={() => setSortOrder((o) => (o === "desc" ? "asc" : "desc"))}
+                  >
+                    <div className="flex items-center gap-1">
+                      同步时间
+                      {sortOrder === "desc" ? (
+                        <ArrowDown className="size-3 text-muted-foreground" />
+                      ) : (
+                        <ArrowUp className="size-3 text-muted-foreground" />
+                      )}
+                    </div>
+                  </TableHead>
                   <TableHead>签收状态</TableHead>
                   <TableHead>AI置信度</TableHead>
                   <TableHead>AI预审结论</TableHead>
