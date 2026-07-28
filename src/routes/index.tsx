@@ -3172,9 +3172,7 @@ function DocPanel({
           className="flex-1 overflow-y-auto"
         >
           <div className="space-y-0.5 px-4 py-3">
-            {resultTab === "compare" && showCompareTab ? (
-              <CompareTable recordId={recordId} count={rejectionCount} loading={compareLoading} />
-            ) : failureReason ? (
+            {failureReason ? (
               <div className="flex h-full flex-col items-center justify-center rounded-lg border border-dashed border-[color:var(--destructive)]/30 bg-[color:var(--destructive)]/5 p-8 text-center">
                 <AlertTriangle className="mb-2 size-8 text-[color:var(--destructive)]" />
                 <div className="text-sm font-medium text-[color:var(--destructive)]">
