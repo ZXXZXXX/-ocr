@@ -3574,12 +3574,12 @@ function ChunkEditor({
             </span>
           </div>
           <div className="flex items-center gap-2 text-[11px]">
-            {chunk.edited && (
+            {(chunk.edited || hasCellEdits) && (
               <span className="inline-flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-primary">
                 <Pencil className="size-2.5" /> 已修改
               </span>
             )}
-            {chunk.confirmed && !chunk.edited && (
+            {chunk.confirmed && !chunk.edited && !hasCellEdits && (
               <span className="inline-flex items-center gap-1 rounded bg-[color:var(--success)]/15 px-1.5 py-0.5 text-[color:var(--success)]">
                 <CheckCircle2 className="size-2.5" /> 已确认
               </span>
