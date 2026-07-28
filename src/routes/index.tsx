@@ -3528,10 +3528,13 @@ function ChunkEditor({
   onFocus: () => void;
   onChange: (newContent: string) => void;
 }) {
+  const { recordId } = useContext(DetailRecordContext);
   const tone = confidenceTone(chunk.confidence);
   const isLow =
     chunk.label !== "Image" && chunk.confidence != null && chunk.confidence < LOW_CONF_THRESHOLD;
-  const needsReview = isLow && !chunk.edited && !chunk.confirmed;
+  const cellEdits = editedCellsStore.get(editedCellsKey(recordId, chunk.id));
+  const hasCellEdits = (cellEdits?.size ?? 0) > 0;
+  const needsReview = isLow && !chunk.edited && !chunk.confirmed && !hasCellEdits;
 
   const dotColor = confidenceDotClasses(tone);
 
