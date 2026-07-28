@@ -76,6 +76,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Table,
   TableBody,
   TableCell,
@@ -2533,13 +2539,14 @@ function DetailView({
   const deliveryImages = record.images.filter((i) => i.docType === "delivery_note");
   const shippingImages = record.images.filter((i) => i.docType === "shipping_slip");
   const [autoFocus, setAutoFocus] = useState(true);
-  const [resultTab, setResultTab] = useState<"compare" | "ocr">("ocr");
+  const [compareOpen, setCompareOpen] = useState(false);
   const [compareLoading, setCompareLoading] = useState(false);
   const openCompare = () => {
-    setResultTab("compare");
+    setCompareOpen(true);
     setCompareLoading(true);
     window.setTimeout(() => setCompareLoading(false), 600);
   };
+
 
 
 
@@ -2704,20 +2711,26 @@ function DetailView({
         autoFocus={autoFocus}
         setAutoFocus={setAutoFocus}
         failureReason={record.failedReason}
-        resultTab={resultTab}
-        setResultTab={setResultTab}
-        compareLoading={compareLoading}
-        recordId={record.id}
-        rejectionCount={rejectionMismatchCount(record)}
-        showCompareTab={
-          record.status === "pending_review" &&
-          record.aiVerdict === "fail" &&
-          !!record.aiRejectionReason
-        }
         onChange={(pageIdx, chunkId, v) =>
           handleEditChange("delivery_note", pageIdx, chunkId, v)
         }
       />
+
+      <Dialog open={compareOpen} onOpenChange={setCompareOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>KA验收单与SDCC订单明细对碰</DialogTitle>
+          </DialogHeader>
+          <div className="mt-2 max-h-[60vh] overflow-y-auto">
+            <CompareTable
+              recordId={record.id}
+              count={rejectionMismatchCount(record)}
+              loading={compareLoading}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+
 
 
 
@@ -2900,12 +2913,6 @@ function DocPanel({
   autoFocus,
   setAutoFocus,
   failureReason,
-  resultTab,
-  setResultTab,
-  compareLoading,
-  recordId,
-  rejectionCount,
-  showCompareTab,
   onChange,
 }: {
   deliveryPages: DocPage[];
@@ -2915,14 +2922,9 @@ function DocPanel({
   autoFocus: boolean;
   setAutoFocus: (v: boolean) => void;
   failureReason?: string;
-  resultTab: "compare" | "ocr";
-  setResultTab: (v: "compare" | "ocr") => void;
-  compareLoading: boolean;
-  recordId: string;
-  rejectionCount: number;
-  showCompareTab: boolean;
   onChange: (pageIdx: number, chunkId: string, value: string) => void;
 }) {
+
 
   // Image (left) and result (right) navigation are linked for delivery notes:
   // switching the delivery-note image switches the recognition-result page, and vice versa.
@@ -3107,35 +3109,8 @@ function DocPanel({
       {/* RIGHT: recognition results (always delivery_note) */}
       <div className="flex flex-1 flex-col overflow-hidden" style={{ minWidth: 0 }}>
         <div className="flex h-10 items-center justify-between gap-3 border-b border-border bg-background/60 px-3 py-1.5">
-          <div className="flex items-center gap-1">
-            {showCompareTab && (
-              <button
-                type="button"
-                onClick={() => setResultTab("compare")}
-                className={cn(
-                  "rounded px-2 py-1 text-xs",
-                  resultTab === "compare"
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-accent",
-                )}
-              >
-                对碰结果
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => setResultTab("ocr")}
-              className={cn(
-                "rounded px-2 py-1 text-xs",
-                resultTab === "ocr" || !showCompareTab
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-accent",
-              )}
-            >
-              识别结果
-            </button>
-          </div>
-          {!failureReason && resultTab === "ocr" && (
+          <div className="text-xs font-medium text-foreground">识别结果</div>
+          {!failureReason && (
             <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
               <span className="inline-flex items-center gap-1">
                 <span className={cn("size-2 rounded-sm", confidenceDotClasses("high"))} />高
@@ -3151,13 +3126,10 @@ function DocPanel({
         </div>
         <div className="flex items-center justify-between gap-3 border-b border-border bg-background/40 px-4 py-1.5">
           <div className="text-[11px] text-muted-foreground">
-            {resultTab === "compare" && showCompareTab
-              ? "· KA验收单与SDCC订单明细对碰"
-              : failureReason
-                ? "· 识别失败"
-                : "· 送货单"}
+            {failureReason ? "· 识别失败" : "· 送货单"}
           </div>
-          {resultTab === "ocr" && !failureReason && deliveryPages.length > 1 && (
+          {!failureReason && deliveryPages.length > 1 && (
+
             <div className="inline-flex items-center gap-1 rounded border border-border bg-background/80 px-1 py-0.5">
               <button
                 type="button"
@@ -3200,9 +3172,7 @@ function DocPanel({
           className="flex-1 overflow-y-auto"
         >
           <div className="space-y-0.5 px-4 py-3">
-            {resultTab === "compare" && showCompareTab ? (
-              <CompareTable recordId={recordId} count={rejectionCount} loading={compareLoading} />
-            ) : failureReason ? (
+            {failureReason ? (
               <div className="flex h-full flex-col items-center justify-center rounded-lg border border-dashed border-[color:var(--destructive)]/30 bg-[color:var(--destructive)]/5 p-8 text-center">
                 <AlertTriangle className="mb-2 size-8 text-[color:var(--destructive)]" />
                 <div className="text-sm font-medium text-[color:var(--destructive)]">
