@@ -2670,7 +2670,13 @@ function DetailView({
               <span className="font-semibold">AI 预审不通过原因：</span>
               {record.aiRejectionReason}，共发现 {rejectionMismatchCount(record)} 项商品存在差异
             </div>
-
+            <button
+              type="button"
+              onClick={openCompare}
+              className="shrink-0 self-center rounded-md border border-[color:var(--destructive)]/30 bg-background/40 px-2 py-1 text-xs font-medium text-[color:var(--destructive)] hover:bg-background/70"
+            >
+              查看详情
+            </button>
           </div>
         )}
       {record.status === "pending_review" && record.aiVerdict === "exception" && (
