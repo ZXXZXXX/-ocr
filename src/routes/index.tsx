@@ -76,12 +76,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
   Table,
   TableBody,
   TableCell,
@@ -2703,33 +2697,27 @@ function DetailView({
       )}
       </SheetHeader>
 
-      <DocPanel
-        deliveryPages={deliveryPages}
-        deliveryImages={deliveryImages}
-        shippingImages={shippingImages}
-        editing={editing}
-        autoFocus={autoFocus}
-        setAutoFocus={setAutoFocus}
-        failureReason={record.failedReason}
-        onChange={(pageIdx, chunkId, v) =>
-          handleEditChange("delivery_note", pageIdx, chunkId, v)
-        }
-      />
-
-      <Dialog open={compareOpen} onOpenChange={setCompareOpen}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>KA验收单与SDCC订单明细对碰</DialogTitle>
-          </DialogHeader>
-          <div className="mt-2 max-h-[60vh] overflow-y-auto">
-            <CompareTable
-              recordId={record.id}
-              count={rejectionMismatchCount(record)}
-              loading={compareLoading}
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
+      {compareOpen ? (
+        <CompareView
+          recordId={record.id}
+          count={rejectionMismatchCount(record)}
+          loading={compareLoading}
+          onBack={() => setCompareOpen(false)}
+        />
+      ) : (
+        <DocPanel
+          deliveryPages={deliveryPages}
+          deliveryImages={deliveryImages}
+          shippingImages={shippingImages}
+          editing={editing}
+          autoFocus={autoFocus}
+          setAutoFocus={setAutoFocus}
+          failureReason={record.failedReason}
+          onChange={(pageIdx, chunkId, v) =>
+            handleEditChange("delivery_note", pageIdx, chunkId, v)
+          }
+        />
+      )}
 
 
 
@@ -2903,7 +2891,37 @@ function CompareTable({
   );
 }
 
-
+function CompareView({
+  recordId,
+  count,
+  loading,
+  onBack,
+}: {
+  recordId: string;
+  count: number;
+  loading: boolean;
+  onBack: () => void;
+}) {
+  return (
+    <div className="flex flex-1 flex-col overflow-hidden bg-background">
+      <div className="flex h-11 items-center gap-2 border-b border-border bg-background/60 px-4">
+        <button
+          type="button"
+          onClick={onBack}
+          className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="size-4" />
+          返回
+        </button>
+        <span className="text-xs text-muted-foreground">/</span>
+        <span className="text-sm font-medium text-foreground">KA验收单与SDCC订单明细对碰</span>
+      </div>
+      <div className="flex-1 overflow-y-auto p-4">
+        <CompareTable recordId={recordId} count={count} loading={loading} />
+      </div>
+    </div>
+  );
+}
 
 function DocPanel({
   deliveryPages,
