@@ -1732,6 +1732,7 @@ function Workbench() {
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 10;
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   // 筛选/搜索变化时重置到第一页
   useEffect(() => {
@@ -1813,25 +1814,27 @@ function Workbench() {
     const allTonesSelected = selectedConfidenceTones.size === 3;
     const fromT = dateFrom ? new Date(dateFrom).getTime() : -Infinity;
     const toT = dateTo ? new Date(dateTo).getTime() + 86400000 : Infinity;
-    return records.filter((r) => {
-      if (quickStatus === "unreviewed" && r.status === "verified") return false;
-      if (r.createdAt < fromT || r.createdAt > toT) return false;
-      if (r.status !== "recognizing" && r.status !== "failed" && r.status !== "queued" && r.confidence != null) {
-        const tone = confidenceTone(r.confidence / 100);
-        if (!selectedConfidenceTones.has(tone)) return false;
-      } else if (r.status === "recognizing" || r.status === "failed" || r.status === "queued") {
-        if (!allTonesSelected) return false;
-      }
-      // confidence 为 null 的 pending_review 记录不参与置信度筛选，始终保留
-      if (aiVerdictFilter !== "all" && r.aiVerdict !== aiVerdictFilter) return false;
-      if (searchQuery.trim()) {
-        const kaMatch = fuzzyMatch(searchQuery, r.id);
-        const shippingMatch = r.shippingSlipNo ? fuzzyMatch(searchQuery, r.shippingSlipNo) : false;
-        if (!kaMatch && !shippingMatch) return false;
-      }
-      return true;
-    });
-  }, [records, dateFrom, dateTo, selectedConfidenceTones, aiVerdictFilter, quickStatus, searchQuery]);
+    return records
+      .filter((r) => {
+        if (quickStatus === "unreviewed" && r.status === "verified") return false;
+        if (r.createdAt < fromT || r.createdAt > toT) return false;
+        if (r.status !== "recognizing" && r.status !== "failed" && r.status !== "queued" && r.confidence != null) {
+          const tone = confidenceTone(r.confidence / 100);
+          if (!selectedConfidenceTones.has(tone)) return false;
+        } else if (r.status === "recognizing" || r.status === "failed" || r.status === "queued") {
+          if (!allTonesSelected) return false;
+        }
+        // confidence 为 null 的 pending_review 记录不参与置信度筛选，始终保留
+        if (aiVerdictFilter !== "all" && r.aiVerdict !== aiVerdictFilter) return false;
+        if (searchQuery.trim()) {
+          const kaMatch = fuzzyMatch(searchQuery, r.id);
+          const shippingMatch = r.shippingSlipNo ? fuzzyMatch(searchQuery, r.shippingSlipNo) : false;
+          if (!kaMatch && !shippingMatch) return false;
+        }
+        return true;
+      })
+      .sort((a, b) => (sortOrder === "desc" ? b.createdAt - a.createdAt : a.createdAt - b.createdAt));
+  }, [records, dateFrom, dateTo, selectedConfidenceTones, aiVerdictFilter, quickStatus, searchQuery, sortOrder]);
 
   const filterActive =
     !!dateFrom ||
@@ -1987,12 +1990,10 @@ function Workbench() {
         </header>
 
         <main className="mx-auto max-w-[1400px] px-6 py-6">
-          <div className="overflow-hidden rounded-xl border border-border bg-card">
+          <div className="flex h-[calc(100vh-112px)] flex-col overflow-hidden rounded-xl border border-border bg-card">
             <div className="flex items-center justify-between border-b border-border px-5 py-3">
               <div className="flex items-center gap-3 text-sm">
                 <span className="font-medium">验收任务</span>
-                <span className="text-xs text-muted-foreground">共 {filteredRecords.length}&nbsp;项</span>
-
               </div>
               <div className="mx-4 flex-1 max-w-md">
                 <div className="relative">
@@ -2146,11 +2147,24 @@ function Workbench() {
               </div>
             </div>
 
+            <div className="flex-1 overflow-auto">
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/40">
                   <TableHead className="w-[200px]">KA 订单号</TableHead>
-                  <TableHead className="w-[150px]">同步时间</TableHead>
+                  <TableHead
+                    className="w-[150px] cursor-pointer select-none"
+                    onClick={() => setSortOrder((o) => (o === "desc" ? "asc" : "desc"))}
+                  >
+                    <div className="flex items-center gap-1">
+                      同步时间
+                      {sortOrder === "desc" ? (
+                        <ArrowDown className="size-3 text-muted-foreground" />
+                      ) : (
+                        <ArrowUp className="size-3 text-muted-foreground" />
+                      )}
+                    </div>
+                  </TableHead>
                   <TableHead>签收状态</TableHead>
                   <TableHead>AI置信度</TableHead>
                   <TableHead>AI预审结论</TableHead>
@@ -2271,36 +2285,45 @@ function Workbench() {
                 })}
               </TableBody>
             </Table>
+            </div>
 
-            {filteredRecords.length > 0 && (
-              <div className="flex items-center justify-center gap-2 border-t border-border px-4 py-3">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8 w-8 p-0"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  aria-label="上一页"
-                >
-                  <ChevronLeft className="size-4" />
-                </Button>
-                <span className="text-sm text-muted-foreground">
-                  <span className="font-medium text-foreground">{page}</span>
-                  {" / "}
-                  {totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8 w-8 p-0"
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page === totalPages}
-                  aria-label="下一页"
-                >
-                  <ChevronRight className="size-4" />
-                </Button>
+            <div className="grid grid-cols-3 items-center border-t border-border px-4 py-3">
+              <div className="text-xs text-muted-foreground">
+                本页 {paginatedRecords.length}&nbsp;项
               </div>
-            )}
+              {filteredRecords.length > 0 ? (
+                <div className="flex items-center justify-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    aria-label="上一页"
+                  >
+                    <ChevronLeft className="size-4" />
+                  </Button>
+                  <span className="text-sm text-muted-foreground">
+                    <span className="font-medium text-foreground">{page}</span>
+                    {" / "}
+                    {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                    aria-label="下一页"
+                  >
+                    <ChevronRight className="size-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div />
+              )}
+              <div />
+            </div>
           </div>
         </main>
 
