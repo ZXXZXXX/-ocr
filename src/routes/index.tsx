@@ -124,20 +124,23 @@ const LOW_CONF_THRESHOLD = 0.8;
 const AI_FAILURE_REASONS = ["图片无法识别", "图片质量过低"] as const;
 const AI_REJECTION_REASONS = [
   "OCR识别结果与《KA验收单》数据不匹配",
+  "《KA验收单》与《SDCC订单明细》不匹配",
 ] as const;
 type AiRejectionReason = (typeof AI_REJECTION_REASONS)[number];
 // 特定任务的固定不通过原因（用于演示）
 const AI_REJECTION_OVERRIDES: Record<string, AiRejectionReason> = {
-  CD202607143260522: "OCR识别结果与《KA验收单》数据不匹配",
+  CD202607143260522: "《KA验收单》与《SDCC订单明细》不匹配",
   CD202607141000274: "OCR识别结果与《KA验收单》数据不匹配",
 };
-// 无论何种原因，表格内只会标注与《KA验收单》不匹配的数据（签收数量列）
+// 单元格勘误括号内展示的对比来源标签
 const REJECTION_SOURCE_LABEL: Record<AiRejectionReason, string> = {
   "OCR识别结果与《KA验收单》数据不匹配": "KA验收单",
+  "《KA验收单》与《SDCC订单明细》不匹配": "SDCC订单明细",
 };
-// 允许出现勘误标注的数量列 —— 统一仅限「签收数量」（对应 KA 验收单）
+// 允许出现勘误标注的数量列 —— 统一仅限「签收数量」
 const REJECTION_MISMATCH_COLS: Record<AiRejectionReason, readonly string[]> = {
   "OCR识别结果与《KA验收单》数据不匹配": ["签收数量"],
+  "《KA验收单》与《SDCC订单明细》不匹配": ["签收数量"],
 };
 // 每条记录不通过原因中「共发现 n 项商品存在差异」的 n，按记录种子稳定生成
 const rejectionMismatchCount = (record: { createdAt: number }) =>
