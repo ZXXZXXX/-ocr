@@ -1345,12 +1345,6 @@ function seedRecords(): OcrRecord[] {
       aiVerdict: "exception",
       aiExceptionReason: "图片质量过低",
     },
-    {
-      minutesAgo: 200,
-      signatureStatus: "partial",
-      status: "failed",
-      failedReason: "图片数据为空",
-    },
   ];
 
   const docTypes: DocType[] = ["delivery_note", "shipping_slip"];
@@ -1624,66 +1618,7 @@ function seedRecords(): OcrRecord[] {
     aiRejectionReason: makeAiRejectionReason(tongyiRecord),
   };
 
-  // 新记录 1：无签收数据，但上传了合格图片 → AI 预审异常（物流签收数据缺失）
-  const missingSignCreatedAt = now - 1 * 60_000;
-  const missingSignImages: UploadedImage[] = [
-    {
-      id: "img-missing-sign-delivery",
-      name: "qualified_delivery_note.jpg",
-      url: receiptLingshiAsset.url,
-      docType: "delivery_note",
-      width: 1098,
-      height: 609,
-    },
-  ];
-  const missingSignResults: Partial<Record<DocType, DocPage[]>> = {
-    delivery_note: [
-      {
-        imageId: missingSignImages[0]!.id,
-        sourceImage: missingSignImages[0]!.name,
-        pageBox: [0, 0, missingSignImages[0]!.width, missingSignImages[0]!.height],
-        chunks: enrichTableChunks(mockMissingSignChunks()),
-      },
-    ],
-  };
-  const missingSignPages = Object.values(missingSignResults).flat() as DocPage[];
-  const missingSignRecord: OcrRecord = {
-    id: makeKaOrderId(missingSignCreatedAt, 4_100_001),
-    createdAt: missingSignCreatedAt,
-    status: "pending_review",
-    progress: 100,
-    confidence: averageConfidence(missingSignPages),
-    deliveryCount: 1,
-    shippingCount: 0,
-    images: missingSignImages,
-    results: missingSignResults,
-    driver: "周海明",
-    plateNo: "沪C·39102",
-    signatureStatus: undefined,
-    // 缺少物流签收数据 → AI 不输出预审结论，也不做数据冲突展示
-    shippingSlipNo: makeShippingSlipNo(missingSignCreatedAt, 4_100_001),
-  };
-
-  // 新记录 2：无签收数据，且无图片上传 → AI 识别失败
-  const noImageCreatedAt = now - 2 * 60_000;
-  const noImageRecord: OcrRecord = {
-    id: makeKaOrderId(noImageCreatedAt, 4_100_002),
-    createdAt: noImageCreatedAt,
-    status: "failed",
-    progress: 100,
-    confidence: undefined,
-    deliveryCount: 0,
-    shippingCount: 0,
-    images: [],
-    results: {},
-    driver: "吴志强",
-    plateNo: "苏D·55819",
-    signatureStatus: "partial",
-    failedReason: "未上传图片",
-    shippingSlipNo: makeShippingSlipNo(noImageCreatedAt, 4_100_002),
-  };
-
-  return [missingSignRecord, noImageRecord, tongyiRecordFinal, realRecord, ...noSlipRecords, ...records];
+  return [tongyiRecordFinal, realRecord, ...noSlipRecords, ...records];
 }
 
 
