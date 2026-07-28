@@ -3109,35 +3109,8 @@ function DocPanel({
       {/* RIGHT: recognition results (always delivery_note) */}
       <div className="flex flex-1 flex-col overflow-hidden" style={{ minWidth: 0 }}>
         <div className="flex h-10 items-center justify-between gap-3 border-b border-border bg-background/60 px-3 py-1.5">
-          <div className="flex items-center gap-1">
-            {showCompareTab && (
-              <button
-                type="button"
-                onClick={() => setResultTab("compare")}
-                className={cn(
-                  "rounded px-2 py-1 text-xs",
-                  resultTab === "compare"
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-accent",
-                )}
-              >
-                对碰结果
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => setResultTab("ocr")}
-              className={cn(
-                "rounded px-2 py-1 text-xs",
-                resultTab === "ocr" || !showCompareTab
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-accent",
-              )}
-            >
-              识别结果
-            </button>
-          </div>
-          {!failureReason && resultTab === "ocr" && (
+          <div className="text-xs font-medium text-foreground">识别结果</div>
+          {!failureReason && (
             <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
               <span className="inline-flex items-center gap-1">
                 <span className={cn("size-2 rounded-sm", confidenceDotClasses("high"))} />高
@@ -3153,13 +3126,10 @@ function DocPanel({
         </div>
         <div className="flex items-center justify-between gap-3 border-b border-border bg-background/40 px-4 py-1.5">
           <div className="text-[11px] text-muted-foreground">
-            {resultTab === "compare" && showCompareTab
-              ? "· KA验收单与SDCC订单明细对碰"
-              : failureReason
-                ? "· 识别失败"
-                : "· 送货单"}
+            {failureReason ? "· 识别失败" : "· 送货单"}
           </div>
-          {resultTab === "ocr" && !failureReason && deliveryPages.length > 1 && (
+          {!failureReason && deliveryPages.length > 1 && (
+
             <div className="inline-flex items-center gap-1 rounded border border-border bg-background/80 px-1 py-0.5">
               <button
                 type="button"
