@@ -1990,12 +1990,10 @@ function Workbench() {
         </header>
 
         <main className="mx-auto max-w-[1400px] px-6 py-6">
-          <div className="overflow-hidden rounded-xl border border-border bg-card">
+          <div className="flex h-[calc(100vh-112px)] flex-col overflow-hidden rounded-xl border border-border bg-card">
             <div className="flex items-center justify-between border-b border-border px-5 py-3">
               <div className="flex items-center gap-3 text-sm">
                 <span className="font-medium">验收任务</span>
-                <span className="text-xs text-muted-foreground">共 {filteredRecords.length}&nbsp;项</span>
-
               </div>
               <div className="mx-4 flex-1 max-w-md">
                 <div className="relative">
