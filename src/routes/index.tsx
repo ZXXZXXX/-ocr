@@ -2680,7 +2680,7 @@ function DetailView({
             <button
               type="button"
               onClick={openCompare}
-              className="shrink-0 self-center rounded-md border border-[color:var(--destructive)]/30 bg-background/40 px-2 py-1 text-xs font-medium text-[color:var(--destructive)] hover:bg-background/70"
+              className="shrink-0 self-center text-xs font-medium text-[color:var(--destructive)] underline underline-offset-2 hover:opacity-80"
             >
               查看详情
             </button>
