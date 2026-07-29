@@ -2962,6 +2962,7 @@ function DocPanel({
   const [imageTab, setImageTab] = useState<"delivery_note" | "shipping_slip">(
     deliveryImages.length ? "delivery_note" : "shipping_slip",
   );
+  const [imageLayout, setImageLayout] = useState<"single" | "split">("single");
 
   const deliveryImage = deliveryImages[deliveryImgIdx];
   const shippingImage = shippingImages[shippingIdx];
