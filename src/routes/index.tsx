@@ -2427,6 +2427,9 @@ function Workbench() {
                       <TableCell>
                         <AuditConclusionBadge status={r.status} aiVerdict={r.aiVerdict} />
                       </TableCell>
+                      <TableCell className="text-sm text-muted-foreground" suppressHydrationWarning>
+                        {r.verifiedAt ? fmtMinute(r.verifiedAt) : "—"}
+                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
                           {(r.status === "pending_review" || r.status === "failed") && (
