@@ -421,6 +421,28 @@ function makeAiRejectionReason(record: OcrRecord): AiRejectionReason | undefined
   return AI_REJECTION_REASONS[idx];
 }
 
+// 根据当前 AI 审核结论推导两步对碰状态（算法平台未来会直接推送该字段）
+function deriveReviewStepStatuses(record: OcrRecord): {
+  kaVsSdccStatus?: StepStatus;
+  ocrVsKaStatus?: StepStatus;
+} {
+  if (record.aiVerdict === "exception") {
+    return { kaVsSdccStatus: "no_result", ocrVsKaStatus: "no_result" };
+  }
+  if (record.aiVerdict === "pass") {
+    return { kaVsSdccStatus: "success", ocrVsKaStatus: "success" };
+  }
+  if (record.aiVerdict === "fail") {
+    if (record.aiRejectionReason === "《KA验收单》与《SDCC订单明细》不匹配") {
+      return { kaVsSdccStatus: "fail", ocrVsKaStatus: "no_result" };
+    }
+    if (record.aiRejectionReason === "OCR识别结果与《KA验收单》数据不匹配") {
+      return { kaVsSdccStatus: "success", ocrVsKaStatus: "fail" };
+    }
+  }
+  return { kaVsSdccStatus: "no_result", ocrVsKaStatus: "no_result" };
+}
+
 // Extract plain text from a simple HTML string (handles <p>, <br>, entities)
 function htmlToText(html: string): string {
   return html
