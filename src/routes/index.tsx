@@ -8,6 +8,7 @@ import {
   ScrollText,
   X,
   Minimize2,
+  Maximize2,
   CheckCircle2,
   AlertTriangle,
   Loader2,
@@ -39,6 +40,7 @@ import {
   Link,
   Link2Off,
   Info,
+  Rows2,
 } from "lucide-react";
 
 import receiptRtmartAsset from "@/assets/receipt_rtmart.jpg.asset.json";
@@ -2961,6 +2963,7 @@ function DocPanel({
   const [imageTab, setImageTab] = useState<"delivery_note" | "shipping_slip">(
     deliveryImages.length ? "delivery_note" : "shipping_slip",
   );
+  const [imageLayout, setImageLayout] = useState<"single" | "split">("single");
 
   const deliveryImage = deliveryImages[deliveryImgIdx];
   const shippingImage = shippingImages[shippingIdx];
@@ -3048,11 +3051,14 @@ function DocPanel({
             <button
               type="button"
               onClick={() => setImageTab("delivery_note")}
+              disabled={imageLayout === "split"}
               className={cn(
                 "inline-flex items-center gap-1 rounded px-2 py-1 text-xs",
-                imageTab === "delivery_note"
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-accent",
+                imageLayout === "split"
+                  ? "text-muted-foreground/50 cursor-not-allowed"
+                  : imageTab === "delivery_note"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-accent",
               )}
             >
               <Truck className="size-3.5" /> 送货单
@@ -3063,11 +3069,14 @@ function DocPanel({
             <button
               type="button"
               onClick={() => setImageTab("shipping_slip")}
+              disabled={imageLayout === "split"}
               className={cn(
                 "inline-flex items-center gap-1 rounded px-2 py-1 text-xs",
-                imageTab === "shipping_slip"
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-accent",
+                imageLayout === "split"
+                  ? "text-muted-foreground/50 cursor-not-allowed"
+                  : imageTab === "shipping_slip"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-accent",
               )}
             >
               <ScrollText className="size-3.5" /> 出货传票
@@ -3076,44 +3085,138 @@ function DocPanel({
               </span>
             </button>
           </div>
+          <button
+            type="button"
+            onClick={() =>
+              setImageLayout((l) => (l === "single" ? "split" : "single"))
+            }
+            className="inline-flex items-center gap-1 rounded border border-border bg-background/80 px-2 py-1 text-[11px] text-muted-foreground hover:bg-accent hover:text-foreground"
+            title={imageLayout === "single" ? "上下分屏查看" : "恢复单独窗口"}
+          >
+            {imageLayout === "single" ? (
+              <>
+                <Rows2 className="size-3.5" /> 上下视图
+              </>
+            ) : (
+              <>
+                <Maximize2 className="size-3.5" /> 单独窗口
+              </>
+            )}
+          </button>
         </div>
 
-        <div className="flex-1 flex items-center justify-center overflow-hidden p-4">
-          {leftImage && leftPage ? (
-            <ImageWithBoxes
-              image={leftImage}
-              page={leftPage}
-              activeChunkId={showingShipping ? null : activeChunkId}
-              onSelect={setActiveChunkId}
-              autoFocus={!showingShipping && autoFocus}
-              setAutoFocus={setAutoFocus}
-              showAutoFocus={!showingShipping}
-              viewMap={viewMap}
-              setViewMap={setViewMap}
-              navIndex={showingShipping ? shippingIdx : deliveryImgIdx}
-              navCount={showingShipping ? shippingImages.length : deliveryImages.length}
-              onPrev={() => {
-                if (showingShipping) {
-                  setShippingIdx((i) => Math.max(0, i - 1));
-                } else {
-                  setDeliveryImgIdx((i) => Math.max(0, i - 1));
-                }
-              }}
-              onNext={() => {
-                if (showingShipping) {
-                  setShippingIdx((i) => Math.min(shippingImages.length - 1, i + 1));
-                } else {
-                  setDeliveryImgIdx((i) => Math.min(deliveryImages.length - 1, i + 1));
-                }
-              }}
-              navLabel={"张"}
-            />
-          ) : (
-            <div className="rounded-lg border border-dashed border-border p-8 text-center text-xs text-muted-foreground">
-              未上传该类别的图片
+        {imageLayout === "split" ? (
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <div className="flex-1 flex flex-col overflow-hidden border-b border-border">
+              <div className="flex h-7 items-center gap-1 border-b border-border bg-background/40 px-3 text-[11px] text-muted-foreground">
+                <Truck className="size-3" /> 送货单
+              </div>
+              <div className="flex-1 flex items-center justify-center overflow-hidden p-3">
+                {deliveryImage && leftDeliveryPage ? (
+                  <ImageWithBoxes
+                    image={deliveryImage}
+                    page={leftDeliveryPage}
+                    activeChunkId={activeChunkId}
+                    onSelect={setActiveChunkId}
+                    autoFocus={autoFocus}
+                    setAutoFocus={setAutoFocus}
+                    showAutoFocus
+                    viewMap={viewMap}
+                    setViewMap={setViewMap}
+                    navIndex={deliveryImgIdx}
+                    navCount={deliveryImages.length}
+                    onPrev={() => setDeliveryImgIdx((i) => Math.max(0, i - 1))}
+                    onNext={() =>
+                      setDeliveryImgIdx((i) =>
+                        Math.min(deliveryImages.length - 1, i + 1),
+                      )
+                    }
+                    navLabel={"张"}
+                  />
+                ) : (
+                  <div className="rounded-lg border border-dashed border-border p-6 text-center text-xs text-muted-foreground">
+                    未上传送货单图片
+                  </div>
+                )}
+              </div>
             </div>
-          )}
-        </div>
+            <div className="flex-1 flex flex-col overflow-hidden">
+              <div className="flex h-7 items-center gap-1 border-b border-border bg-background/40 px-3 text-[11px] text-muted-foreground">
+                <ScrollText className="size-3" /> 出货传票
+              </div>
+              <div className="flex-1 flex items-center justify-center overflow-hidden p-3">
+                {shippingImage ? (
+                  <ImageWithBoxes
+                    image={shippingImage}
+                    page={{
+                      imageId: shippingImage.id,
+                      sourceImage: shippingImage.name,
+                      pageBox: [0, 0, shippingImage.width, shippingImage.height],
+                      chunks: [],
+                    }}
+                    activeChunkId={null}
+                    onSelect={() => {}}
+                    autoFocus={false}
+                    setAutoFocus={() => {}}
+                    showAutoFocus={false}
+                    viewMap={viewMap}
+                    setViewMap={setViewMap}
+                    navIndex={shippingIdx}
+                    navCount={shippingImages.length}
+                    onPrev={() => setShippingIdx((i) => Math.max(0, i - 1))}
+                    onNext={() =>
+                      setShippingIdx((i) =>
+                        Math.min(shippingImages.length - 1, i + 1),
+                      )
+                    }
+                    navLabel={"张"}
+                  />
+                ) : (
+                  <div className="rounded-lg border border-dashed border-border p-6 text-center text-xs text-muted-foreground">
+                    未上传出货传票图片
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex-1 flex items-center justify-center overflow-hidden p-4">
+            {leftImage && leftPage ? (
+              <ImageWithBoxes
+                image={leftImage}
+                page={leftPage}
+                activeChunkId={showingShipping ? null : activeChunkId}
+                onSelect={setActiveChunkId}
+                autoFocus={!showingShipping && autoFocus}
+                setAutoFocus={setAutoFocus}
+                showAutoFocus={!showingShipping}
+                viewMap={viewMap}
+                setViewMap={setViewMap}
+                navIndex={showingShipping ? shippingIdx : deliveryImgIdx}
+                navCount={showingShipping ? shippingImages.length : deliveryImages.length}
+                onPrev={() => {
+                  if (showingShipping) {
+                    setShippingIdx((i) => Math.max(0, i - 1));
+                  } else {
+                    setDeliveryImgIdx((i) => Math.max(0, i - 1));
+                  }
+                }}
+                onNext={() => {
+                  if (showingShipping) {
+                    setShippingIdx((i) => Math.min(shippingImages.length - 1, i + 1));
+                  } else {
+                    setDeliveryImgIdx((i) => Math.min(deliveryImages.length - 1, i + 1));
+                  }
+                }}
+                navLabel={"张"}
+              />
+            ) : (
+              <div className="rounded-lg border border-dashed border-border p-8 text-center text-xs text-muted-foreground">
+                未上传该类别的图片
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Resizer */}
