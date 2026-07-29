@@ -2963,25 +2963,24 @@ function DetailView({
             </SheetClose>
           </div>
         </div>
-      {record.status === "pending_review" &&
-        record.aiVerdict === "fail" &&
-        record.aiRejectionReason && (
-          <div className="mt-4 flex items-start gap-3 rounded-xl border border-[color:var(--destructive)]/20 bg-[color:var(--destructive)]/10 px-4 py-3 text-xs text-[color:var(--destructive)]">
-            <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-            <div className="flex-1 leading-relaxed">
-              <span className="font-semibold">AI 预审不通过原因：</span>
-              {record.aiRejectionReason}，共发现 {rejectionMismatchCount(record)} 项商品存在差异
-            </div>
-            <button
-              type="button"
-              onClick={openCompare}
-              className="shrink-0 self-center text-xs font-medium text-[color:var(--destructive)] underline underline-offset-2 hover:opacity-80"
-            >
-              查看详情
-            </button>
-          </div>
-        )}
+      {record.aiVerdict && (
+        <AiReviewSteps record={record} onViewDetail={openCompare} />
+      )}
       {record.status === "pending_review" && record.aiVerdict === "exception" && (
+        <div className="mt-4 flex items-start gap-3 rounded-xl border border-[color:var(--warning)]/30 bg-[color:var(--warning)]/15 px-4 py-3 text-xs text-[color:var(--warning-foreground)]">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+          <div className="flex-1 leading-relaxed">
+            <span className="font-semibold">AI 预审异常原因：</span>
+            {record.aiExceptionReason === "物流签收数据缺失"
+              ? "物流签收数据缺失"
+              : record.aiExceptionReason === "图片无法识别"
+              ? "图片无法识别，AI 无法从图片中提取有效单据信息，请确认图片内容是否完整或重新上传清晰图片。"
+              : record.aiExceptionReason === "图片质量过低"
+              ? "图片质量过低，AI 无法清晰识别单据内容，请重新上传清晰度更高的图片。"
+              : "物料数据列无法匹配"}
+          </div>
+        </div>
+      )}
         <div className="mt-4 flex items-start gap-3 rounded-xl border border-[color:var(--warning)]/30 bg-[color:var(--warning)]/15 px-4 py-3 text-xs text-[color:var(--warning-foreground)]">
           <AlertTriangle className="mt-0.5 size-4 shrink-0" />
           <div className="flex-1 leading-relaxed">
