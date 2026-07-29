@@ -2465,7 +2465,7 @@ function Workbench() {
                         <AuditConclusionBadge status={r.status} aiVerdict={r.aiVerdict} />
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground" suppressHydrationWarning>
-                        {r.verifiedAt ? fmtTime(r.verifiedAt) : "—"}
+                        {r.verifiedAt ? fmtTime(r.verifiedAt) : "-"}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
