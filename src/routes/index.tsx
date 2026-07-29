@@ -2373,6 +2373,7 @@ function Workbench() {
                   const inProgress = r.status === "recognizing" || r.status === "queued";
                   const canSelect = !inProgress && r.status !== "failed";
                   const pending = !inProgress && r.status !== "failed" ? pendingLowConf(r) : 0;
+                  const noImages = !r.images || r.images.length === 0;
                   return (
                     <TableRow key={r.id} className="hover:bg-muted/30">
                       <TableCell className="font-mono text-xs text-foreground">{r.id}</TableCell>
@@ -2383,14 +2384,18 @@ function Workbench() {
                         {r.signatureStatus ? SIGNATURE_LABEL[r.signatureStatus] : "—"}
                       </TableCell>
                       <TableCell>
-                        {r.confidence != null ? (
+                        {noImages ? (
+                          <EmptyBadge className="w-12" />
+                        ) : r.confidence != null ? (
                           <ConfidenceBadge score={r.confidence} />
                         ) : (
                           <EmptyBadge className="w-12" />
                         )}
                       </TableCell>
                       <TableCell>
-                        {r.aiVerdict ? (
+                        {noImages ? (
+                          <EmptyBadge />
+                        ) : r.aiVerdict ? (
                           <VerdictBadge value={r.aiVerdict} />
                         ) : r.status === "recognizing" ? (
                           <span className="text-xs text-secondary-foreground">AI 识别中</span>
@@ -2410,8 +2415,11 @@ function Workbench() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="text-sm font-semibold text-primary hover:bg-primary/10 hover:text-primary"
+                              className="text-sm font-semibold text-primary hover:bg-primary/10 hover:text-primary disabled:text-muted-foreground disabled:opacity-60"
+                              disabled={noImages}
+                              title={noImages ? "图片数据未上传，暂不可审核" : undefined}
                               onClick={() => {
+                                if (noImages) return;
                                 setDetailId(r.id);
                                 setDetailEditing(true);
                               }}
@@ -2432,6 +2440,7 @@ function Workbench() {
                           >
                             查看
                           </Button>
+
 
 
 
