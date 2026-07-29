@@ -2683,9 +2683,9 @@ function ImageStatusBadge({ noImages, updated }: { noImages: boolean; updated: b
     return <span className="text-sm text-muted-foreground">未上传</span>;
   }
   if (updated) {
-    return <span className="text-sm text-amber-600">有更新</span>;
+    return <span className="text-sm text-muted-foreground">有更新</span>;
   }
-  return <span className="text-sm text-emerald-600">已上传</span>;
+  return <span className="text-sm text-muted-foreground">已上传</span>;
 }
 
 function RecognitionProgressBadge({ status }: { status: Status }) {
@@ -2698,15 +2698,15 @@ function RecognitionProgressBadge({ status }: { status: Status }) {
   }
   if (status === "recognizing") {
     return (
-      <span className="inline-flex items-center gap-1 text-sm text-sky-600">
+      <span className="inline-flex items-center gap-1 text-sm text-muted-foreground">
         <Loader2 className="size-3 animate-spin" /> 正在识别
       </span>
     );
   }
   if (status === "failed") {
-    return <span className="text-sm text-rose-600">识别失败</span>;
+    return <span className="text-sm text-muted-foreground">识别失败</span>;
   }
-  return <span className="text-sm text-emerald-600">识别完成</span>;
+  return <span className="text-sm text-muted-foreground">识别完成</span>;
 }
 
 function StatusBadge({ status, pending: _pending }: { status: Status; pending: number }) {
