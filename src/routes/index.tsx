@@ -2437,7 +2437,7 @@ function Workbench() {
                         <ImageStatusBadge noImages={noImages} updated={!!r.imageUpdated} />
                       </TableCell>
                       <TableCell>
-                        <RecognitionProgressBadge status={r.status} noImages={noImages} />
+                        <RecognitionProgressBadge status={r.status} noImages={noImages} confidence={r.confidence} />
                       </TableCell>
                       <TableCell>
                         {noImages ? (
