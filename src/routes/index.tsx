@@ -1508,9 +1508,9 @@ function seedRecords(): OcrRecord[] {
       minutesAgo: 140,
       signatureStatus: "partial",
       status: "pending_review",
-      aiVerdict: "exception",
-      aiExceptionReason: "图片质量过低",
+      noImages: true,
     },
+
   ];
 
   const docTypes: DocType[] = ["delivery_note", "shipping_slip"];
