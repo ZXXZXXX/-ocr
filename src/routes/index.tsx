@@ -2748,7 +2748,7 @@ function EmptyBadge({ className }: { className?: string }) {
 
 function ImageStatusBadge({ noImages, updated }: { noImages: boolean; updated: boolean }) {
   if (noImages) {
-    return <span className="text-sm text-muted-foreground">未上传</span>;
+    return <span className="text-sm text-muted-foreground">-</span>;
   }
   if (updated) {
     return <span className="text-sm text-muted-foreground">有更新</span>;
