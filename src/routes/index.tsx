@@ -3208,21 +3208,24 @@ function CompareTable({
           </tr>
         </thead>
         <tbody>
-          {rows.map((r, i) => (
-            <tr
-              key={r.code}
-              className="border-t border-border"
-              style={r.mismatched ? { backgroundColor: "#fde7ec" } : undefined}
-            >
-              <td className="px-3 py-2 text-muted-foreground">{i + 1}</td>
-              <td className="px-3 py-2">{r.name}</td>
-              <td className="px-3 py-2 font-mono text-xs">{r.code}</td>
-              <td className="px-3 py-2 text-right tabular-nums">{r.kaQty}</td>
-              <td className="px-3 py-2 text-right tabular-nums">{r.sdccOrderQty}</td>
-              <td className="px-3 py-2 text-right tabular-nums">{r.kaReceive}</td>
-              <td className="px-3 py-2 text-right tabular-nums">{r.sdccSignQty}</td>
-            </tr>
-          ))}
+          {rows.map((r, i) => {
+            const fmt = (v: number | null) => (v === null || v === undefined ? "-" : v);
+            return (
+              <tr
+                key={`${r.code}-${i}`}
+                className="border-t border-border"
+                style={r.mismatched ? { backgroundColor: "#fde7ec" } : undefined}
+              >
+                <td className="px-3 py-2 text-muted-foreground">{i + 1}</td>
+                <td className="px-3 py-2">{r.name}</td>
+                <td className="px-3 py-2 font-mono text-xs">{r.code}</td>
+                <td className="px-3 py-2 text-right tabular-nums">{fmt(r.kaQty)}</td>
+                <td className="px-3 py-2 text-right tabular-nums">{fmt(r.sdccOrderQty)}</td>
+                <td className="px-3 py-2 text-right tabular-nums">{fmt(r.kaReceive)}</td>
+                <td className="px-3 py-2 text-right tabular-nums">{fmt(r.sdccSignQty)}</td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
