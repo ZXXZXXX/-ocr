@@ -2781,25 +2781,24 @@ function AiReviewSteps({
 
   return (
     <div className="mt-4 rounded-xl border border-border bg-background/80 px-4 py-3">
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-3">
         {/* Step 1: KA vs SDCC */}
-        <div className="flex min-w-0 flex-1 items-center gap-2">
+        <div className="flex items-center gap-2">
           {stepDot(1)}
           <div className="min-w-0 flex-1">
             <div className="text-xs font-medium text-foreground">KA验收单与SDCC订单明细对碰</div>
           </div>
           {stepIcon(step1)}
+          <button
+            type="button"
+            onClick={onViewDetail}
+            className="shrink-0 text-xs font-medium text-primary underline underline-offset-2 hover:opacity-80"
+          >
+            查看详情
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={onViewDetail}
-          className="shrink-0 text-xs font-medium text-primary underline underline-offset-2 hover:opacity-80"
-        >
-          查看详情
-        </button>
-        <div className="h-8 w-px bg-border" />
         {/* Step 2: OCR vs KA */}
-        <div className="flex min-w-0 flex-1 items-center gap-2">
+        <div className="flex items-center gap-2">
           {stepDot(2)}
           <div className="min-w-0 flex-1">
             <div className="text-xs font-medium text-foreground">OCR识别结果与KA验收单对碰</div>
