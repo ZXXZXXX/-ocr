@@ -3071,7 +3071,7 @@ function DetailView({
                     )}
                   </div>
                 )}
-                {record.status === "done" && record.images && record.images.length > 0 && (
+                {record.status !== "failed" && record.status !== "queued" && record.status !== "recognizing" && record.images && record.images.length > 0 && (
                   <div className="flex items-center gap-2">
                     <span className="text-muted-foreground">签收状态：</span>
                     <Select
