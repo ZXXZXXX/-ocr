@@ -1476,6 +1476,7 @@ function seedRecords(): OcrRecord[] {
       signatureStatus: "perfect",
       status: "pending_review",
       aiVerdict: "pass",
+      imageUpdated: true,
     },
     {
       minutesAgo: 45,
@@ -1490,6 +1491,7 @@ function seedRecords(): OcrRecord[] {
       signatureStatus: "partial",
       status: "pending_review",
       aiVerdict: "fail",
+      imageUpdated: true,
     },
     {
       minutesAgo: 320,
