@@ -2434,6 +2434,9 @@ function Workbench() {
                               onClick={() => {
                                 if (noImages) return;
                                 setDetailId(r.id);
+                                if (r.imageUpdated) {
+                                  setRecords((prev) => prev.map((x) => x.id === r.id ? { ...x, imageUpdated: false } : x));
+                                }
                                 setDetailEditing(true);
                               }}
                             >
