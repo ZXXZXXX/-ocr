@@ -1509,10 +1509,8 @@ function seedRecords(): OcrRecord[] {
     },
     {
       minutesAgo: 90,
-      signatureStatus: "perfect",
-      status: "pending_review",
-      aiVerdict: "exception",
-      aiExceptionReason: "图片无法识别",
+      status: "failed",
+      failedReason: "图片质量过低",
     },
     {
       minutesAgo: 140,
