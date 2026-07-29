@@ -1738,36 +1738,6 @@ function seedRecords(): OcrRecord[] {
     return { ...record, aiRejectionReason: makeAiRejectionReason(record) };
   });
 
-  // 识别失败任务：#CD202607141000548
-  const failedRecognitionRecord: OcrRecord = {
-    id: "CD202607141000548",
-    createdAt: new Date(2026, 6, 14, 8, 32, 0, 0).getTime(),
-    status: "failed",
-    progress: 100,
-    deliveryCount: 1,
-    shippingCount: 1,
-    images: [
-      {
-        id: "img-failed-delivery",
-        name: "failed_delivery_sample.jpg",
-        url: placeholderImg(1920, 720, "送货单示例"),
-        docType: "delivery_note",
-        width: 1920,
-        height: 720,
-      },
-      {
-        id: "img-failed-shipping",
-        name: "failed_shipping_sample.jpg",
-        url: placeholderImg(1920, 720, "出货传票示例（参考）"),
-        docType: "shipping_slip",
-        width: 1920,
-        height: 720,
-      },
-    ],
-    driver: "赵强",
-    plateNo: "京A·88888",
-    failedReason: "图片质量过低",
-  };
 
 
   // 多送货单任务：长沙统一企业 · 零食很忙SRM送货单（同一验收任务包含2张送货单照片）
