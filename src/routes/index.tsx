@@ -1863,7 +1863,8 @@ function seedRecords(): OcrRecord[] {
     aiRejectionReason: makeAiRejectionReason(lingshiRecord),
   };
 
-  return [lingshiRecordFinal, tongyiRecordFinal, realRecord, ...noSlipRecords, ...records];
+  const allRecords = [lingshiRecordFinal, tongyiRecordFinal, realRecord, ...noSlipRecords, ...records];
+  return allRecords.map((r) => ({ ...r, ...deriveReviewStepStatuses(r) }));
 }
 
 
