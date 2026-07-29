@@ -2451,6 +2451,9 @@ function Workbench() {
                             disabled={inProgress}
                             onClick={() => {
                               setDetailId(r.id);
+                              if (r.imageUpdated) {
+                                setRecords((prev) => prev.map((x) => x.id === r.id ? { ...x, imageUpdated: false } : x));
+                              }
                               setDetailEditing(false);
                             }}
                           >
