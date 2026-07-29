@@ -2658,6 +2658,57 @@ function EmptyBadge({ className }: { className?: string }) {
   );
 }
 
+function ImageStatusBadge({ noImages, updated }: { noImages: boolean; updated: boolean }) {
+  if (noImages) {
+    return (
+      <Badge variant="status" className="border-0 bg-muted font-normal text-muted-foreground">
+        未上传
+      </Badge>
+    );
+  }
+  if (updated) {
+    return (
+      <Badge variant="status" className="border-0 bg-amber-100 font-normal text-amber-700">
+        有更新
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="status" className="border-0 bg-emerald-100 font-normal text-emerald-700">
+      已上传
+    </Badge>
+  );
+}
+
+function RecognitionProgressBadge({ status }: { status: Status }) {
+  if (status === "queued") {
+    return (
+      <Badge variant="status" className="gap-1 border-0 bg-muted font-normal text-muted-foreground">
+        <Loader2 className="size-3" /> 等待识别
+      </Badge>
+    );
+  }
+  if (status === "recognizing") {
+    return (
+      <Badge variant="status" className="gap-1 border-0 bg-sky-100 font-normal text-sky-700">
+        <Loader2 className="size-3 animate-spin" /> 正在识别
+      </Badge>
+    );
+  }
+  if (status === "failed") {
+    return (
+      <Badge variant="status" className="border-0 bg-rose-100 font-normal text-rose-700">
+        识别失败
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="status" className="border-0 bg-emerald-100 font-normal text-emerald-700">
+      识别完成
+    </Badge>
+  );
+}
+
 function StatusBadge({ status, pending: _pending }: { status: Status; pending: number }) {
   if (status === "queued")
     return (
