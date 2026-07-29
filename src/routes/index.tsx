@@ -2788,7 +2788,6 @@ function AiReviewSteps({
           <div className="min-w-0 flex-1">
             <div className="text-xs font-medium text-foreground">KA验收单与SDCC订单明细对碰</div>
           </div>
-          {stepIcon(step1)}
           <button
             type="button"
             onClick={onViewDetail}
@@ -2796,6 +2795,7 @@ function AiReviewSteps({
           >
             查看详情
           </button>
+          {stepIcon(step1)}
         </div>
         {/* Step 2: OCR vs KA */}
         <div className="flex items-center gap-2">
