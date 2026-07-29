@@ -2451,13 +2451,13 @@ function Workbench() {
                         )}
                       </TableCell>
                       <TableCell className="text-sm text-foreground">
-                        {(() => {
-                          const hide = noImages || r.status === "failed" || r.status === "queued" || r.status === "recognizing";
-                          if (r.id === "CD202607141000548") {
-                            console.log("[sig-status]", r.id, "status=", r.status, "signatureStatus=", r.signatureStatus, "hide=", hide);
-                          }
-                          return hide ? "-" : r.signatureStatus ? SIGNATURE_LABEL[r.signatureStatus] : "—";
-                        })()}
+                        {noImages || r.status === "failed" || r.status === "queued" || r.status === "recognizing" ? (
+                          "-"
+                        ) : r.signatureStatus ? (
+                          SIGNATURE_LABEL[r.signatureStatus]
+                        ) : (
+                          "—"
+                        )}
                       </TableCell>
                       <TableCell>
                         {noImages ? (
