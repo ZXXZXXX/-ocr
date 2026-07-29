@@ -2386,10 +2386,10 @@ function Workbench() {
                       )}
                     </div>
                   </TableHead>
-                  <TableHead>签收状态</TableHead>
                   <TableHead>图片状态</TableHead>
                   <TableHead>AI识别进度</TableHead>
                   <TableHead>AI置信度</TableHead>
+                  <TableHead>签收状态</TableHead>
                   <TableHead>AI预审结论</TableHead>
                   <TableHead>最终审核结论</TableHead>
                   <TableHead>完成审核时间</TableHead>
@@ -2430,9 +2430,6 @@ function Workbench() {
                       <TableCell className="text-sm text-muted-foreground" suppressHydrationWarning>
                         {fmtTime(r.createdAt)}
                       </TableCell>
-                      <TableCell className="text-sm text-foreground">
-                        {r.signatureStatus ? SIGNATURE_LABEL[r.signatureStatus] : "—"}
-                      </TableCell>
                       <TableCell>
                         <ImageStatusBadge noImages={noImages} updated={!!r.imageUpdated} />
                       </TableCell>
@@ -2448,6 +2445,9 @@ function Workbench() {
                           <EmptyBadge className="w-12" />
                         )}
                       </TableCell>
+                      <TableCell className="text-sm text-foreground">
+                        {r.signatureStatus ? SIGNATURE_LABEL[r.signatureStatus] : "—"}
+                      </TableCell>
                       <TableCell>
                         {noImages ? (
                           <EmptyBadge />
@@ -2461,7 +2461,6 @@ function Workbench() {
                           <EmptyBadge />
                         )}
                       </TableCell>
-
                       <TableCell>
                         <AuditConclusionBadge status={r.status} aiVerdict={r.aiVerdict} />
                       </TableCell>
