@@ -3102,6 +3102,45 @@ const COMPARE_MOCK_ITEMS = [
   { name: "老坛酸菜牛肉面 122g", code: "SKU-8830512", kaQty: 96, kaReceive: 94 },
 ];
 
+// 真实对碰数据：#CD202606224769631（严格按用户提供的 Excel）
+type CompareRow = {
+  name: string;
+  code: string;
+  kaQty: number | null;
+  kaReceive: number | null;
+  sdccOrderQty: number | null;
+  sdccSignQty: number | null;
+};
+const COMPARE_REAL_DATA: Record<string, CompareRow[]> = {
+  CD202606224769631: [
+    { name: "统一汤达人日式豚骨拉面杯83g", code: "4016847", kaQty: 2880, kaReceive: 240, sdccOrderQty: 240, sdccSignQty: 240 },
+    { name: "统一汤达人酸酸辣辣豚骨拉面杯90g", code: "4016849", kaQty: 2376, kaReceive: 198, sdccOrderQty: 240, sdccSignQty: 240 },
+    { name: "统一来一桶红烧牛肉面103g", code: "4018425", kaQty: 1296, kaReceive: 108, sdccOrderQty: 108, sdccSignQty: 108 },
+    { name: "统一茄皇鸡蛋面120g", code: "4016643", kaQty: 1296, kaReceive: 108, sdccOrderQty: 108, sdccSignQty: 108 },
+    { name: "统一茄皇牛肉面128g", code: "4016646", kaQty: 3888, kaReceive: 324, sdccOrderQty: 324, sdccSignQty: 324 },
+    { name: "统一巧面馆老坛泡椒牛肉面107g", code: "4017360", kaQty: 2592, kaReceive: 216, sdccOrderQty: 216, sdccSignQty: 216 },
+    { name: "统一巧面馆麻辣笋子牛肉面108g", code: "4016523", kaQty: 1296, kaReceive: 108, sdccOrderQty: 108, sdccSignQty: 108 },
+    { name: "统一来一桶老坛酸菜牛肉面120g", code: "4014877", kaQty: 2160, kaReceive: 180, sdccOrderQty: 216, sdccSignQty: 216 },
+    { name: "统一巧面馆藤椒牛肉面105g", code: "4016506", kaQty: 1296, kaReceive: 108, sdccOrderQty: 108, sdccSignQty: 108 },
+    { name: "统一巧面馆油泼辣子酸汤桶面116g", code: "4016534", kaQty: 1680, kaReceive: 140, sdccOrderQty: 140, sdccSignQty: 140 },
+    { name: "汤达人日式豚骨面125g*5", code: "4017038", kaQty: 864, kaReceive: 144, sdccOrderQty: 144, sdccSignQty: 144 },
+    { name: "汤达人酸辣豚骨面130g*5", code: "4016928", kaQty: 432, kaReceive: 72, sdccOrderQty: 72, sdccSignQty: 72 },
+    { name: "统一粉面蛋肉肠金汤肥牛味173g", code: "4016664", kaQty: 1296, kaReceive: 108, sdccOrderQty: 108, sdccSignQty: 108 },
+    { name: "统一小浣熊番茄红烩味35g", code: "-", kaQty: 4320, kaReceive: 108, sdccOrderQty: null, sdccSignQty: null },
+    { name: "统一小浣熊烤翅味35g", code: "4017837", kaQty: 4320, kaReceive: 108, sdccOrderQty: 108, sdccSignQty: 108 },
+    { name: "统一巧面馆麻辣笋子牛肉袋106g", code: "4016524", kaQty: 24, kaReceive: 1, sdccOrderQty: 216, sdccSignQty: 216 },
+    { name: "统一茄皇牛肉面袋面126g", code: "4016648", kaQty: 120, kaReceive: 4, sdccOrderQty: 216, sdccSignQty: 216 },
+    { name: "统一茄皇鸡蛋袋面116g", code: "4016645", kaQty: 6480, kaReceive: 216, sdccOrderQty: 216, sdccSignQty: 216 },
+    { name: "统一巧面馆油泼辣子酸汤袋面110g", code: "4016512", kaQty: 4800, kaReceive: 200, sdccOrderQty: 200, sdccSignQty: 200 },
+    { name: "统一粉面蛋肉肠诱惑酸麻味173g", code: "4016666", kaQty: 1296, kaReceive: 108, sdccOrderQty: 108, sdccSignQty: 108 },
+    { name: "-", code: "4011624", kaQty: null, kaReceive: null, sdccOrderQty: 270, sdccSignQty: 270 },
+    { name: "-", code: "4016503", kaQty: null, kaReceive: null, sdccOrderQty: 108, sdccSignQty: 108 },
+    { name: "-", code: "4016528", kaQty: null, kaReceive: null, sdccOrderQty: 216, sdccSignQty: 216 },
+    { name: "-", code: "4016830", kaQty: null, kaReceive: null, sdccOrderQty: 120, sdccSignQty: 120 },
+    { name: "-", code: "4017836", kaQty: null, kaReceive: null, sdccOrderQty: 108, sdccSignQty: 108 },
+  ],
+};
+
 function CompareTable({
   recordId,
   count,
@@ -3111,7 +3150,15 @@ function CompareTable({
   count: number;
   loading: boolean;
 }) {
-  const rows = useMemo(() => {
+  const rows = useMemo<(CompareRow & { orderMismatch: boolean; signMismatch: boolean; mismatched: boolean })[]>(() => {
+    const real = COMPARE_REAL_DATA[recordId];
+    if (real) {
+      return real.map((r) => {
+        const orderMismatch = r.kaQty !== r.sdccOrderQty;
+        const signMismatch = r.kaReceive !== r.sdccSignQty;
+        return { ...r, orderMismatch, signMismatch, mismatched: orderMismatch || signMismatch };
+      });
+    }
     const seed = recordId.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
     const total = Math.max(count + 2, 5);
     const picks = COMPARE_MOCK_ITEMS.slice(0, Math.min(total, COMPARE_MOCK_ITEMS.length));
@@ -3119,17 +3166,15 @@ function CompareTable({
       const mismatched = i < count;
       const delta = ((seed + i * 7) % 5) + 1;
       const mode = (seed + i) % 3;
-      // mode 0: 订单数量 mismatch; mode 1: 签收数量 mismatch; mode 2: both mismatch
-      const sdccOrderQty = mismatched && mode !== 1
-        ? item.kaQty + (i % 2 === 0 ? -delta : delta)
-        : item.kaQty;
-      const sdccSignQty = mismatched && mode !== 0
-        ? item.kaReceive + (i % 2 === 0 ? -delta : delta)
-        : item.kaReceive;
+      const sdccOrderQty = mismatched && mode !== 1 ? item.kaQty + (i % 2 === 0 ? -delta : delta) : item.kaQty;
+      const sdccSignQty = mismatched && mode !== 0 ? item.kaReceive + (i % 2 === 0 ? -delta : delta) : item.kaReceive;
       const orderMismatch = mismatched && mode !== 1;
       const signMismatch = mismatched && mode !== 0;
       return {
-        ...item,
+        name: item.name,
+        code: item.code,
+        kaQty: item.kaQty,
+        kaReceive: item.kaReceive,
         sdccOrderQty,
         sdccSignQty,
         orderMismatch,
