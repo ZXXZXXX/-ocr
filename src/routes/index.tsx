@@ -3199,8 +3199,8 @@ function CompareTable({
         <thead className="bg-muted/50 text-xs text-muted-foreground">
           <tr>
             <th className="px-3 py-2 text-left font-medium">序号</th>
+            <th className="px-3 py-2 text-left font-medium">物料编码</th>
             <th className="px-3 py-2 text-left font-medium">物料名称</th>
-            <th className="px-3 py-2 text-left font-medium">产品单元条码</th>
             <th className="px-3 py-2 text-right font-medium">《KA验收单》数量</th>
             <th className="px-3 py-2 text-right font-medium">《SDCC订单明细》订单数量</th>
             <th className="px-3 py-2 text-right font-medium">《KA验收单》实收数量</th>
@@ -3217,8 +3217,8 @@ function CompareTable({
                 style={r.mismatched ? { backgroundColor: "#fde7ec" } : undefined}
               >
                 <td className="px-3 py-2 text-muted-foreground">{i + 1}</td>
-                <td className="px-3 py-2">{r.name}</td>
                 <td className="px-3 py-2 font-mono text-xs">{r.code}</td>
+                <td className="px-3 py-2">{r.name}</td>
                 <td className="px-3 py-2 text-right tabular-nums">{fmt(r.kaQty)}</td>
                 <td className="px-3 py-2 text-right tabular-nums">{fmt(r.sdccOrderQty)}</td>
                 <td className="px-3 py-2 text-right tabular-nums">{fmt(r.kaReceive)}</td>
