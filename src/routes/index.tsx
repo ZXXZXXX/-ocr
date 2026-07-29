@@ -10,6 +10,8 @@ import {
   Minimize2,
   Maximize2,
   CheckCircle2,
+  XCircle,
+  HelpCircle,
   AlertTriangle,
   Loader2,
   Sparkles,
