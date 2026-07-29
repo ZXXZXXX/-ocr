@@ -3091,55 +3091,104 @@ function DetailView({
   );
 }
 
-// ---------- Compare table (KA验收单 vs SDCC订单明细) ----------
-const COMPARE_MOCK_ITEMS = [
-  { name: "统一小浣熊烤翅味 35g", code: "SKU-8830021", kaQty: 120, kaReceive: 118 },
-  { name: "汤达人日式豚骨面 125g*5", code: "SKU-8830118", kaQty: 60, kaReceive: 60 },
-  { name: "统一阿萨姆奶茶 500ml", code: "SKU-8830204", kaQty: 240, kaReceive: 238 },
-  { name: "统一冰红茶 500ml", code: "SKU-8830301", kaQty: 300, kaReceive: 300 },
-  { name: "统一绿茶 500ml", code: "SKU-8830302", kaQty: 180, kaReceive: 178 },
-  { name: "统一鲜橙多 450ml", code: "SKU-8830405", kaQty: 144, kaReceive: 144 },
-  { name: "老坛酸菜牛肉面 122g", code: "SKU-8830512", kaQty: 96, kaReceive: 94 },
-];
+// ---------- Compare table (KA验收单 vs SDCC订单明细，按 69 码聚合) ----------
+type CompareItem = { code: string; name: string; order: number | null; recv: number | null };
+type CompareGroup = { barcode: string; ka: CompareItem[]; sd: CompareItem[] };
 
-// 真实对碰数据：#CD202606224769631（严格按用户提供的 Excel）
-type CompareRow = {
-  name: string;
-  code: string;
-  kaQty: number | null;
-  kaReceive: number | null;
-  sdccOrderQty: number | null;
-  sdccSignQty: number | null;
-};
-const COMPARE_REAL_DATA: Record<string, CompareRow[]> = {
+// 真实对碰数据：#CD202606224769631（严格按用户提供的 Excel，按产品单元条码 = 69码 聚合）
+const COMPARE_REAL_GROUPS: Record<string, CompareGroup[]> = {
   CD202606224769631: [
-    { name: "统一汤达人日式豚骨拉面杯83g", code: "4016847", kaQty: 2880, kaReceive: 240, sdccOrderQty: 240, sdccSignQty: 240 },
-    { name: "统一汤达人酸酸辣辣豚骨拉面杯90g", code: "4016849", kaQty: 2376, kaReceive: 198, sdccOrderQty: 240, sdccSignQty: 240 },
-    { name: "统一来一桶红烧牛肉面103g", code: "4018425", kaQty: 1296, kaReceive: 108, sdccOrderQty: 108, sdccSignQty: 108 },
-    { name: "统一茄皇鸡蛋面120g", code: "4016643", kaQty: 1296, kaReceive: 108, sdccOrderQty: 108, sdccSignQty: 108 },
-    { name: "统一茄皇牛肉面128g", code: "4016646", kaQty: 3888, kaReceive: 324, sdccOrderQty: 324, sdccSignQty: 324 },
-    { name: "统一巧面馆老坛泡椒牛肉面107g", code: "4017360", kaQty: 2592, kaReceive: 216, sdccOrderQty: 216, sdccSignQty: 216 },
-    { name: "统一巧面馆麻辣笋子牛肉面108g", code: "4016523", kaQty: 1296, kaReceive: 108, sdccOrderQty: 108, sdccSignQty: 108 },
-    { name: "统一来一桶老坛酸菜牛肉面120g", code: "4014877", kaQty: 2160, kaReceive: 180, sdccOrderQty: 216, sdccSignQty: 216 },
-    { name: "统一巧面馆藤椒牛肉面105g", code: "4016506", kaQty: 1296, kaReceive: 108, sdccOrderQty: 108, sdccSignQty: 108 },
-    { name: "统一巧面馆油泼辣子酸汤桶面116g", code: "4016534", kaQty: 1680, kaReceive: 140, sdccOrderQty: 140, sdccSignQty: 140 },
-    { name: "汤达人日式豚骨面125g*5", code: "4017038", kaQty: 864, kaReceive: 144, sdccOrderQty: 144, sdccSignQty: 144 },
-    { name: "汤达人酸辣豚骨面130g*5", code: "4016928", kaQty: 432, kaReceive: 72, sdccOrderQty: 72, sdccSignQty: 72 },
-    { name: "统一粉面蛋肉肠金汤肥牛味173g", code: "4016664", kaQty: 1296, kaReceive: 108, sdccOrderQty: 108, sdccSignQty: 108 },
-    { name: "统一小浣熊番茄红烩味35g", code: "-", kaQty: 4320, kaReceive: 108, sdccOrderQty: null, sdccSignQty: null },
-    { name: "统一小浣熊烤翅味35g", code: "4017837", kaQty: 4320, kaReceive: 108, sdccOrderQty: 108, sdccSignQty: 108 },
-    { name: "统一巧面馆麻辣笋子牛肉袋106g", code: "4016524", kaQty: 24, kaReceive: 1, sdccOrderQty: 216, sdccSignQty: 216 },
-    { name: "统一茄皇牛肉面袋面126g", code: "4016648", kaQty: 120, kaReceive: 4, sdccOrderQty: 216, sdccSignQty: 216 },
-    { name: "统一茄皇鸡蛋袋面116g", code: "4016645", kaQty: 6480, kaReceive: 216, sdccOrderQty: 216, sdccSignQty: 216 },
-    { name: "统一巧面馆油泼辣子酸汤袋面110g", code: "4016512", kaQty: 4800, kaReceive: 200, sdccOrderQty: 200, sdccSignQty: 200 },
-    { name: "统一粉面蛋肉肠诱惑酸麻味173g", code: "4016666", kaQty: 1296, kaReceive: 108, sdccOrderQty: 108, sdccSignQty: 108 },
-    { name: "-", code: "4011624", kaQty: null, kaReceive: null, sdccOrderQty: 270, sdccSignQty: 270 },
-    { name: "-", code: "4016503", kaQty: null, kaReceive: null, sdccOrderQty: 108, sdccSignQty: 108 },
-    { name: "-", code: "4016528", kaQty: null, kaReceive: null, sdccOrderQty: 216, sdccSignQty: 216 },
-    { name: "-", code: "4016830", kaQty: null, kaReceive: null, sdccOrderQty: 120, sdccSignQty: 120 },
-    { name: "-", code: "4017836", kaQty: null, kaReceive: null, sdccOrderQty: 108, sdccSignQty: 108 },
+    { barcode: "6925303710903", ka: [{ code: "111487", name: "汤达人日式豚骨面125g*5", order: 864, recv: 144 }], sd: [{ code: "4017038", name: "统一4017038", order: 144, recv: 144 }] },
+    { barcode: "6925303710910", ka: [{ code: "111594", name: "汤达人酸辣豚骨面130g*5", order: 432, recv: 72 }], sd: [{ code: "4016928", name: "统一4016928", order: 72, recv: 72 }] },
+    { barcode: "6925303711153", ka: [], sd: [{ code: "4011624", name: "统一4011624", order: 270, recv: 270 }] },
+    { barcode: "6925303711368", ka: [
+      { code: "109200", name: "统一巧面馆老坛泡椒牛肉面107g", order: 1152, recv: 96 },
+      { code: "109200", name: "统一巧面馆老坛泡椒牛肉面107g", order: 1440, recv: 120 },
+    ], sd: [{ code: "4017360", name: "统一4017360", order: 216, recv: 216 }] },
+    { barcode: "6925303713003", ka: [{ code: "123768", name: "统一小浣熊番茄红烩味35g", order: 4320, recv: 108 }], sd: [] },
+    { barcode: "6925303714086", ka: [{ code: "100811", name: "统一来一桶红烧牛肉面103g", order: 1296, recv: 108 }], sd: [{ code: "4018425", name: "统一4018425", order: 108, recv: 108 }] },
+    { barcode: "6925303740351", ka: [{ code: "128723", name: "统一巧面馆麻辣笋子牛肉袋106g", order: 24, recv: 1 }], sd: [{ code: "4016524", name: "统一4016524", order: 216, recv: 216 }] },
+    { barcode: "6925303740627", ka: [
+      { code: "109201", name: "统一巧面馆麻辣笋子牛肉面108g", order: 576, recv: 48 },
+      { code: "109201", name: "统一巧面馆麻辣笋子牛肉面108g", order: 720, recv: 60 },
+    ], sd: [{ code: "4016523", name: "统一4016523", order: 108, recv: 108 }] },
+    { barcode: "6925303740702", ka: [{ code: "111482", name: "统一巧面馆油泼辣子酸汤桶面116g", order: 1680, recv: 140 }], sd: [{ code: "4016534", name: "统一4016534", order: 140, recv: 140 }] },
+    { barcode: "6925303743024", ka: [{ code: "151500", name: "统一巧面馆油泼辣子酸汤袋面110g", order: 4800, recv: 200 }], sd: [{ code: "4016512", name: "统一4016512", order: 200, recv: 200 }] },
+    { barcode: "6925303770006", ka: [], sd: [{ code: "4016528", name: "统一4016528", order: 216, recv: 216 }] },
+    { barcode: "6925303770556", ka: [{ code: "100807", name: "统一汤达人酸酸辣辣豚骨拉面杯90g", order: 2376, recv: 198 }], sd: [{ code: "4016849", name: "统一4016849", order: 240, recv: 240 }] },
+    { barcode: "6925303770563", ka: [{ code: "100806", name: "统一汤达人日式豚骨拉面杯83g", order: 2880, recv: 240 }], sd: [{ code: "4016847", name: "统一4016847", order: 240, recv: 240 }] },
+    { barcode: "6925303773106", ka: [{ code: "109760", name: "统一来一桶老坛酸菜牛肉面120g", order: 2160, recv: 180 }], sd: [{ code: "4014877", name: "统一4014877", order: 216, recv: 216 }] },
+    { barcode: "6925303774202", ka: [
+      { code: "123770", name: "统一小浣熊烤翅味35g", order: 40, recv: 1 },
+      { code: "123770", name: "统一小浣熊烤翅味35g", order: 4280, recv: 107 },
+    ], sd: [{ code: "4017837", name: "统一4017837", order: 108, recv: 108 }] },
+    { barcode: "6925303791155", ka: [], sd: [{ code: "4016830", name: "统一4016830", order: 120, recv: 120 }] },
+    { barcode: "6925303793050", ka: [
+      { code: "109763", name: "统一巧面馆藤椒牛肉面105g", order: 1284, recv: 107 },
+      { code: "109763", name: "统一巧面馆藤椒牛肉面105g", order: 12, recv: 1 },
+    ], sd: [{ code: "4016506", name: "统一4016506", order: 108, recv: 108 }] },
+    { barcode: "6925303793067", ka: [], sd: [{ code: "4016503", name: "统一4016503", order: 108, recv: 108 }] },
+    { barcode: "6925303795214", ka: [{ code: "108995", name: "统一茄皇鸡蛋面120g", order: 1296, recv: 108 }], sd: [{ code: "4016643", name: "统一4016643", order: 108, recv: 108 }] },
+    { barcode: "6925303795535", ka: [
+      { code: "128725", name: "统一茄皇鸡蛋袋面116g", order: 120, recv: 4 },
+      { code: "128725", name: "统一茄皇鸡蛋袋面116g", order: 6360, recv: 212 },
+    ], sd: [{ code: "4016645", name: "统一4016645", order: 216, recv: 216 }] },
+    { barcode: "6925303796426", ka: [
+      { code: "108996", name: "统一茄皇牛肉面128g", order: 1944, recv: 162 },
+      { code: "108996", name: "统一茄皇牛肉面128g", order: 1284, recv: 107 },
+      { code: "108996", name: "统一茄皇牛肉面128g", order: 12, recv: 1 },
+      { code: "108996", name: "统一茄皇牛肉面128g", order: 648, recv: 54 },
+    ], sd: [{ code: "4016646", name: "统一4016646", order: 324, recv: 324 }] },
+    { barcode: "6925303796716", ka: [{ code: "128724", name: "统一茄皇牛肉面袋面126g", order: 120, recv: 4 }], sd: [{ code: "4016648", name: "统一4016648", order: 216, recv: 216 }] },
+    { barcode: "6925303797775", ka: [{ code: "152046", name: "统一粉面蛋肉肠诱惑酸麻味173g", order: 1296, recv: 108 }], sd: [{ code: "4016666", name: "统一4016666", order: 108, recv: 108 }] },
+    { barcode: "6925303797782", ka: [
+      { code: "121299", name: "统一粉面蛋肉肠金汤肥牛味173g", order: 648, recv: 54 },
+      { code: "121299", name: "统一粉面蛋肉肠金汤肥牛味173g", order: 648, recv: 54 },
+    ], sd: [{ code: "4016664", name: "统一4016664", order: 108, recv: 108 }] },
+    { barcode: "未映射", ka: [], sd: [{ code: "4017836", name: "统一4017836", order: 108, recv: 108 }] },
   ],
 };
+
+const COMPARE_FALLBACK_ITEMS = [
+  { barcode: "6901028180001", name: "统一小浣熊烤翅味35g", kaCode: "108021", sdCode: "4010001", order: 120, recv: 118 },
+  { barcode: "6901028180018", name: "汤达人日式豚骨面125g*5", kaCode: "108118", sdCode: "4010118", order: 60, recv: 60 },
+  { barcode: "6901028180025", name: "统一阿萨姆奶茶500ml", kaCode: "108204", sdCode: "4010204", order: 240, recv: 238 },
+  { barcode: "6901028180032", name: "统一冰红茶500ml", kaCode: "108301", sdCode: "4010301", order: 300, recv: 300 },
+  { barcode: "6901028180049", name: "统一绿茶500ml", kaCode: "108302", sdCode: "4010302", order: 180, recv: 178 },
+  { barcode: "6901028180056", name: "统一鲜橙多450ml", kaCode: "108405", sdCode: "4010405", order: 144, recv: 144 },
+  { barcode: "6901028180063", name: "老坛酸菜牛肉面122g", kaCode: "108512", sdCode: "4010512", order: 96, recv: 94 },
+];
+
+function fallbackGroups(recordId: string, count: number): CompareGroup[] {
+  const seed = recordId.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+  const total = Math.max(count + 2, 5);
+  const picks = COMPARE_FALLBACK_ITEMS.slice(0, Math.min(total, COMPARE_FALLBACK_ITEMS.length));
+  return picks.map((item, i) => {
+    const mismatched = i < count;
+    const delta = ((seed + i * 7) % 5) + 1;
+    const sdOrder = mismatched ? item.order + (i % 2 === 0 ? -delta : delta) : item.order;
+    const sdRecv = mismatched ? item.recv + (i % 2 === 0 ? -delta : delta) : item.recv;
+    return {
+      barcode: item.barcode,
+      ka: [{ code: item.kaCode, name: item.name, order: item.order, recv: item.recv }],
+      sd: [{ code: item.sdCode, name: item.name, order: sdOrder, recv: sdRecv }],
+    };
+  });
+}
+
+function sumField(items: CompareItem[], key: "order" | "recv") {
+  return items.reduce((s, it) => s + (it[key] ?? 0), 0);
+}
+
+function groupStatus(g: CompareGroup) {
+  if (g.ka.length === 0 || g.sd.length === 0) return { pass: false, reason: "未映射" as const };
+  const kaO = sumField(g.ka, "order");
+  const sdO = sumField(g.sd, "order");
+  const kaR = sumField(g.ka, "recv");
+  const sdR = sumField(g.sd, "recv");
+  if (kaO === sdO && kaR === sdR) return { pass: true, reason: "通过" as const };
+  return { pass: false, reason: "数量不一致" as const };
+}
 
 function CompareTable({
   recordId,
@@ -3150,38 +3199,8 @@ function CompareTable({
   count: number;
   loading: boolean;
 }) {
-  const rows = useMemo<(CompareRow & { orderMismatch: boolean; signMismatch: boolean; mismatched: boolean })[]>(() => {
-    const real = COMPARE_REAL_DATA[recordId];
-    if (real) {
-      return real.map((r) => {
-        const orderMismatch = r.kaQty !== r.sdccOrderQty;
-        const signMismatch = r.kaReceive !== r.sdccSignQty;
-        return { ...r, orderMismatch, signMismatch, mismatched: orderMismatch || signMismatch };
-      });
-    }
-    const seed = recordId.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
-    const total = Math.max(count + 2, 5);
-    const picks = COMPARE_MOCK_ITEMS.slice(0, Math.min(total, COMPARE_MOCK_ITEMS.length));
-    return picks.map((item, i) => {
-      const mismatched = i < count;
-      const delta = ((seed + i * 7) % 5) + 1;
-      const mode = (seed + i) % 3;
-      const sdccOrderQty = mismatched && mode !== 1 ? item.kaQty + (i % 2 === 0 ? -delta : delta) : item.kaQty;
-      const sdccSignQty = mismatched && mode !== 0 ? item.kaReceive + (i % 2 === 0 ? -delta : delta) : item.kaReceive;
-      const orderMismatch = mismatched && mode !== 1;
-      const signMismatch = mismatched && mode !== 0;
-      return {
-        name: item.name,
-        code: item.code,
-        kaQty: item.kaQty,
-        kaReceive: item.kaReceive,
-        sdccOrderQty,
-        sdccSignQty,
-        orderMismatch,
-        signMismatch,
-        mismatched: orderMismatch || signMismatch,
-      };
-    });
+  const groups = useMemo<CompareGroup[]>(() => {
+    return COMPARE_REAL_GROUPS[recordId] ?? fallbackGroups(recordId, count);
   }, [recordId, count]);
 
   if (loading) {
@@ -3193,37 +3212,91 @@ function CompareTable({
     );
   }
 
+  const fmt = (v: number | null | undefined) => (v === null || v === undefined ? "-" : v);
+
   return (
     <div className="overflow-hidden rounded-lg border border-border">
       <table className="w-full text-sm">
         <thead className="bg-muted/50 text-xs text-muted-foreground">
           <tr>
             <th className="px-3 py-2 text-left font-medium">序号</th>
-            <th className="px-3 py-2 text-left font-medium">物料编码</th>
-            <th className="px-3 py-2 text-left font-medium">物料名称</th>
-            <th className="px-3 py-2 text-right font-medium">《KA验收单》数量</th>
-            <th className="px-3 py-2 text-right font-medium">《SDCC订单明细》订单数量</th>
-            <th className="px-3 py-2 text-right font-medium">《KA验收单》实收数量</th>
-            <th className="px-3 py-2 text-right font-medium">《SDCC订单明细》签收数量</th>
+            <th className="px-3 py-2 text-left font-medium">产品单元条码（69码）</th>
+            <th className="px-3 py-2 text-left font-medium">来源</th>
+            <th className="px-3 py-2 text-left font-medium">编码</th>
+            <th className="px-3 py-2 text-left font-medium">品名</th>
+            <th className="px-3 py-2 text-right font-medium">订单数量</th>
+            <th className="px-3 py-2 text-right font-medium">发货/签收数量</th>
+            <th className="px-3 py-2 text-center font-medium">对碰状态</th>
           </tr>
         </thead>
         <tbody>
-          {rows.map((r, i) => {
-            const fmt = (v: number | null) => (v === null || v === undefined ? "-" : v);
+          {groups.map((g, gi) => {
+            const status = groupStatus(g);
+            const bg = status.pass ? undefined : "#fde7ec";
+            const kaRows = g.ka.length > 0 ? g.ka : [null];
+            const sdRows = g.sd.length > 0 ? g.sd : [null];
+            const totalRows = kaRows.length + sdRows.length + 1; // + 合计
+            const kaSumO = sumField(g.ka, "order");
+            const kaSumR = sumField(g.ka, "recv");
+            const sdSumO = sumField(g.sd, "order");
+            const sdSumR = sumField(g.sd, "recv");
             return (
-              <tr
-                key={`${r.code}-${i}`}
-                className="border-t border-border"
-                style={r.mismatched ? { backgroundColor: "#fde7ec" } : undefined}
-              >
-                <td className="px-3 py-2 text-muted-foreground">{i + 1}</td>
-                <td className="px-3 py-2 font-mono text-xs">{r.code}</td>
-                <td className="px-3 py-2">{r.name}</td>
-                <td className="px-3 py-2 text-right tabular-nums">{fmt(r.kaQty)}</td>
-                <td className="px-3 py-2 text-right tabular-nums">{fmt(r.sdccOrderQty)}</td>
-                <td className="px-3 py-2 text-right tabular-nums">{fmt(r.kaReceive)}</td>
-                <td className="px-3 py-2 text-right tabular-nums">{fmt(r.sdccSignQty)}</td>
-              </tr>
+              <Fragment key={`${g.barcode}-${gi}`}>
+                {kaRows.map((it, i) => (
+                  <tr key={`ka-${gi}-${i}`} className="border-t border-border" style={bg ? { backgroundColor: bg } : undefined}>
+                    {i === 0 && (
+                      <>
+                        <td className="px-3 py-2 align-top text-muted-foreground" rowSpan={totalRows}>{gi + 1}</td>
+                        <td className="px-3 py-2 align-top font-mono text-xs" rowSpan={totalRows}>{g.barcode}</td>
+                      </>
+                    )}
+                    {i === 0 && (
+                      <td className="px-3 py-2 align-top text-xs font-medium text-foreground/80" rowSpan={kaRows.length}>
+                        KA验收单
+                      </td>
+                    )}
+                    <td className="px-3 py-2 font-mono text-xs">{it ? it.code : "-"}</td>
+                    <td className="px-3 py-2">{it ? it.name : <span className="text-muted-foreground">未映射</span>}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{it ? fmt(it.order) : "-"}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{it ? fmt(it.recv) : "-"}</td>
+                    {i === 0 && (
+                      <td className="px-3 py-2 text-center align-top" rowSpan={totalRows}>
+                        <span
+                          className={
+                            status.pass
+                              ? "inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-600"
+                              : "inline-flex items-center rounded-full bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-600"
+                          }
+                        >
+                          {status.reason}
+                        </span>
+                      </td>
+                    )}
+                  </tr>
+                ))}
+                {sdRows.map((it, i) => (
+                  <tr key={`sd-${gi}-${i}`} className="border-t border-border" style={bg ? { backgroundColor: bg } : undefined}>
+                    {i === 0 && (
+                      <td className="px-3 py-2 align-top text-xs font-medium text-foreground/80" rowSpan={sdRows.length}>
+                        SDCC订单明细
+                      </td>
+                    )}
+                    <td className="px-3 py-2 font-mono text-xs">{it ? it.code : "-"}</td>
+                    <td className="px-3 py-2">{it ? it.name : <span className="text-muted-foreground">未映射</span>}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{it ? fmt(it.order) : "-"}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{it ? fmt(it.recv) : "-"}</td>
+                  </tr>
+                ))}
+                <tr className="border-t border-border" style={bg ? { backgroundColor: bg } : undefined}>
+                  <td className="px-3 py-2 text-xs font-medium text-muted-foreground" colSpan={3}>合计</td>
+                  <td className="px-3 py-2 text-right text-xs tabular-nums text-muted-foreground">
+                    KA {kaSumO} / SDCC {sdSumO}
+                  </td>
+                  <td className="px-3 py-2 text-right text-xs tabular-nums text-muted-foreground">
+                    KA {kaSumR} / SDCC {sdSumR}
+                  </td>
+                </tr>
+              </Fragment>
             );
           })}
         </tbody>
