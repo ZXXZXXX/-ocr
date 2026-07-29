@@ -50,6 +50,9 @@ import receiptKualuDgAsset from "@/assets/receipt_kualu_dg.png.asset.json";
 import receiptKualuTjAsset from "@/assets/receipt_kualu_tj.png.asset.json";
 import tongyiSrmP1Asset from "@/assets/tongyi_srm_p1.jpg.asset.json";
 import tongyiSrmP2Asset from "@/assets/tongyi_srm_p2.jpg.asset.json";
+import lingshiSrmP1Asset from "@/assets/lingshi_srm_p1.png.asset.json";
+import lingshiSrmP2Asset from "@/assets/lingshi_srm_p2.png.asset.json";
+import lingshiShippingAsset from "@/assets/lingshi_shipping.png.asset.json";
 
 
 
