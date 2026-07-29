@@ -1953,7 +1953,7 @@ function Workbench() {
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 10;
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [sortConfig, setSortConfig] = useState<{ column: "syncTime" | "verifiedTime"; order: "asc" | "desc" }>({ column: "syncTime", order: "desc" });
 
   // 筛选/搜索变化时重置到第一页
   useEffect(() => {
@@ -2054,8 +2054,19 @@ function Workbench() {
         }
         return true;
       })
-      .sort((a, b) => (sortOrder === "desc" ? b.createdAt - a.createdAt : a.createdAt - b.createdAt));
-  }, [records, dateFrom, dateTo, selectedConfidenceTones, aiVerdictFilter, quickStatus, searchQuery, sortOrder]);
+      .sort((a, b) => {
+        const order = sortConfig.order === "desc" ? -1 : 1;
+        if (sortConfig.column === "syncTime") {
+          return order * (a.createdAt - b.createdAt);
+        }
+        const aT = a.verifiedAt ?? 0;
+        const bT = b.verifiedAt ?? 0;
+        if (aT === 0 && bT === 0) return 0;
+        if (aT === 0) return 1;
+        if (bT === 0) return -1;
+        return order * (aT - bT);
+      });
+  }, [records, dateFrom, dateTo, selectedConfidenceTones, aiVerdictFilter, quickStatus, searchQuery, sortConfig]);
 
   const filterActive =
     !!dateFrom ||
@@ -2375,15 +2386,22 @@ function Workbench() {
                   <TableHead className="w-[200px]">KA 订单号</TableHead>
                   <TableHead
                     className="w-[150px] cursor-pointer select-none"
-                    onClick={() => setSortOrder((o) => (o === "desc" ? "asc" : "desc"))}
+                    onClick={() =>
+                      setSortConfig((s) =>
+                        s.column === "syncTime"
+                          ? { ...s, order: s.order === "desc" ? "asc" : "desc" }
+                          : { column: "syncTime", order: "desc" }
+                      )
+                    }
                   >
                     <div className="flex items-center gap-1">
                       任务同步时间
-                      {sortOrder === "desc" ? (
-                        <ArrowDown className="size-3 text-muted-foreground" />
-                      ) : (
-                        <ArrowUp className="size-3 text-muted-foreground" />
-                      )}
+                      {sortConfig.column === "syncTime" &&
+                        (sortConfig.order === "desc" ? (
+                          <ArrowDown className="size-3 text-muted-foreground" />
+                        ) : (
+                          <ArrowUp className="size-3 text-muted-foreground" />
+                        ))}
                     </div>
                   </TableHead>
                   <TableHead>图片状态</TableHead>
@@ -2392,7 +2410,26 @@ function Workbench() {
                   <TableHead>签收结论</TableHead>
                   <TableHead>AI预审结论</TableHead>
                   <TableHead>最终审核结论</TableHead>
-                  <TableHead>完成审核时间</TableHead>
+                  <TableHead
+                    className="w-[150px] cursor-pointer select-none"
+                    onClick={() =>
+                      setSortConfig((s) =>
+                        s.column === "verifiedTime"
+                          ? { ...s, order: s.order === "desc" ? "asc" : "desc" }
+                          : { column: "verifiedTime", order: "desc" }
+                      )
+                    }
+                  >
+                    <div className="flex items-center gap-1">
+                      完成审核时间
+                      {sortConfig.column === "verifiedTime" &&
+                        (sortConfig.order === "desc" ? (
+                          <ArrowDown className="size-3 text-muted-foreground" />
+                        ) : (
+                          <ArrowUp className="size-3 text-muted-foreground" />
+                        ))}
+                    </div>
+                  </TableHead>
                   <TableHead className="text-right">操作</TableHead>
 
                 </TableRow>
