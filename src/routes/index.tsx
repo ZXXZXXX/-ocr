@@ -1464,7 +1464,9 @@ function seedRecords(): OcrRecord[] {
     aiVerdict?: AiVerdict;
     failedReason?: string;
     aiExceptionReason?: string;
+    noImages?: boolean;
   };
+
   // 送货单始终有；出货传票作为参考图，一定附带
   const seeds: Seed[] = [
     {
@@ -1506,15 +1508,17 @@ function seedRecords(): OcrRecord[] {
       minutesAgo: 140,
       signatureStatus: "partial",
       status: "pending_review",
-      aiVerdict: "exception",
-      aiExceptionReason: "图片质量过低",
+      noImages: true,
     },
+
   ];
 
   const docTypes: DocType[] = ["delivery_note", "shipping_slip"];
   const records: OcrRecord[] = seeds.map((s, idx) => {
-    const isEmptyImage = s.status === "failed" && s.failedReason === "图片数据为空";
+    const isEmptyImage =
+      (s.status === "failed" && s.failedReason === "图片数据为空") || s.noImages === true;
     const images: UploadedImage[] = isEmptyImage
+
       ? []
       : docTypes.map((dt) => ({
           id: `img-${idx}-${dt}`,
