@@ -2688,7 +2688,10 @@ function ImageStatusBadge({ noImages, updated }: { noImages: boolean; updated: b
   return <span className="text-sm text-muted-foreground">已上传</span>;
 }
 
-function RecognitionProgressBadge({ status }: { status: Status }) {
+function RecognitionProgressBadge({ status, noImages }: { status: Status; noImages: boolean }) {
+  if (noImages) {
+    return <EmptyBadge text="-" />;
+  }
   if (status === "queued") {
     return (
       <span className="inline-flex items-center gap-1 text-sm text-muted-foreground">
