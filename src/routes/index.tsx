@@ -430,12 +430,7 @@ function deriveReviewStepStatuses(record: OcrRecord): {
     return { kaVsSdccStatus: "success", ocrVsKaStatus: "success" };
   }
   if (record.aiVerdict === "fail") {
-    if (record.aiRejectionReason === "《KA验收单》与《SDCC订单明细》不匹配") {
-      return { kaVsSdccStatus: "fail", ocrVsKaStatus: "no_result" };
-    }
-    if (record.aiRejectionReason === "OCR识别结果与《KA验收单》数据不匹配") {
-      return { kaVsSdccStatus: "success", ocrVsKaStatus: "fail" };
-    }
+    return { kaVsSdccStatus: "success", ocrVsKaStatus: "fail" };
   }
   return { kaVsSdccStatus: "no_result", ocrVsKaStatus: "no_result" };
 }
