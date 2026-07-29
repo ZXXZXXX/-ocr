@@ -3467,7 +3467,7 @@ function DocPanel({
         </div>
         <div className="flex items-center justify-between gap-3 border-b border-border bg-background/40 px-4 py-1.5">
           <div className="text-[11px] text-muted-foreground">
-            {failureReason ? "· 识别失败" : "· 送货单"}
+            {failureReason ? "识别失败" : "送货单"}
           </div>
           {!failureReason && deliveryPages.length > 1 && (
 
