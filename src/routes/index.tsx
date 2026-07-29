@@ -2754,6 +2754,63 @@ function ConfidenceBadge({ score }: { score: number }) {
   );
 }
 
+// ---------- AI review two-step status indicator ----------
+function AiReviewSteps({
+  record,
+  onViewDetail,
+}: {
+  record: OcrRecord;
+  onViewDetail: () => void;
+}) {
+  const step1 = record.kaVsSdccStatus ?? "no_result";
+  const step2 = record.ocrVsKaStatus ?? "no_result";
+
+  const stepDot = (step: number) => (
+    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+      {step}
+    </div>
+  );
+
+  const stepIcon = (status: StepStatus) => {
+    if (status === "success")
+      return <CheckCircle2 className="size-4 shrink-0 text-[color:var(--success)]" />;
+    if (status === "fail")
+      return <XCircle className="size-4 shrink-0 text-[color:var(--destructive)]" />;
+    return <HelpCircle className="size-4 shrink-0 text-muted-foreground" />;
+  };
+
+  return (
+    <div className="mt-4 rounded-xl border border-border bg-background/80 px-4 py-3">
+      <div className="flex items-center gap-3">
+        {/* Step 1: KA vs SDCC */}
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          {stepDot(1)}
+          <div className="min-w-0 flex-1">
+            <div className="text-xs font-medium text-foreground">KA验收单与SDCC订单明细对碰</div>
+          </div>
+          {stepIcon(step1)}
+        </div>
+        <button
+          type="button"
+          onClick={onViewDetail}
+          className="shrink-0 text-xs font-medium text-primary underline underline-offset-2 hover:opacity-80"
+        >
+          查看详情
+        </button>
+        <div className="h-8 w-px bg-border" />
+        {/* Step 2: OCR vs KA */}
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          {stepDot(2)}
+          <div className="min-w-0 flex-1">
+            <div className="text-xs font-medium text-foreground">OCR识别结果与KA验收单对碰</div>
+          </div>
+          {stepIcon(step2)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ---------- Detail view ----------
 function DetailView({
   record,
