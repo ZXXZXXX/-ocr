@@ -2354,6 +2354,7 @@ function Workbench() {
                   <TableHead>AI置信度</TableHead>
                   <TableHead>AI预审结论</TableHead>
                   <TableHead>最终审核结论</TableHead>
+                  <TableHead>完成审核时间</TableHead>
                   <TableHead className="text-right">操作</TableHead>
 
                 </TableRow>
