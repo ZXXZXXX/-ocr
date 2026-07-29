@@ -1576,6 +1576,7 @@ function seedRecords(): OcrRecord[] {
       verifiedAt: s.status === "verified" ? now - (s.minutesAgo - 10) * 60_000 : undefined,
       verifiedBy: s.status === "verified" ? CURRENT_USER : undefined,
       shippingSlipNo: makeShippingSlipNo(createdAt, 1_000 + idx * 137),
+      imageUpdated: !isEmptyImage && s.imageUpdated ? true : undefined,
     };
     const canOutputVerdict = hasResults && !!s.signatureStatus && images.length > 0;
     return { ...record, aiRejectionReason: canOutputVerdict ? makeAiRejectionReason(record) : undefined };
