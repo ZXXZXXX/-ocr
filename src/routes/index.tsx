@@ -8,6 +8,7 @@ import {
   ScrollText,
   X,
   Minimize2,
+  Maximize2,
   CheckCircle2,
   AlertTriangle,
   Loader2,
