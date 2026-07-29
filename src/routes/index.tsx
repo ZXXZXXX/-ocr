@@ -2378,7 +2378,7 @@ function Workbench() {
                     onClick={() => setSortOrder((o) => (o === "desc" ? "asc" : "desc"))}
                   >
                     <div className="flex items-center gap-1">
-                      同步时间
+                      任务同步时间
                       {sortOrder === "desc" ? (
                         <ArrowDown className="size-3 text-muted-foreground" />
                       ) : (
