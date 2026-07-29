@@ -1466,7 +1466,7 @@ function seedRecords(): OcrRecord[] {
   type Seed = {
     minutesAgo: number;
     mode?: "high" | "mid" | "low";
-    signatureStatus: SignatureStatus;
+    signatureStatus?: SignatureStatus;
     status: Extract<Status, "pending_review" | "verified" | "failed">;
     aiVerdict?: AiVerdict;
     failedReason?: string;
