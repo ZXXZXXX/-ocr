@@ -2981,20 +2981,6 @@ function DetailView({
           </div>
         </div>
       )}
-        <div className="mt-4 flex items-start gap-3 rounded-xl border border-[color:var(--warning)]/30 bg-[color:var(--warning)]/15 px-4 py-3 text-xs text-[color:var(--warning-foreground)]">
-          <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-          <div className="flex-1 leading-relaxed">
-            <span className="font-semibold">AI 预审异常原因：</span>
-            {record.aiExceptionReason === "物流签收数据缺失"
-              ? "物流签收数据缺失"
-              : record.aiExceptionReason === "图片无法识别"
-              ? "图片无法识别，AI 无法从图片中提取有效单据信息，请确认图片内容是否完整或重新上传清晰图片。"
-              : record.aiExceptionReason === "图片质量过低"
-              ? "图片质量过低，AI 无法清晰识别单据内容，请重新上传清晰度更高的图片。"
-              : "物料数据列无法匹配"}
-          </div>
-        </div>
-      )}
       </SheetHeader>
 
       {compareOpen ? (
