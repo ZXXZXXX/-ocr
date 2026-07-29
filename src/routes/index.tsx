@@ -3071,25 +3071,27 @@ function DetailView({
                     )}
                   </div>
                 )}
-                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground">签收状态：</span>
-                  <Select
-                    value={record.signatureStatus ?? ""}
-                    onValueChange={(v) => onSignatureStatusChange(v as SignatureStatus)}
-                    disabled={record.status === "verified"}
-                  >
-                    <SelectTrigger className="h-7 w-[120px] text-xs">
-                      <SelectValue placeholder="待识别" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(Object.keys(SIGNATURE_LABEL) as SignatureStatus[]).map((k) => (
-                        <SelectItem key={k} value={k} className="text-xs">
-                          {SIGNATURE_LABEL[k]}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {record.status !== "failed" && record.status !== "queued" && record.status !== "recognizing" && record.images && record.images.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground">签收状态：</span>
+                    <Select
+                      value={record.signatureStatus ?? ""}
+                      onValueChange={(v) => onSignatureStatusChange(v as SignatureStatus)}
+                      disabled={record.status === "verified"}
+                    >
+                      <SelectTrigger className="h-7 w-[120px] text-xs">
+                        <SelectValue placeholder="待识别" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(Object.keys(SIGNATURE_LABEL) as SignatureStatus[]).map((k) => (
+                          <SelectItem key={k} value={k} className="text-xs">
+                            {SIGNATURE_LABEL[k]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </div>
             )}
             <SheetDescription className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs">
