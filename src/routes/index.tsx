@@ -3018,7 +3018,7 @@ function DetailView({
               <SheetTitle className="flex flex-wrap items-center gap-2">
                 任务详情
                 <NeutralTag>
-                  {STATUS_LABEL[record.status] ?? record.status}
+                  {record.status === "verified" ? "已完成审核" : "待审核"}
                 </NeutralTag>
               {editing && (
                 <span className="inline-flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-xs text-primary">
