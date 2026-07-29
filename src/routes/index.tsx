@@ -249,6 +249,8 @@ interface DocPage {
   chunks: Chunk[];
 }
 
+type StepStatus = "success" | "fail" | "no_result";
+
 interface OcrRecord {
   id: string;
   createdAt: number;
@@ -268,6 +270,9 @@ interface OcrRecord {
   aiRejectionReason?: AiRejectionReason; // AI 不通过原因
   aiExceptionReason?: string; // AI 审核异常原因（如 "物料数据列无法匹配" / "物流签收数据缺失"）
   failedReason?: string; // AI 识别失败原因，如 "图片无法识别" / "图片质量过低"
+  // AI 对碰两步状态：算法平台完成后推送
+  kaVsSdccStatus?: StepStatus;
+  ocrVsKaStatus?: StepStatus;
   verifiedAt?: number; // 人工提交验收结论时间
   verifiedBy?: string;
   shippingSlipNo?: string; // 出货传票单号，用于搜索
