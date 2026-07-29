@@ -323,6 +323,17 @@ const fmtTime = (t: number) =>
     timeZone: "Asia/Shanghai",
   });
 
+const fmtMinute = (t: number) =>
+  new Date(t).toLocaleString("zh-CN", {
+    hour12: false,
+    timeZone: "Asia/Shanghai",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
 function confidenceTone(c?: number) {
   if (c == null) return "high"; // absent = treat as clean
   if (c >= 0.9) return "high";
@@ -2354,6 +2365,7 @@ function Workbench() {
                   <TableHead>AI置信度</TableHead>
                   <TableHead>AI预审结论</TableHead>
                   <TableHead>最终审核结论</TableHead>
+                  <TableHead>完成审核时间</TableHead>
                   <TableHead className="text-right">操作</TableHead>
 
                 </TableRow>
@@ -2361,7 +2373,7 @@ function Workbench() {
               <TableBody>
                 {filteredRecords.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={9} className="py-16 text-center">
+                    <TableCell colSpan={10} className="py-16 text-center">
 
                       <div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-muted-foreground">
                         <div className="grid size-12 place-items-center rounded-full bg-secondary">
@@ -2425,6 +2437,9 @@ function Workbench() {
 
                       <TableCell>
                         <AuditConclusionBadge status={r.status} aiVerdict={r.aiVerdict} />
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground" suppressHydrationWarning>
+                        {r.verifiedAt ? fmtMinute(r.verifiedAt) : "—"}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
