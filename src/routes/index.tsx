@@ -10,6 +10,8 @@ import {
   Minimize2,
   Maximize2,
   CheckCircle2,
+  XCircle,
+  HelpCircle,
   AlertTriangle,
   Loader2,
   Sparkles,
@@ -247,6 +249,8 @@ interface DocPage {
   chunks: Chunk[];
 }
 
+type StepStatus = "success" | "fail" | "no_result";
+
 interface OcrRecord {
   id: string;
   createdAt: number;
@@ -266,6 +270,9 @@ interface OcrRecord {
   aiRejectionReason?: AiRejectionReason; // AI 不通过原因
   aiExceptionReason?: string; // AI 审核异常原因（如 "物料数据列无法匹配" / "物流签收数据缺失"）
   failedReason?: string; // AI 识别失败原因，如 "图片无法识别" / "图片质量过低"
+  // AI 对碰两步状态：算法平台完成后推送
+  kaVsSdccStatus?: StepStatus;
+  ocrVsKaStatus?: StepStatus;
   verifiedAt?: number; // 人工提交验收结论时间
   verifiedBy?: string;
   shippingSlipNo?: string; // 出货传票单号，用于搜索
@@ -412,6 +419,28 @@ function makeAiRejectionReason(record: OcrRecord): AiRejectionReason | undefined
   // 按记录创建时间稳定选取一条枚举原因，保证同任务原因不变
   const idx = record.createdAt % AI_REJECTION_REASONS.length;
   return AI_REJECTION_REASONS[idx];
+}
+
+// 根据当前 AI 审核结论推导两步对碰状态（算法平台未来会直接推送该字段）
+function deriveReviewStepStatuses(record: OcrRecord): {
+  kaVsSdccStatus?: StepStatus;
+  ocrVsKaStatus?: StepStatus;
+} {
+  if (record.aiVerdict === "exception") {
+    return { kaVsSdccStatus: "no_result", ocrVsKaStatus: "no_result" };
+  }
+  if (record.aiVerdict === "pass") {
+    return { kaVsSdccStatus: "success", ocrVsKaStatus: "success" };
+  }
+  if (record.aiVerdict === "fail") {
+    if (record.aiRejectionReason === "《KA验收单》与《SDCC订单明细》不匹配") {
+      return { kaVsSdccStatus: "fail", ocrVsKaStatus: "no_result" };
+    }
+    if (record.aiRejectionReason === "OCR识别结果与《KA验收单》数据不匹配") {
+      return { kaVsSdccStatus: "success", ocrVsKaStatus: "fail" };
+    }
+  }
+  return { kaVsSdccStatus: "no_result", ocrVsKaStatus: "no_result" };
 }
 
 // Extract plain text from a simple HTML string (handles <p>, <br>, entities)
@@ -1834,7 +1863,8 @@ function seedRecords(): OcrRecord[] {
     aiRejectionReason: makeAiRejectionReason(lingshiRecord),
   };
 
-  return [lingshiRecordFinal, tongyiRecordFinal, realRecord, ...noSlipRecords, ...records];
+  const allRecords = [lingshiRecordFinal, tongyiRecordFinal, realRecord, ...noSlipRecords, ...records];
+  return allRecords.map((r) => ({ ...r, ...deriveReviewStepStatuses(r) }));
 }
 
 
@@ -2724,6 +2754,63 @@ function ConfidenceBadge({ score }: { score: number }) {
   );
 }
 
+// ---------- AI review two-step status indicator ----------
+function AiReviewSteps({
+  record,
+  onViewDetail,
+}: {
+  record: OcrRecord;
+  onViewDetail: () => void;
+}) {
+  const step1 = record.kaVsSdccStatus ?? "no_result";
+  const step2 = record.ocrVsKaStatus ?? "no_result";
+
+  const stepDot = (step: number) => (
+    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+      {step}
+    </div>
+  );
+
+  const stepIcon = (status: StepStatus) => {
+    if (status === "success")
+      return <CheckCircle2 className="size-4 shrink-0 text-[color:var(--success)]" />;
+    if (status === "fail")
+      return <XCircle className="size-4 shrink-0 text-[color:var(--destructive)]" />;
+    return <HelpCircle className="size-4 shrink-0 text-muted-foreground" />;
+  };
+
+  return (
+    <div className="mt-4 rounded-xl border border-border bg-background/80 px-4 py-3">
+      <div className="flex items-center gap-3">
+        {/* Step 1: KA vs SDCC */}
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          {stepDot(1)}
+          <div className="min-w-0 flex-1">
+            <div className="text-xs font-medium text-foreground">KA验收单与SDCC订单明细对碰</div>
+          </div>
+          {stepIcon(step1)}
+        </div>
+        <button
+          type="button"
+          onClick={onViewDetail}
+          className="shrink-0 text-xs font-medium text-primary underline underline-offset-2 hover:opacity-80"
+        >
+          查看详情
+        </button>
+        <div className="h-8 w-px bg-border" />
+        {/* Step 2: OCR vs KA */}
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          {stepDot(2)}
+          <div className="min-w-0 flex-1">
+            <div className="text-xs font-medium text-foreground">OCR识别结果与KA验收单对碰</div>
+          </div>
+          {stepIcon(step2)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ---------- Detail view ----------
 function DetailView({
   record,
@@ -2876,24 +2963,9 @@ function DetailView({
             </SheetClose>
           </div>
         </div>
-      {record.status === "pending_review" &&
-        record.aiVerdict === "fail" &&
-        record.aiRejectionReason && (
-          <div className="mt-4 flex items-start gap-3 rounded-xl border border-[color:var(--destructive)]/20 bg-[color:var(--destructive)]/10 px-4 py-3 text-xs text-[color:var(--destructive)]">
-            <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-            <div className="flex-1 leading-relaxed">
-              <span className="font-semibold">AI 预审不通过原因：</span>
-              {record.aiRejectionReason}，共发现 {rejectionMismatchCount(record)} 项商品存在差异
-            </div>
-            <button
-              type="button"
-              onClick={openCompare}
-              className="shrink-0 self-center text-xs font-medium text-[color:var(--destructive)] underline underline-offset-2 hover:opacity-80"
-            >
-              查看详情
-            </button>
-          </div>
-        )}
+      {record.aiVerdict && (
+        <AiReviewSteps record={record} onViewDetail={openCompare} />
+      )}
       {record.status === "pending_review" && record.aiVerdict === "exception" && (
         <div className="mt-4 flex items-start gap-3 rounded-xl border border-[color:var(--warning)]/30 bg-[color:var(--warning)]/15 px-4 py-3 text-xs text-[color:var(--warning-foreground)]">
           <AlertTriangle className="mt-0.5 size-4 shrink-0" />
