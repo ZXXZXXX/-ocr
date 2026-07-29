@@ -1515,8 +1515,10 @@ function seedRecords(): OcrRecord[] {
 
   const docTypes: DocType[] = ["delivery_note", "shipping_slip"];
   const records: OcrRecord[] = seeds.map((s, idx) => {
-    const isEmptyImage = s.status === "failed" && s.failedReason === "图片数据为空";
+    const isEmptyImage =
+      (s.status === "failed" && s.failedReason === "图片数据为空") || s.noImages === true;
     const images: UploadedImage[] = isEmptyImage
+
       ? []
       : docTypes.map((dt) => ({
           id: `img-${idx}-${dt}`,
