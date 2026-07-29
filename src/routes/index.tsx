@@ -2483,7 +2483,13 @@ function Workbench() {
                         )}
                       </TableCell>
                       <TableCell className="text-sm text-foreground">
-                        {r.signatureStatus ? SIGNATURE_LABEL[r.signatureStatus] : "—"}
+                        {noImages || r.status === "failed" || r.status === "queued" || r.status === "recognizing" ? (
+                          "-"
+                        ) : r.signatureStatus ? (
+                          SIGNATURE_LABEL[r.signatureStatus]
+                        ) : (
+                          "—"
+                        )}
                       </TableCell>
                       <TableCell>
                         {noImages ? (
