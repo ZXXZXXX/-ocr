@@ -2699,7 +2699,7 @@ function RecognitionProgressBadge({ status }: { status: Status }) {
   if (status === "recognizing") {
     return (
       <span className="inline-flex items-center gap-1 text-sm text-muted-foreground">
-        <Loader2 className="size-3 animate-spin" /> 正在识别
+        <Loader2 className="size-3 animate-spin" /> 识别中…
       </span>
     );
   }
