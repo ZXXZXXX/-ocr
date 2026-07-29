@@ -2405,7 +2405,7 @@ function Workbench() {
                         <ImageStatusBadge noImages={noImages} updated={!!r.imageUpdated} />
                       </TableCell>
                       <TableCell>
-                        <RecognitionProgressBadge status={r.status} />
+                        <RecognitionProgressBadge status={r.status} noImages={noImages} />
                       </TableCell>
                       <TableCell>
                         {noImages ? (
@@ -2688,7 +2688,10 @@ function ImageStatusBadge({ noImages, updated }: { noImages: boolean; updated: b
   return <span className="text-sm text-muted-foreground">已上传</span>;
 }
 
-function RecognitionProgressBadge({ status }: { status: Status }) {
+function RecognitionProgressBadge({ status, noImages }: { status: Status; noImages: boolean }) {
+  if (noImages) {
+    return <span className="text-sm text-muted-foreground">-</span>;
+  }
   if (status === "queued") {
     return (
       <span className="inline-flex items-center gap-1 text-sm text-muted-foreground">
