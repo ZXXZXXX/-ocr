@@ -273,6 +273,7 @@ interface OcrRecord {
   verifiedAt?: number; // 人工提交验收结论时间
   verifiedBy?: string;
   shippingSlipNo?: string; // 出货传票单号，用于搜索
+  imageUpdated?: boolean; // 图片有更新，未被查看过
 }
 
 
