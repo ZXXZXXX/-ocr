@@ -2054,8 +2054,19 @@ function Workbench() {
         }
         return true;
       })
-      .sort((a, b) => (sortOrder === "desc" ? b.createdAt - a.createdAt : a.createdAt - b.createdAt));
-  }, [records, dateFrom, dateTo, selectedConfidenceTones, aiVerdictFilter, quickStatus, searchQuery, sortOrder]);
+      .sort((a, b) => {
+        const order = sortConfig.order === "desc" ? -1 : 1;
+        if (sortConfig.column === "syncTime") {
+          return order * (a.createdAt - b.createdAt);
+        }
+        const aT = a.verifiedAt ?? 0;
+        const bT = b.verifiedAt ?? 0;
+        if (aT === 0 && bT === 0) return 0;
+        if (aT === 0) return 1;
+        if (bT === 0) return -1;
+        return order * (aT - bT);
+      });
+  }, [records, dateFrom, dateTo, selectedConfidenceTones, aiVerdictFilter, quickStatus, searchQuery, sortConfig]);
 
   const filterActive =
     !!dateFrom ||
