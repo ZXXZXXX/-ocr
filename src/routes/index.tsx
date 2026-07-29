@@ -2720,7 +2720,7 @@ function ImageStatusBadge({ noImages, updated }: { noImages: boolean; updated: b
   return <span className="text-sm text-muted-foreground">已上传</span>;
 }
 
-function RecognitionProgressBadge({ status, noImages }: { status: Status; noImages: boolean }) {
+function RecognitionProgressBadge({ status, noImages, confidence }: { status: Status; noImages: boolean; confidence?: number | null }) {
   if (noImages) {
     return <span className="text-sm text-muted-foreground">-</span>;
   }
@@ -2738,7 +2738,7 @@ function RecognitionProgressBadge({ status, noImages }: { status: Status; noImag
       </span>
     );
   }
-  if (status === "failed") {
+  if (status === "failed" || confidence == null) {
     return <span className="text-sm text-muted-foreground">识别失败</span>;
   }
   return <span className="text-sm text-muted-foreground">识别完成</span>;
