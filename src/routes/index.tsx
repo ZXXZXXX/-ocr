@@ -1953,7 +1953,7 @@ function Workbench() {
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 10;
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [sortConfig, setSortConfig] = useState<{ column: "syncTime" | "verifiedTime"; order: "asc" | "desc" }>({ column: "syncTime", order: "desc" });
 
   // 筛选/搜索变化时重置到第一页
   useEffect(() => {
