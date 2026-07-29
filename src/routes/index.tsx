@@ -2954,47 +2954,41 @@ function DetailView({
             </SheetClose>
           </div>
         </div>
-      {record.aiVerdict && (
-        <AiReviewSteps record={record} onViewDetail={openCompare} />
+      {record.status === "pending_review" && record.aiVerdict === "fail" && (
+        <div className="mt-4 flex items-start gap-3 rounded-xl border border-[color:var(--destructive)]/30 bg-[color:var(--destructive)]/10 px-4 py-3 text-xs text-[color:var(--destructive)]">
+          <XCircle className="mt-0.5 size-4 shrink-0" />
+          <div className="flex-1 leading-relaxed">
+            <span className="font-semibold">AI 预审不通过原因：</span>
+            {record.aiRejectionReason ?? "《送货单》数据与《KA验收单》数据不匹配，请人工核实"}
+          </div>
+        </div>
       )}
       {record.status === "pending_review" && record.aiVerdict === "exception" && (
         <div className="mt-4 flex items-start gap-3 rounded-xl border border-[color:var(--warning)]/30 bg-[color:var(--warning)]/15 px-4 py-3 text-xs text-[color:var(--warning-foreground)]">
           <AlertTriangle className="mt-0.5 size-4 shrink-0" />
           <div className="flex-1 leading-relaxed">
             <span className="font-semibold">AI 预审异常原因：</span>
-            {record.aiExceptionReason === "物流签收数据缺失"
-              ? "物流签收数据缺失"
-              : record.aiExceptionReason === "图片无法识别"
-              ? "图片无法识别，AI 无法从图片中提取有效单据信息，请确认图片内容是否完整或重新上传清晰图片。"
-              : record.aiExceptionReason === "图片质量过低"
-              ? "图片质量过低，AI 无法清晰识别单据内容，请重新上传清晰度更高的图片。"
-              : "物料数据列无法匹配"}
+            {record.aiExceptionReason === "图片无法识别" || record.aiExceptionReason === "图片质量过低"
+              ? "图片质量过低，无法识别出有效数据，请人工审核"
+              : "物料数量相关列无法匹配，请人工匹配列"}
           </div>
         </div>
       )}
       </SheetHeader>
 
-      {compareOpen ? (
-        <CompareView
-          recordId={record.id}
-          count={rejectionMismatchCount(record)}
-          loading={compareLoading}
-          onBack={() => setCompareOpen(false)}
-        />
-      ) : (
-        <DocPanel
-          deliveryPages={deliveryPages}
-          deliveryImages={deliveryImages}
-          shippingImages={shippingImages}
-          editing={editing}
-          autoFocus={autoFocus}
-          setAutoFocus={setAutoFocus}
-          failureReason={record.failedReason}
-          onChange={(pageIdx, chunkId, v) =>
-            handleEditChange("delivery_note", pageIdx, chunkId, v)
-          }
-        />
-      )}
+      <DocPanel
+        deliveryPages={deliveryPages}
+        deliveryImages={deliveryImages}
+        shippingImages={shippingImages}
+        editing={editing}
+        autoFocus={autoFocus}
+        setAutoFocus={setAutoFocus}
+        failureReason={record.failedReason}
+        onChange={(pageIdx, chunkId, v) =>
+          handleEditChange("delivery_note", pageIdx, chunkId, v)
+        }
+      />
+
 
 
 
