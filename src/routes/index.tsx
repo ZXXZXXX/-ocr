@@ -2386,15 +2386,22 @@ function Workbench() {
                   <TableHead className="w-[200px]">KA 订单号</TableHead>
                   <TableHead
                     className="w-[150px] cursor-pointer select-none"
-                    onClick={() => setSortOrder((o) => (o === "desc" ? "asc" : "desc"))}
+                    onClick={() =>
+                      setSortConfig((s) =>
+                        s.column === "syncTime"
+                          ? { ...s, order: s.order === "desc" ? "asc" : "desc" }
+                          : { column: "syncTime", order: "desc" }
+                      )
+                    }
                   >
                     <div className="flex items-center gap-1">
                       任务同步时间
-                      {sortOrder === "desc" ? (
-                        <ArrowDown className="size-3 text-muted-foreground" />
-                      ) : (
-                        <ArrowUp className="size-3 text-muted-foreground" />
-                      )}
+                      {sortConfig.column === "syncTime" &&
+                        (sortConfig.order === "desc" ? (
+                          <ArrowDown className="size-3 text-muted-foreground" />
+                        ) : (
+                          <ArrowUp className="size-3 text-muted-foreground" />
+                        ))}
                     </div>
                   </TableHead>
                   <TableHead>图片状态</TableHead>
@@ -2403,7 +2410,26 @@ function Workbench() {
                   <TableHead>签收结论</TableHead>
                   <TableHead>AI预审结论</TableHead>
                   <TableHead>最终审核结论</TableHead>
-                  <TableHead>完成审核时间</TableHead>
+                  <TableHead
+                    className="w-[150px] cursor-pointer select-none"
+                    onClick={() =>
+                      setSortConfig((s) =>
+                        s.column === "verifiedTime"
+                          ? { ...s, order: s.order === "desc" ? "asc" : "desc" }
+                          : { column: "verifiedTime", order: "desc" }
+                      )
+                    }
+                  >
+                    <div className="flex items-center gap-1">
+                      完成审核时间
+                      {sortConfig.column === "verifiedTime" &&
+                        (sortConfig.order === "desc" ? (
+                          <ArrowDown className="size-3 text-muted-foreground" />
+                        ) : (
+                          <ArrowUp className="size-3 text-muted-foreground" />
+                        ))}
+                    </div>
+                  </TableHead>
                   <TableHead className="text-right">操作</TableHead>
 
                 </TableRow>
