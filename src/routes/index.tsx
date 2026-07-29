@@ -1466,6 +1466,7 @@ function seedRecords(): OcrRecord[] {
     failedReason?: string;
     aiExceptionReason?: string;
     noImages?: boolean;
+    imageUpdated?: boolean;
   };
 
   // 送货单始终有；出货传票作为参考图，一定附带
