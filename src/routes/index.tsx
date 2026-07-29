@@ -2407,7 +2407,7 @@ function Workbench() {
                   <TableHead>图片状态</TableHead>
                   <TableHead>AI识别进度</TableHead>
                   <TableHead>AI置信度</TableHead>
-                  <TableHead>签收结论</TableHead>
+                  <TableHead>签收状态</TableHead>
                   <TableHead>AI预审结论</TableHead>
                   <TableHead>最终审核结论</TableHead>
                   <TableHead
