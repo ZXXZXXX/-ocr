@@ -50,6 +50,9 @@ import receiptKualuDgAsset from "@/assets/receipt_kualu_dg.png.asset.json";
 import receiptKualuTjAsset from "@/assets/receipt_kualu_tj.png.asset.json";
 import tongyiSrmP1Asset from "@/assets/tongyi_srm_p1.jpg.asset.json";
 import tongyiSrmP2Asset from "@/assets/tongyi_srm_p2.jpg.asset.json";
+import lingshiSrmP1Asset from "@/assets/lingshi_srm_p1.png.asset.json";
+import lingshiSrmP2Asset from "@/assets/lingshi_srm_p2.png.asset.json";
+import lingshiShippingAsset from "@/assets/lingshi_shipping.png.asset.json";
 
 
 
@@ -866,6 +869,141 @@ function mockTongyiSrmP2Chunks(): Chunk[] {
 }
 
 
+// 长沙统一企业 · 零食很忙SRM送货单（第1页 / 共2页，1916x888）
+function mockLingshiSrmP1Chunks(): Chunk[] {
+  const rows = [
+    ["10", "100806", "统一汤达人日式豚骨拉面杯83g", "83g*12桶", "件", "240", "240", "2026-06-04", "否", "top300", "10", "12", "2层/码", "缠绕膜", "", ""],
+    ["20", "109763", "统一巧面馆藤椒牛肉面105g", "105g*12桶", "件", "108", "108", "2026-06-18", "否", "", "10", "6", "2层/码", "绑带", "", ""],
+    ["30", "111478", "统一巧面馆泡椒牛肉面104g", "1件*6中袋*5袋", "箱", "270", "270", "2026-06-18", "否", "", "16", "6", "2层/码", "绑带", "", ""],
+    ["40", "111482", "统一巧面馆油泼辣子酸汤桶面116g", "116g*12桶", "件", "140", "140", "2026-06-18", "否", "", "10", "6", "2层/码", "绑带", "", ""],
+    ["50", "111487", "汤达人日式豚骨面125g*5", "125g*5包*6中袋", "箱", "144", "144", "2026-06-19", "否", "top300", "16", "6", "2层/码", "缠绕膜", "", ""],
+    ["60", "111594", "汤达人酸辣豚骨面130g*5", "130g*5包*6中袋", "箱", "72", "72", "2026-06-23", "否", "top300", "10", "6", "2层/码", "缠绕膜", "", ""],
+    ["70", "121299", "统一粉面蛋肉肠金汤肥牛173g", "173g*12盒", "件", "108", "108", "2026-06-01", "否", "", "10", "6", "2层/码", "绑带", "", ""],
+  ];
+  const trs = rows
+    .map((r) => "<tr>" + r.map((c) => `<td>${c}</td>`).join("") + "</tr>")
+    .join("");
+  const raw: Omit<Chunk, "id">[] = [
+    { bbox: [700, 40, 1220, 90], label: "Section-Header", content: "<p>长沙统一企业有限公司</p>", confidence: 0.96 },
+    { bbox: [720, 95, 1200, 145], label: "Section-Header", content: "<p>零食很忙SRM送货单</p>", confidence: 0.95 },
+    { bbox: [260, 180, 780, 215], label: "Text", content: "<p>收货组织: 四川零食很忙壁山分仓</p>", confidence: 0.88 },
+    { bbox: [1100, 180, 1500, 215], label: "Text", content: "<p>预约日期: 2026-06-26</p>", confidence: 0.92 },
+    { bbox: [260, 220, 780, 255], label: "Text", content: "<p>单据号: DN202606254634</p>", confidence: 0.9 },
+    { bbox: [1100, 220, 1580, 255], label: "Text", content: "<p>采购订单: CD202606224769631</p>", confidence: 0.88 },
+    { bbox: [260, 260, 900, 310], label: "Text", content: "<p>客户地址: 重庆市壁山区壁青北路992号丰树重庆壁山物流平台</p>", confidence: 0.78 },
+    { bbox: [1100, 260, 1400, 295], label: "Text", content: "<p>卸货类型: 仓卸</p>", confidence: 0.9 },
+    { bbox: [260, 320, 720, 355], label: "Text", content: "<p>采购员: L02211_任晴元</p>", confidence: 0.86 },
+    { bbox: [1100, 320, 1400, 355], label: "Text", content: "<p>带板运输: 否</p>", confidence: 0.92 },
+    { bbox: [260, 360, 720, 395], label: "Text", content: "<p>收货联系电话: 183-2383-6715</p>", confidence: 0.85 },
+    { bbox: [1100, 360, 1400, 395], label: "Text", content: "<p>是否年货: 否</p>", confidence: 0.93 },
+    { bbox: [260, 400, 620, 435], label: "Text", content: "<p>3.0中式糕点: 否</p>", confidence: 0.9 },
+    { bbox: [1100, 400, 1400, 435], label: "Text", content: "<p>预约时段: 上午</p>", confidence: 0.92 },
+    { bbox: [260, 440, 780, 475], label: "Text", content: "<p>送货公司: 长沙统一企业有限公司</p>", confidence: 0.9 },
+    {
+      bbox: [80, 520, 1880, 870],
+      label: "Table",
+      content:
+        '<table border="1"><thead><tr><th>序号</th><th>物料编码</th><th>产品名称</th><th>规格</th><th>计价单位</th><th>订单数量</th><th>发货数量</th><th>生产批号</th><th>是否赠品</th><th>备注</th><th>层件数</th><th>层数</th><th>堆码方式</th><th>固定物</th><th>拒收数量</th><th>是否单品允收</th></tr></thead><tbody>' +
+        trs +
+        "</tbody></table>",
+      confidence: 0.72,
+    },
+  ];
+  return raw.map((c) => ({ ...c, id: uid() }));
+}
+
+// 长沙统一企业 · 零食很忙SRM送货单（第2页 / 共2页，1916x888）
+function mockLingshiSrmP2Chunks(): Chunk[] {
+  const rows = [
+    ["80", "123768", "统一小浣熊番茄红烩味35g", "35g*40包", "箱", "108", "108", "2026-06-11", "否", "", "8", "9", "不打码", "绑带", "", ""],
+    ["90", "123770", "统一小浣熊烤翅味35g", "35g*40包", "箱", "108", "108", "2026-06-10", "否", "", "8", "9", "不打码", "绑带", "", ""],
+    ["100", "128722", "统一巧面馆藤椒牛肉袋102g", "102g*24袋", "件", "108", "108", "2026-06-18", "否", "", "6", "11", "2层/码", "绑带", "", ""],
+    ["110", "128723", "统一巧面馆麻辣笋子牛肉袋106g", "106g*24袋", "件", "216", "216", "2026-06-22", "否", "", "6", "11", "2层/码", "绑带", "", ""],
+    ["120", "100807", "统一汤达人酸酸辣辣豚骨拉面杯90g", "90g*12桶", "件", "240", "240", "2026-06-04", "否", "top300", "9", "11", "2层/码", "绑带", "", ""],
+    ["130", "128724", "统一茄皇牛肉面袋面126g", "126g*5包*6袋", "件", "216", "216", "2026-06-17", "否", "top300", "16", "3", "1层/码", "绑带", "", ""],
+    ["140", "128725", "统一茄皇鸡蛋袋面116g", "116g*5包*6袋", "件", "216", "216", "2026-06-10", "否", "", "16", "3", "1层/码", "缠绕膜", "", ""],
+    ["150", "128744", "统一巧面馆红油老坛酸菜牛肉袋120g", "120g*24袋", "件", "216", "216", "2026-06-17", "否", "", "20", "3", "2层/码", "绑带", "", ""],
+    ["160", "151500", "统一巧面馆油泼辣子酸汤袋110g", "110g*24包", "件", "200", "200", "2026-06-18", "否", "", "9", "10", "不打码", "绑带", "", ""],
+    ["170", "152046", "统一粉面蛋肉肠诱惑酸麻味173g", "173g*12桶", "件", "108", "108", "2026-05-28", "否", "", "9", "6", "2层/码", "绑带", "", ""],
+    ["180", "100808", "统一汤达人海鲜拉面杯80g", "80g*12桶", "件", "120", "120", "2026-06-11", "否", "", "10", "12", "2层/码", "缠绕膜", "", ""],
+    ["190", "100811", "统一来一桶红烧牛肉面103g", "103g*12桶", "件", "108", "108", "2026-06-17", "否", "", "10", "6", "2层/码", "绑带", "", ""],
+    ["200", "108995", "统一茄皇鸡蛋面120g", "1*12桶", "件", "108", "108", "2026-06-05", "否", "", "10", "6", "1层/码", "缠绕膜", "", ""],
+    ["210", "108996", "统一茄皇牛肉面128g", "1*12桶", "件", "108", "108", "2026-06-16", "否", "top300", "10", "6", "2层/码", "缠绕膜", "", ""],
+    ["220", "109200", "统一巧面馆老坛泡椒牛肉面107g", "107g*12桶", "件", "216", "216", "2026-06-15", "否", "", "10", "6", "2层/码", "缠绕膜", "", ""],
+    ["230", "109201", "统一巧面馆麻辣笋子牛肉面108g", "108g*12桶", "件", "108", "108", "2026-06-18", "否", "", "10", "6", "2层/码", "绑带", "", ""],
+    ["240", "109760", "统一来一桶老坛酸菜牛肉面120g", "120g*12桶", "件", "216", "216", "2026-06-17", "否", "top300", "10", "6", "2层/码", "绑带", "", ""],
+  ];
+  const trs = rows
+    .map((r) => "<tr>" + r.map((c) => `<td>${c}</td>`).join("") + "</tr>")
+    .join("");
+  const raw: Omit<Chunk, "id">[] = [
+    {
+      bbox: [80, 30, 1880, 780],
+      label: "Table",
+      content:
+        '<table border="1"><thead><tr><th>序号</th><th>物料编码</th><th>产品名称</th><th>规格</th><th>计价单位</th><th>订单数量</th><th>发货数量</th><th>生产批号</th><th>是否赠品</th><th>备注</th><th>层件数</th><th>层数</th><th>堆码方式</th><th>固定物</th><th>拒收数量</th><th>是否单品允收</th></tr></thead><tbody>' +
+        trs +
+        '<tr><td colspan="6">合计</td><td>4018</td><td colspan="9"></td></tr>' +
+        "</tbody></table>",
+      confidence: 0.7,
+    },
+    { bbox: [1200, 800, 1700, 850], label: "Text", content: "<p>收货人: 实收4018件</p>", confidence: 0.6 },
+    { bbox: [1200, 850, 1700, 885], label: "Text", content: "<p>发货日期: 2026年06月25日</p>", confidence: 0.86 },
+  ];
+  return raw.map((c) => ({ ...c, id: uid() }));
+}
+
+// 成都统一 · 出货传票（1080x1920，长条粉色单据）
+function mockLingshiShippingChunks(): Chunk[] {
+  const rows = [
+    ["1", "4016664", "都会小馆汤肝丝大桶", "173g*12", "箱", "108", "9471.28"],
+    ["2", "4017836", "小浣熊薯条大利红烩烧2g版40入", "35g*40", "箱", "108", ""],
+    ["3", "4016503", "巧面馆-地道腌泡牛肉红烧茄面身伏化102g", "102g*24", "箱", "108", ""],
+    ["4", "4015524", "巧面馆-地道麻辣蒜香牛肉面五合", "126g*5*6", "箱", "216", ""],
+    ["5", "4016648", "统一-茄一皇蛋面五合2025", "126g*5*6", "箱", "216", ""],
+    ["6", "4016645", "统一-茄皇鸡蛋面西合2025", "116g*5*6", "箱", "216", ""],
+    ["7", "4016528", "巧面馆-地道红油老坛酸菜箱肉装面120g", "120g*24", "箱", "216", ""],
+    ["8", "4016542", "巧面馆-巧面馆-地道油泼辣子酸汤面身伏化110g", "110g*24", "箱", "200", ""],
+    ["9", "4016000", "都会小馆防蒸品品麻大桶", "173g*12", "箱", "108", "578"],
+  ];
+  const trs = rows
+    .map((r) => "<tr>" + r.map((c) => `<td>${c}</td>`).join("") + "</tr>")
+    .join("");
+  const raw: Omit<Chunk, "id">[] = [
+    { bbox: [80, 60, 900, 140], label: "Section-Header", content: "<p>成都统一企业食品有限公司</p>", confidence: 0.95 },
+    { bbox: [280, 150, 780, 230], label: "Section-Header", content: "<p>出货传票</p>", confidence: 0.94 },
+    { bbox: [80, 250, 620, 300], label: "Text", content: "<p>客户代号: 2601 · 特赋盈钢制</p>", confidence: 0.82 },
+    { bbox: [80, 300, 620, 340], label: "Text", content: "<p>客户电话: AL401265119</p>", confidence: 0.7 },
+    { bbox: [80, 340, 620, 380], label: "Text", content: "<p>银行账号: A923836715</p>", confidence: 0.7 },
+    { bbox: [640, 250, 990, 300], label: "Text", content: "<p>单据号码: 0001</p>", confidence: 0.82 },
+    { bbox: [640, 300, 990, 340], label: "Text", content: "<p>传票号码: 0001/2026</p>", confidence: 0.84 },
+    { bbox: [640, 340, 990, 380], label: "Text", content: "<p>业务员座: 00049 · 王敏</p>", confidence: 0.8 },
+    { bbox: [640, 380, 990, 420], label: "Text", content: "<p>物流仓: 成都总仓食品仓</p>", confidence: 0.8 },
+    { bbox: [640, 420, 990, 460], label: "Text", content: "<p>订单号: 5910 · ZUP260622</p>", confidence: 0.72 },
+    { bbox: [640, 460, 990, 500], label: "Text", content: "<p>客户单号: CD202606224769631</p>", confidence: 0.86 },
+    {
+      bbox: [40, 560, 1040, 1560],
+      label: "Table",
+      content:
+        '<table border="1"><thead><tr><th>序号</th><th>产品代号</th><th>品名</th><th>规格</th><th>单位</th><th>数量</th><th>金额</th></tr></thead><tbody>' +
+        trs +
+        "</tbody></table>",
+      confidence: 0.62,
+    },
+    { bbox: [80, 1600, 620, 1650], label: "Text", content: "<p>车号: 川AB4507</p>", confidence: 0.86 },
+    { bbox: [640, 1600, 990, 1650], label: "Text", content: "<p>司机: 李虎</p>", confidence: 0.88 },
+    { bbox: [80, 1660, 620, 1710], label: "Text", content: "<p>体积: 71.209</p>", confidence: 0.82 },
+    { bbox: [640, 1660, 990, 1710], label: "Text", content: "<p>积数: 3478</p>", confidence: 0.82 },
+    { bbox: [80, 1720, 620, 1770], label: "Text", content: "<p>重量: 9471.28</p>", confidence: 0.8 },
+    { bbox: [640, 1720, 990, 1770], label: "Text", content: "<p>货运公司: 运易通科技</p>", confidence: 0.82 },
+    { bbox: [80, 1790, 990, 1870], label: "Text", content: "<p>经办人: 运易通科技 06/24 · 06/25</p>", confidence: 0.6 },
+  ];
+  return raw.map((c) => ({ ...c, id: uid() }));
+}
+
+
+
+
 
 
 // 货品明细（Table）标准化为这 6 列
@@ -1623,8 +1761,82 @@ function seedRecords(): OcrRecord[] {
     aiRejectionReason: makeAiRejectionReason(tongyiRecord),
   };
 
-  return [tongyiRecordFinal, realRecord, ...noSlipRecords, ...records];
+  // 多送货单任务：长沙统一企业 · 零食很忙SRM送货单（同一验收任务包含2张送货单照片 + 1张出货传票）
+  const lingshiCreatedAt = new Date("2026-06-25T09:20:00").getTime();
+  const lingshiImages: UploadedImage[] = [
+    {
+      id: "img-lingshi-p1",
+      name: "lingshi_srm_p1.png",
+      url: lingshiSrmP1Asset.url,
+      docType: "delivery_note",
+      width: 1916,
+      height: 888,
+    },
+    {
+      id: "img-lingshi-p2",
+      name: "lingshi_srm_p2.png",
+      url: lingshiSrmP2Asset.url,
+      docType: "delivery_note",
+      width: 1916,
+      height: 888,
+    },
+    {
+      id: "img-lingshi-ship",
+      name: "lingshi_shipping.png",
+      url: lingshiShippingAsset.url,
+      docType: "shipping_slip",
+      width: 1080,
+      height: 1920,
+    },
+  ];
+  const lingshiResults: Partial<Record<DocType, DocPage[]>> = {
+    delivery_note: [
+      {
+        imageId: lingshiImages[0]!.id,
+        sourceImage: lingshiImages[0]!.name,
+        pageBox: [0, 0, lingshiImages[0]!.width, lingshiImages[0]!.height],
+        chunks: enrichTableChunks(mockLingshiSrmP1Chunks()),
+      },
+      {
+        imageId: lingshiImages[1]!.id,
+        sourceImage: lingshiImages[1]!.name,
+        pageBox: [0, 0, lingshiImages[1]!.width, lingshiImages[1]!.height],
+        chunks: enrichTableChunks(mockLingshiSrmP2Chunks()),
+      },
+    ],
+    shipping_slip: [
+      {
+        imageId: lingshiImages[2]!.id,
+        sourceImage: lingshiImages[2]!.name,
+        pageBox: [0, 0, lingshiImages[2]!.width, lingshiImages[2]!.height],
+        chunks: enrichTableChunks(mockLingshiShippingChunks()),
+      },
+    ],
+  };
+  const lingshiPages = Object.values(lingshiResults).flat() as DocPage[];
+  const lingshiRecord: OcrRecord = {
+    id: "CD202606224769631",
+    createdAt: lingshiCreatedAt,
+    status: "pending_review",
+    progress: 100,
+    confidence: averageConfidence(lingshiPages),
+    deliveryCount: 2,
+    shippingCount: 1,
+    images: lingshiImages,
+    results: lingshiResults,
+    driver: "李虎",
+    plateNo: "川A·B4507",
+    signatureStatus: "perfect",
+    aiVerdict: "pass",
+  };
+  const lingshiRecordFinal: OcrRecord = {
+    ...lingshiRecord,
+    aiRejectionReason: makeAiRejectionReason(lingshiRecord),
+  };
+
+  return [lingshiRecordFinal, tongyiRecordFinal, realRecord, ...noSlipRecords, ...records];
 }
+
 
 
 
