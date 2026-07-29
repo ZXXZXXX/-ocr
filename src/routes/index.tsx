@@ -2391,6 +2391,12 @@ function Workbench() {
                         {r.signatureStatus ? SIGNATURE_LABEL[r.signatureStatus] : "—"}
                       </TableCell>
                       <TableCell>
+                        <ImageStatusBadge noImages={noImages} updated={!!r.imageUpdated} />
+                      </TableCell>
+                      <TableCell>
+                        <RecognitionProgressBadge status={r.status} />
+                      </TableCell>
+                      <TableCell>
                         {noImages ? (
                           <EmptyBadge className="w-12" />
                         ) : r.confidence != null ? (
