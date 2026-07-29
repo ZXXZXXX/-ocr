@@ -2475,9 +2475,7 @@ function Workbench() {
             </div>
 
             <div className="grid grid-cols-3 items-center border-t border-border px-4 py-3">
-              <div className="text-xs text-muted-foreground">
-                本页 {paginatedRecords.length}&nbsp;项
-              </div>
+              <div />
               {filteredRecords.length > 0 ? (
                 <div className="flex items-center justify-center gap-2">
                   <Button
@@ -2509,7 +2507,9 @@ function Workbench() {
               ) : (
                 <div />
               )}
-              <div />
+              <div className="text-right text-xs text-muted-foreground">
+                本页 {paginatedRecords.length}&nbsp;项
+              </div>
             </div>
           </div>
         </main>
