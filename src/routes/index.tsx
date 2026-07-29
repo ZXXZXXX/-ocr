@@ -3200,7 +3200,7 @@ function CompareTable({
           <tr>
             <th className="px-3 py-2 text-left font-medium">序号</th>
             <th className="px-3 py-2 text-left font-medium">物料名称</th>
-            <th className="px-3 py-2 text-left font-medium">物料编码</th>
+            <th className="px-3 py-2 text-left font-medium">产品单元条码</th>
             <th className="px-3 py-2 text-right font-medium">《KA验收单》数量</th>
             <th className="px-3 py-2 text-right font-medium">《SDCC订单明细》订单数量</th>
             <th className="px-3 py-2 text-right font-medium">《KA验收单》实收数量</th>
