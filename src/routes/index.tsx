@@ -2405,7 +2405,7 @@ function Workbench() {
                         <ImageStatusBadge noImages={noImages} updated={!!r.imageUpdated} />
                       </TableCell>
                       <TableCell>
-                        <RecognitionProgressBadge status={r.status} />
+                        <RecognitionProgressBadge status={r.status} noImages={noImages} />
                       </TableCell>
                       <TableCell>
                         {noImages ? (
@@ -2690,7 +2690,7 @@ function ImageStatusBadge({ noImages, updated }: { noImages: boolean; updated: b
 
 function RecognitionProgressBadge({ status, noImages }: { status: Status; noImages: boolean }) {
   if (noImages) {
-    return <EmptyBadge text="-" />;
+    return <span className="text-sm text-muted-foreground">-</span>;
   }
   if (status === "queued") {
     return (
