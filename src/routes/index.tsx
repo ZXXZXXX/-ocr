@@ -328,16 +328,6 @@ const fmtTime = (t: number) =>
     minute: "2-digit",
   });
 
-const fmtMinute = (t: number) =>
-  new Date(t).toLocaleString("zh-CN", {
-    hour12: false,
-    timeZone: "Asia/Shanghai",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 
 function confidenceTone(c?: number) {
   if (c == null) return "high"; // absent = treat as clean
@@ -2444,7 +2434,7 @@ function Workbench() {
                         <AuditConclusionBadge status={r.status} aiVerdict={r.aiVerdict} />
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground" suppressHydrationWarning>
-                        {r.verifiedAt ? fmtMinute(r.verifiedAt) : "—"}
+                        {r.verifiedAt ? fmtTime(r.verifiedAt) : "—"}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
