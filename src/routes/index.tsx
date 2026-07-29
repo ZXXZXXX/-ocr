@@ -3010,22 +3010,44 @@ function DetailView({
                 <NeutralTag>
                   {STATUS_LABEL[record.status] ?? record.status}
                 </NeutralTag>
-                {record.signatureStatus && <span className="text-sm text-foreground">{SIGNATURE_LABEL[record.signatureStatus]}</span>}
               {editing && (
                 <span className="inline-flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-xs text-primary">
                   <Pencil className="size-3" /> 编辑中
                 </span>
               )}
             </SheetTitle>
-            {record.aiVerdict && (
-              <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs">
-                <span className="text-muted-foreground">ai识别结果：</span>
-                <VerdictBadge value={record.aiVerdict} />
-                {record.confidence != null ? (
-                  <ConfidenceBadge score={record.confidence} />
-                ) : (
-                  <EmptyBadge className="w-12" />
+            {(record.aiVerdict || record.signatureStatus) && (
+              <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
+                {record.aiVerdict && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground">ai识别结果：</span>
+                    <VerdictBadge value={record.aiVerdict} />
+                    {record.confidence != null ? (
+                      <ConfidenceBadge score={record.confidence} />
+                    ) : (
+                      <EmptyBadge className="w-12" />
+                    )}
+                  </div>
                 )}
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground">签收状态：</span>
+                  <Select
+                    value={record.signatureStatus ?? ""}
+                    onValueChange={(v) => onSignatureStatusChange(v as SignatureStatus)}
+                    disabled={record.status === "verified"}
+                  >
+                    <SelectTrigger className="h-7 w-[120px] text-xs">
+                      <SelectValue placeholder="待识别" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(Object.keys(SIGNATURE_LABEL) as SignatureStatus[]).map((k) => (
+                        <SelectItem key={k} value={k} className="text-xs">
+                          {SIGNATURE_LABEL[k]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             )}
             <SheetDescription className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs">
