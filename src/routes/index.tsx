@@ -273,6 +273,7 @@ interface OcrRecord {
   verifiedAt?: number; // 人工提交验收结论时间
   verifiedBy?: string;
   shippingSlipNo?: string; // 出货传票单号，用于搜索
+  imageUpdated?: boolean; // 图片有更新，未被查看过
 }
 
 
@@ -1465,6 +1466,7 @@ function seedRecords(): OcrRecord[] {
     failedReason?: string;
     aiExceptionReason?: string;
     noImages?: boolean;
+    imageUpdated?: boolean;
   };
 
   // 送货单始终有；出货传票作为参考图，一定附带
@@ -1475,6 +1477,7 @@ function seedRecords(): OcrRecord[] {
       signatureStatus: "perfect",
       status: "pending_review",
       aiVerdict: "pass",
+      imageUpdated: true,
     },
     {
       minutesAgo: 45,
@@ -1489,6 +1492,7 @@ function seedRecords(): OcrRecord[] {
       signatureStatus: "partial",
       status: "pending_review",
       aiVerdict: "fail",
+      imageUpdated: true,
     },
     {
       minutesAgo: 320,
@@ -1572,6 +1576,7 @@ function seedRecords(): OcrRecord[] {
       verifiedAt: s.status === "verified" ? now - (s.minutesAgo - 10) * 60_000 : undefined,
       verifiedBy: s.status === "verified" ? CURRENT_USER : undefined,
       shippingSlipNo: makeShippingSlipNo(createdAt, 1_000 + idx * 137),
+      imageUpdated: !isEmptyImage && s.imageUpdated ? true : undefined,
     };
     const canOutputVerdict = hasResults && !!s.signatureStatus && images.length > 0;
     return { ...record, aiRejectionReason: canOutputVerdict ? makeAiRejectionReason(record) : undefined };
@@ -2344,6 +2349,8 @@ function Workbench() {
                     </div>
                   </TableHead>
                   <TableHead>签收状态</TableHead>
+                  <TableHead>图片状态</TableHead>
+                  <TableHead>AI识别进度</TableHead>
                   <TableHead>AI置信度</TableHead>
                   <TableHead>AI预审结论</TableHead>
                   <TableHead>最终审核结论</TableHead>
@@ -2354,7 +2361,7 @@ function Workbench() {
               <TableBody>
                 {filteredRecords.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={7} className="py-16 text-center">
+                    <TableCell colSpan={9} className="py-16 text-center">
 
                       <div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-muted-foreground">
                         <div className="grid size-12 place-items-center rounded-full bg-secondary">
@@ -2386,6 +2393,12 @@ function Workbench() {
                       </TableCell>
                       <TableCell className="text-sm text-foreground">
                         {r.signatureStatus ? SIGNATURE_LABEL[r.signatureStatus] : "—"}
+                      </TableCell>
+                      <TableCell>
+                        <ImageStatusBadge noImages={noImages} updated={!!r.imageUpdated} />
+                      </TableCell>
+                      <TableCell>
+                        <RecognitionProgressBadge status={r.status} />
                       </TableCell>
                       <TableCell>
                         {noImages ? (
@@ -2425,6 +2438,9 @@ function Workbench() {
                               onClick={() => {
                                 if (noImages) return;
                                 setDetailId(r.id);
+                                if (r.imageUpdated) {
+                                  setRecords((prev) => prev.map((x) => x.id === r.id ? { ...x, imageUpdated: false } : x));
+                                }
                                 setDetailEditing(true);
                               }}
                             >
@@ -2439,6 +2455,9 @@ function Workbench() {
                             disabled={inProgress}
                             onClick={() => {
                               setDetailId(r.id);
+                              if (r.imageUpdated) {
+                                setRecords((prev) => prev.map((x) => x.id === r.id ? { ...x, imageUpdated: false } : x));
+                              }
                               setDetailEditing(false);
                             }}
                           >
@@ -2645,6 +2664,57 @@ function EmptyBadge({ className }: { className?: string }) {
       )}
     >
       —
+    </Badge>
+  );
+}
+
+function ImageStatusBadge({ noImages, updated }: { noImages: boolean; updated: boolean }) {
+  if (noImages) {
+    return (
+      <Badge variant="status" className="border-0 bg-muted font-normal text-muted-foreground">
+        未上传
+      </Badge>
+    );
+  }
+  if (updated) {
+    return (
+      <Badge variant="status" className="border-0 bg-amber-100 font-normal text-amber-700">
+        有更新
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="status" className="border-0 bg-emerald-100 font-normal text-emerald-700">
+      已上传
+    </Badge>
+  );
+}
+
+function RecognitionProgressBadge({ status }: { status: Status }) {
+  if (status === "queued") {
+    return (
+      <Badge variant="status" className="gap-1 border-0 bg-muted font-normal text-muted-foreground">
+        <Loader2 className="size-3" /> 等待识别
+      </Badge>
+    );
+  }
+  if (status === "recognizing") {
+    return (
+      <Badge variant="status" className="gap-1 border-0 bg-sky-100 font-normal text-sky-700">
+        <Loader2 className="size-3 animate-spin" /> 正在识别
+      </Badge>
+    );
+  }
+  if (status === "failed") {
+    return (
+      <Badge variant="status" className="border-0 bg-rose-100 font-normal text-rose-700">
+        识别失败
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="status" className="border-0 bg-emerald-100 font-normal text-emerald-700">
+      识别完成
     </Badge>
   );
 }
