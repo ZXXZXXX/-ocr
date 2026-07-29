@@ -1761,8 +1761,82 @@ function seedRecords(): OcrRecord[] {
     aiRejectionReason: makeAiRejectionReason(tongyiRecord),
   };
 
-  return [tongyiRecordFinal, realRecord, ...noSlipRecords, ...records];
+  // 多送货单任务：长沙统一企业 · 零食很忙SRM送货单（同一验收任务包含2张送货单照片 + 1张出货传票）
+  const lingshiCreatedAt = new Date("2026-06-25T09:20:00").getTime();
+  const lingshiImages: UploadedImage[] = [
+    {
+      id: "img-lingshi-p1",
+      name: "lingshi_srm_p1.png",
+      url: lingshiSrmP1Asset.url,
+      docType: "delivery_note",
+      width: 1916,
+      height: 888,
+    },
+    {
+      id: "img-lingshi-p2",
+      name: "lingshi_srm_p2.png",
+      url: lingshiSrmP2Asset.url,
+      docType: "delivery_note",
+      width: 1916,
+      height: 888,
+    },
+    {
+      id: "img-lingshi-ship",
+      name: "lingshi_shipping.png",
+      url: lingshiShippingAsset.url,
+      docType: "shipping_slip",
+      width: 1080,
+      height: 1920,
+    },
+  ];
+  const lingshiResults: Partial<Record<DocType, DocPage[]>> = {
+    delivery_note: [
+      {
+        imageId: lingshiImages[0]!.id,
+        sourceImage: lingshiImages[0]!.name,
+        pageBox: [0, 0, lingshiImages[0]!.width, lingshiImages[0]!.height],
+        chunks: enrichTableChunks(mockLingshiSrmP1Chunks()),
+      },
+      {
+        imageId: lingshiImages[1]!.id,
+        sourceImage: lingshiImages[1]!.name,
+        pageBox: [0, 0, lingshiImages[1]!.width, lingshiImages[1]!.height],
+        chunks: enrichTableChunks(mockLingshiSrmP2Chunks()),
+      },
+    ],
+    shipping_slip: [
+      {
+        imageId: lingshiImages[2]!.id,
+        sourceImage: lingshiImages[2]!.name,
+        pageBox: [0, 0, lingshiImages[2]!.width, lingshiImages[2]!.height],
+        chunks: enrichTableChunks(mockLingshiShippingChunks()),
+      },
+    ],
+  };
+  const lingshiPages = Object.values(lingshiResults).flat() as DocPage[];
+  const lingshiRecord: OcrRecord = {
+    id: "CD202606224769631",
+    createdAt: lingshiCreatedAt,
+    status: "pending_review",
+    progress: 100,
+    confidence: averageConfidence(lingshiPages),
+    deliveryCount: 2,
+    shippingCount: 1,
+    images: lingshiImages,
+    results: lingshiResults,
+    driver: "李虎",
+    plateNo: "川A·B4507",
+    signatureStatus: "perfect",
+    aiVerdict: "pass",
+  };
+  const lingshiRecordFinal: OcrRecord = {
+    ...lingshiRecord,
+    aiRejectionReason: makeAiRejectionReason(lingshiRecord),
+  };
+
+  return [lingshiRecordFinal, tongyiRecordFinal, realRecord, ...noSlipRecords, ...records];
 }
+
 
 
 
