@@ -3744,11 +3744,11 @@ function DocPanel({
                     viewMap={viewMap}
                     setViewMap={setViewMap}
                     navIndex={shippingIdx}
-                    navCount={shippingImages.length}
+                    navCount={filteredShippingImages.length}
                     onPrev={() => setShippingIdx((i) => Math.max(0, i - 1))}
                     onNext={() =>
                       setShippingIdx((i) =>
-                        Math.min(shippingImages.length - 1, i + 1),
+                        Math.min(filteredShippingImages.length - 1, i + 1),
                       )
                     }
                     navLabel={"张"}
