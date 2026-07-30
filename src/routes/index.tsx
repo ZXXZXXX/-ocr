@@ -3551,11 +3551,7 @@ function DocPanel({
               }
             : undefined);
 
-  // 过滤列表变化时，下标归位并自动切换到有图片的 tab
-  useEffect(() => {
-    setDeliveryImgIdx((i) => Math.min(i, Math.max(0, filteredDeliveryImages.length - 1)));
-    setShippingIdx((i) => Math.min(i, Math.max(0, filteredShippingImages.length - 1)));
-  }, [filteredDeliveryImages.length, filteredShippingImages.length]);
+  // Indices are manually reset via the prev/next controls to avoid state loops.
 
 
 
