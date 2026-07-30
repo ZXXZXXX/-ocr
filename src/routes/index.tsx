@@ -3865,7 +3865,7 @@ function DocPanel({
                 onClick={() => {
                   const nxt = deliveryPages[pageIdx + 1];
                   if (!nxt) return;
-                  const nextImgIdx = deliveryImages.findIndex((img) => img.id === nxt.imageId);
+                  const nextImgIdx = filteredDeliveryImages.findIndex((img) => img.id === nxt.imageId);
                   if (nextImgIdx >= 0) setDeliveryImgIdx(nextImgIdx);
                   setActiveChunkId(null);
                 }}
