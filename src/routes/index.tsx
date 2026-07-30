@@ -19,6 +19,8 @@ import {
   Eye,
   Filter,
   RotateCcw,
+  Ban,
+
   RotateCw,
   ZoomIn,
   ZoomOut,
