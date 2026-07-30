@@ -3667,7 +3667,7 @@ function DocPanel({
             </button>
           </div>
           <div className="flex items-center gap-2">
-            {(deliveryImages.some((i) => i.isValid === false) || shippingImages.some((i) => i.isValid === false)) && (
+            {(allDeliveryImages.some((i) => i.isValid === false) || allShippingImages.some((i) => i.isValid === false)) && (
               <button
                 type="button"
                 onClick={() => setShowInvalid((s) => !s)}
