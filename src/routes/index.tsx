@@ -4323,6 +4323,28 @@ function ImageWithBoxes({
           </Button>
         )}
 
+        {onToggleInvalid && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn(
+              "absolute right-3 z-20 gap-1.5 rounded-full border border-border/50 bg-background/90 px-2.5 py-1 shadow-sm backdrop-blur-sm hover:bg-background",
+              showAutoFocus && setAutoFocus ? "top-12" : "top-3",
+              image.isValid === false
+                ? "text-destructive hover:text-destructive"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+            onClick={() => onToggleInvalid(image)}
+            onPointerDown={(e) => e.stopPropagation()}
+            aria-label={image.isValid === false ? "取消标记无效" : "标记为无效图片"}
+            title={image.isValid === false ? "取消无效标记" : "将该图片标记为无效"}
+          >
+            {image.isValid === false ? <RotateCcw className="size-4" /> : <Ban className="size-4" />}
+            <span className="text-xs">{image.isValid === false ? "取消标记无效" : "标记无效"}</span>
+          </Button>
+        )}
+
+
         {(!navCount || navCount <= 1) && (
           <div
             className="absolute top-4 left-4 z-20 max-w-[40%] truncate rounded-full border border-border/50 bg-background/90 px-2 py-1 text-xs text-muted-foreground backdrop-blur-sm"
