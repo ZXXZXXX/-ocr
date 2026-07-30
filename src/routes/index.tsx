@@ -220,7 +220,9 @@ interface UploadedImage {
   // natural dimensions used for bbox scaling (mocked)
   width: number;
   height: number;
+  isValid?: boolean; // 标记无效图片，可在图片区选择显示/隐藏
 }
+
 
 interface EditLog {
   by: string;
@@ -1473,7 +1475,9 @@ function seedRecords(): OcrRecord[] {
     aiExceptionReason?: string;
     noImages?: boolean;
     imageUpdated?: boolean;
+    invalidImages?: DocType[]; // 标记为无效的图片
   };
+
 
   // 送货单始终有；出货传票作为参考图，一定附带
   const seeds: Seed[] = [
@@ -1499,6 +1503,7 @@ function seedRecords(): OcrRecord[] {
       status: "pending_review",
       aiVerdict: "fail",
       imageUpdated: true,
+      invalidImages: ["shipping_slip"], // 出货传票参考图被判定为无效
     },
     {
       minutesAgo: 320,
@@ -1511,6 +1516,7 @@ function seedRecords(): OcrRecord[] {
       minutesAgo: 90,
       status: "failed",
       failedReason: "图片质量过低",
+      invalidImages: ["delivery_note", "shipping_slip"],
     },
     {
       minutesAgo: 140,
@@ -1520,6 +1526,7 @@ function seedRecords(): OcrRecord[] {
     },
 
   ];
+
 
   const docTypes: DocType[] = ["delivery_note", "shipping_slip"];
   const records: OcrRecord[] = seeds.map((s, idx) => {
