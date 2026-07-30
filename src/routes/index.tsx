@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Fragment, createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
   Upload,
   Plus,
@@ -19,6 +19,8 @@ import {
   Eye,
   Filter,
   RotateCcw,
+  Ban,
+
   RotateCw,
   ZoomIn,
   ZoomOut,
@@ -3506,19 +3508,42 @@ function DocPanel({
   );
   const [imageLayout, setImageLayout] = useState<"single" | "split">("single");
   const [showInvalid, setShowInvalid] = useState(!!failureReason);
+  // 人工标记无效/恢复有效（覆盖 AI 判定），key 为图片 id，value 为「是否无效」
+  const [invalidOverride, setInvalidOverride] = useState<Record<string, boolean>>({});
+  const applyOverride = useCallback(
+    (imgs: UploadedImage[]): UploadedImage[] =>
+
+      imgs.map((i) =>
+        invalidOverride[i.id] === undefined ? i : { ...i, isValid: !invalidOverride[i.id] },
+      ),
+    [invalidOverride],
+  );
+  const toggleInvalid = useCallback(
+    (img: UploadedImage) => {
+      const currentlyInvalid = invalidOverride[img.id] ?? img.isValid === false;
+      setInvalidOverride((m) => ({ ...m, [img.id]: !currentlyInvalid }));
+      if (!currentlyInvalid) setShowInvalid(true);
+    },
+    [invalidOverride],
+  );
+  const allDeliveryImages = useMemo(() => applyOverride(deliveryImages), [applyOverride, deliveryImages]);
+  const allShippingImages = useMemo(() => applyOverride(shippingImages), [applyOverride, shippingImages]);
 
   // 按开关过滤无效图片
   const filteredDeliveryImages = useMemo(
-    () => (showInvalid ? deliveryImages : deliveryImages.filter((i) => i.isValid !== false)),
-    [deliveryImages, showInvalid],
+    () => (showInvalid ? allDeliveryImages : allDeliveryImages.filter((i) => i.isValid !== false)),
+    [allDeliveryImages, showInvalid],
   );
   const filteredShippingImages = useMemo(
-    () => (showInvalid ? shippingImages : shippingImages.filter((i) => i.isValid !== false)),
-    [shippingImages, showInvalid],
+    () => (showInvalid ? allShippingImages : allShippingImages.filter((i) => i.isValid !== false)),
+    [allShippingImages, showInvalid],
   );
 
-  const deliveryImage = filteredDeliveryImages[deliveryImgIdx];
-  const shippingImage = filteredShippingImages[shippingIdx];
+  const deliveryImage =
+    filteredDeliveryImages[Math.min(deliveryImgIdx, filteredDeliveryImages.length - 1)];
+  const shippingImage =
+    filteredShippingImages[Math.min(shippingIdx, filteredShippingImages.length - 1)];
+
   // Derive the recognition-result page from the current delivery image so they stay in sync.
   const pageIdx = Math.max(
     0,
@@ -3644,7 +3669,7 @@ function DocPanel({
             </button>
           </div>
           <div className="flex items-center gap-2">
-            {(deliveryImages.some((i) => i.isValid === false) || shippingImages.some((i) => i.isValid === false)) && (
+            {(allDeliveryImages.some((i) => i.isValid === false) || allShippingImages.some((i) => i.isValid === false)) && (
               <button
                 type="button"
                 onClick={() => setShowInvalid((s) => !s)}
@@ -3719,6 +3744,7 @@ function DocPanel({
                       )
                     }
                     navLabel={"张"}
+                    onToggleInvalid={toggleInvalid}
                   />
                 ) : (
                   <div className="rounded-lg border border-dashed border-border p-6 text-center text-xs text-muted-foreground">
@@ -3757,6 +3783,7 @@ function DocPanel({
                       )
                     }
                     navLabel={"张"}
+                    onToggleInvalid={toggleInvalid}
                   />
                 ) : (
                   <div className="rounded-lg border border-dashed border-border p-6 text-center text-xs text-muted-foreground">
@@ -3796,6 +3823,7 @@ function DocPanel({
                   }
                 }}
                 navLabel={"张"}
+                onToggleInvalid={toggleInvalid}
               />
             ) : (
               <div className="rounded-lg border border-dashed border-border p-8 text-center text-xs text-muted-foreground">
@@ -4017,6 +4045,7 @@ function ImageWithBoxes({
   onPrev,
   onNext,
   navLabel,
+  onToggleInvalid,
 }: {
   image: UploadedImage;
   page: DocPage;
@@ -4032,7 +4061,9 @@ function ImageWithBoxes({
   onPrev?: () => void;
   onNext?: () => void;
   navLabel?: string;
+  onToggleInvalid?: (img: UploadedImage) => void;
 }) {
+
   const [w, h] = [page.pageBox[2] || image.width, page.pageBox[3] || image.height];
   const view = viewMap[image.id] ?? DEFAULT_IMG_VIEW;
 
@@ -4299,6 +4330,28 @@ function ImageWithBoxes({
             <span className="text-xs">{autoFocus ? "自动聚焦" : "断开聚焦"}</span>
           </Button>
         )}
+
+        {onToggleInvalid && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn(
+              "absolute right-3 z-20 gap-1.5 rounded-full border border-border/50 bg-background/90 px-2.5 py-1 shadow-sm backdrop-blur-sm hover:bg-background",
+              showAutoFocus && setAutoFocus ? "top-12" : "top-3",
+              image.isValid === false
+                ? "text-destructive hover:text-destructive"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+            onClick={() => onToggleInvalid(image)}
+            onPointerDown={(e) => e.stopPropagation()}
+            aria-label={image.isValid === false ? "取消标记无效" : "标记为无效图片"}
+            title={image.isValid === false ? "取消无效标记" : "将该图片标记为无效"}
+          >
+            {image.isValid === false ? <RotateCcw className="size-4" /> : <Ban className="size-4" />}
+            <span className="text-xs">{image.isValid === false ? "取消标记无效" : "标记无效"}</span>
+          </Button>
+        )}
+
 
         {(!navCount || navCount <= 1) && (
           <div
