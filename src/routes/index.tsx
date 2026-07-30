@@ -3632,7 +3632,7 @@ function DocPanel({
             >
               <Truck className="size-3.5" /> 送货单
               <span className="rounded bg-black/10 px-1 text-[10px] tabular-nums">
-                {deliveryImages.length}
+                {filteredDeliveryImages.length}
               </span>
             </button>
             <button
@@ -3650,29 +3650,42 @@ function DocPanel({
             >
               <ScrollText className="size-3.5" /> 出货传票
               <span className="rounded bg-black/10 px-1 text-[10px] tabular-nums">
-                {shippingImages.length}
+                {filteredShippingImages.length}
               </span>
             </button>
           </div>
-          <button
-            type="button"
-            onClick={() =>
-              setImageLayout((l) => (l === "single" ? "split" : "single"))
-            }
-            className="inline-flex items-center gap-1 rounded border border-border bg-background/80 px-2 py-1 text-[11px] text-muted-foreground hover:bg-accent hover:text-foreground"
-            title={imageLayout === "single" ? "上下分屏查看" : "恢复单独窗口"}
-          >
-            {imageLayout === "single" ? (
-              <>
-                <Rows2 className="size-3.5" /> 上下视图
-              </>
-            ) : (
-              <>
-                <Maximize2 className="size-3.5" /> 单独窗口
-              </>
+          <div className="flex items-center gap-2">
+            {(deliveryImages.some((i) => i.isValid === false) || shippingImages.some((i) => i.isValid === false)) && (
+              <div className="flex items-center gap-1.5 rounded border border-border bg-background/80 px-2 py-1">
+                <span className="text-[11px] text-muted-foreground">显示无效图片</span>
+                <Switch
+                  checked={showInvalid}
+                  onCheckedChange={setShowInvalid}
+                  className="data-[state=checked]:bg-primary h-4 w-7"
+                />
+              </div>
             )}
-          </button>
+            <button
+              type="button"
+              onClick={() =>
+                setImageLayout((l) => (l === "single" ? "split" : "single"))
+              }
+              className="inline-flex items-center gap-1 rounded border border-border bg-background/80 px-2 py-1 text-[11px] text-muted-foreground hover:bg-accent hover:text-foreground"
+              title={imageLayout === "single" ? "上下分屏查看" : "恢复单独窗口"}
+            >
+              {imageLayout === "single" ? (
+                <>
+                  <Rows2 className="size-3.5" /> 上下视图
+                </>
+              ) : (
+                <>
+                  <Maximize2 className="size-3.5" /> 单独窗口
+                </>
+              )}
+            </button>
+          </div>
         </div>
+
 
         {imageLayout === "split" ? (
           <div className="flex-1 flex flex-col overflow-hidden">
