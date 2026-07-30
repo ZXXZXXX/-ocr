@@ -3744,6 +3744,7 @@ function DocPanel({
                       )
                     }
                     navLabel={"张"}
+                    onToggleInvalid={toggleInvalid}
                   />
                 ) : (
                   <div className="rounded-lg border border-dashed border-border p-6 text-center text-xs text-muted-foreground">
@@ -3782,6 +3783,7 @@ function DocPanel({
                       )
                     }
                     navLabel={"张"}
+                    onToggleInvalid={toggleInvalid}
                   />
                 ) : (
                   <div className="rounded-lg border border-dashed border-border p-6 text-center text-xs text-muted-foreground">
@@ -3821,6 +3823,7 @@ function DocPanel({
                   }
                 }}
                 navLabel={"张"}
+                onToggleInvalid={toggleInvalid}
               />
             ) : (
               <div className="rounded-lg border border-dashed border-border p-8 text-center text-xs text-muted-foreground">
