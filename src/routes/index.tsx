@@ -3775,7 +3775,7 @@ function DocPanel({
                 viewMap={viewMap}
                 setViewMap={setViewMap}
                 navIndex={showingShipping ? shippingIdx : deliveryImgIdx}
-                navCount={showingShipping ? shippingImages.length : deliveryImages.length}
+                navCount={showingShipping ? filteredShippingImages.length : filteredDeliveryImages.length}
                 onPrev={() => {
                   if (showingShipping) {
                     setShippingIdx((i) => Math.max(0, i - 1));
@@ -3785,9 +3785,9 @@ function DocPanel({
                 }}
                 onNext={() => {
                   if (showingShipping) {
-                    setShippingIdx((i) => Math.min(shippingImages.length - 1, i + 1));
+                    setShippingIdx((i) => Math.min(filteredShippingImages.length - 1, i + 1));
                   } else {
-                    setDeliveryImgIdx((i) => Math.min(deliveryImages.length - 1, i + 1));
+                    setDeliveryImgIdx((i) => Math.min(filteredDeliveryImages.length - 1, i + 1));
                   }
                 }}
                 navLabel={"张"}
