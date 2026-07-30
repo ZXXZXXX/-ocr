@@ -3598,6 +3598,16 @@ function DocPanel({
     container.scrollTo({ top: container.scrollTop + delta, behavior: "smooth" });
   }, [activeChunkId, pageIdx]);
 
+  useEffect(() => {
+    if (imageLayout === "split") return;
+    if (imageTab === "delivery_note" && filteredDeliveryImages.length === 0 && filteredShippingImages.length > 0) {
+      setImageTab("shipping_slip");
+    } else if (imageTab === "shipping_slip" && filteredShippingImages.length === 0 && filteredDeliveryImages.length > 0) {
+      setImageTab("delivery_note");
+    }
+  }, [imageTab, imageLayout, filteredDeliveryImages.length, filteredShippingImages.length]);
+
+
   return (
     <div ref={containerRef} className="flex flex-1 overflow-hidden">
       {/* LEFT: image (tabs switch between delivery_note & shipping_slip) */}
