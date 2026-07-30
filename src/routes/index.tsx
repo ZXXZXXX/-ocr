@@ -3509,7 +3509,8 @@ function DocPanel({
   // 人工标记无效/恢复有效（覆盖 AI 判定），key 为图片 id，value 为「是否无效」
   const [invalidOverride, setInvalidOverride] = useState<Record<string, boolean>>({});
   const applyOverride = useCallback(
-    (imgs: UploadedImage[]) =>
+    (imgs: UploadedImage[]): UploadedImage[] =>
+
       imgs.map((i) =>
         invalidOverride[i.id] === undefined ? i : { ...i, isValid: !invalidOverride[i.id] },
       ),
