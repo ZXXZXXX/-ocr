@@ -1546,7 +1546,9 @@ function seedRecords(): OcrRecord[] {
           docType: dt,
           width: 1920,
           height: 720,
+          isValid: !s.invalidImages?.includes(dt),
         }));
+
     // 只对送货单执行 OCR；识别失败/图片无法识别的任务无结果
     const isFailed = s.status === "failed";
     const isRecognitionException =
