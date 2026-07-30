@@ -220,7 +220,9 @@ interface UploadedImage {
   // natural dimensions used for bbox scaling (mocked)
   width: number;
   height: number;
+  isValid?: boolean; // 标记无效图片，可在图片区选择显示/隐藏
 }
+
 
 interface EditLog {
   by: string;
@@ -1473,7 +1475,9 @@ function seedRecords(): OcrRecord[] {
     aiExceptionReason?: string;
     noImages?: boolean;
     imageUpdated?: boolean;
+    invalidImages?: DocType[]; // 标记为无效的图片
   };
+
 
   // 送货单始终有；出货传票作为参考图，一定附带
   const seeds: Seed[] = [
@@ -1499,6 +1503,7 @@ function seedRecords(): OcrRecord[] {
       status: "pending_review",
       aiVerdict: "fail",
       imageUpdated: true,
+      invalidImages: ["shipping_slip"], // 出货传票参考图被判定为无效
     },
     {
       minutesAgo: 320,
@@ -1511,6 +1516,7 @@ function seedRecords(): OcrRecord[] {
       minutesAgo: 90,
       status: "failed",
       failedReason: "图片质量过低",
+      invalidImages: ["delivery_note", "shipping_slip"],
     },
     {
       minutesAgo: 140,
@@ -1520,6 +1526,7 @@ function seedRecords(): OcrRecord[] {
     },
 
   ];
+
 
   const docTypes: DocType[] = ["delivery_note", "shipping_slip"];
   const records: OcrRecord[] = seeds.map((s, idx) => {
@@ -1539,7 +1546,9 @@ function seedRecords(): OcrRecord[] {
           docType: dt,
           width: 1920,
           height: 720,
+          isValid: !s.invalidImages?.includes(dt),
         }));
+
     // 只对送货单执行 OCR；识别失败/图片无法识别的任务无结果
     const isFailed = s.status === "failed";
     const isRecognitionException =
@@ -3496,9 +3505,20 @@ function DocPanel({
     deliveryImages.length ? "delivery_note" : "shipping_slip",
   );
   const [imageLayout, setImageLayout] = useState<"single" | "split">("single");
+  const [showInvalid, setShowInvalid] = useState(!!failureReason);
 
-  const deliveryImage = deliveryImages[deliveryImgIdx];
-  const shippingImage = shippingImages[shippingIdx];
+  // 按开关过滤无效图片
+  const filteredDeliveryImages = useMemo(
+    () => (showInvalid ? deliveryImages : deliveryImages.filter((i) => i.isValid !== false)),
+    [deliveryImages, showInvalid],
+  );
+  const filteredShippingImages = useMemo(
+    () => (showInvalid ? shippingImages : shippingImages.filter((i) => i.isValid !== false)),
+    [shippingImages, showInvalid],
+  );
+
+  const deliveryImage = filteredDeliveryImages[deliveryImgIdx];
+  const shippingImage = filteredShippingImages[shippingIdx];
   // Derive the recognition-result page from the current delivery image so they stay in sync.
   const pageIdx = Math.max(
     0,
@@ -3530,6 +3550,9 @@ function DocPanel({
                 chunks: [],
               }
             : undefined);
+
+  // Indices are manually reset via the prev/next controls to avoid state loops.
+
 
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -3571,6 +3594,9 @@ function DocPanel({
     container.scrollTo({ top: container.scrollTop + delta, behavior: "smooth" });
   }, [activeChunkId, pageIdx]);
 
+  // Note: Tab/index switching is intentionally manual to avoid render loops with Switch components.
+
+
   return (
     <div ref={containerRef} className="flex flex-1 overflow-hidden">
       {/* LEFT: image (tabs switch between delivery_note & shipping_slip) */}
@@ -3595,7 +3621,7 @@ function DocPanel({
             >
               <Truck className="size-3.5" /> 送货单
               <span className="rounded bg-black/10 px-1 text-[10px] tabular-nums">
-                {deliveryImages.length}
+                {filteredDeliveryImages.length}
               </span>
             </button>
             <button
@@ -3613,29 +3639,58 @@ function DocPanel({
             >
               <ScrollText className="size-3.5" /> 出货传票
               <span className="rounded bg-black/10 px-1 text-[10px] tabular-nums">
-                {shippingImages.length}
+                {filteredShippingImages.length}
               </span>
             </button>
           </div>
-          <button
-            type="button"
-            onClick={() =>
-              setImageLayout((l) => (l === "single" ? "split" : "single"))
-            }
-            className="inline-flex items-center gap-1 rounded border border-border bg-background/80 px-2 py-1 text-[11px] text-muted-foreground hover:bg-accent hover:text-foreground"
-            title={imageLayout === "single" ? "上下分屏查看" : "恢复单独窗口"}
-          >
-            {imageLayout === "single" ? (
-              <>
-                <Rows2 className="size-3.5" /> 上下视图
-              </>
-            ) : (
-              <>
-                <Maximize2 className="size-3.5" /> 单独窗口
-              </>
+          <div className="flex items-center gap-2">
+            {(deliveryImages.some((i) => i.isValid === false) || shippingImages.some((i) => i.isValid === false)) && (
+              <button
+                type="button"
+                onClick={() => setShowInvalid((s) => !s)}
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded border border-border px-2 py-1 text-[11px] transition-colors",
+                  showInvalid ? "bg-primary text-primary-foreground border-primary" : "bg-background/80 text-muted-foreground hover:bg-accent",
+                )}
+                title={showInvalid ? "隐藏无效图片" : "显示无效图片"}
+              >
+                <span className="text-[11px]">显示无效图片</span>
+                <span
+                  className={cn(
+                    "relative inline-flex h-4 w-7 items-center rounded-full transition-colors",
+                    showInvalid ? "bg-primary-foreground/30" : "bg-muted-foreground/30",
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "block h-3 w-3 rounded-full bg-background shadow transition-transform",
+                      showInvalid ? "translate-x-3.5" : "translate-x-0.5",
+                    )}
+                  />
+                </span>
+              </button>
             )}
-          </button>
+            <button
+              type="button"
+              onClick={() =>
+                setImageLayout((l) => (l === "single" ? "split" : "single"))
+              }
+              className="inline-flex items-center gap-1 rounded border border-border bg-background/80 px-2 py-1 text-[11px] text-muted-foreground hover:bg-accent hover:text-foreground"
+              title={imageLayout === "single" ? "上下分屏查看" : "恢复单独窗口"}
+            >
+              {imageLayout === "single" ? (
+                <>
+                  <Rows2 className="size-3.5" /> 上下视图
+                </>
+              ) : (
+                <>
+                  <Maximize2 className="size-3.5" /> 单独窗口
+                </>
+              )}
+            </button>
+          </div>
         </div>
+
 
         {imageLayout === "split" ? (
           <div className="flex-1 flex flex-col overflow-hidden">
@@ -3656,11 +3711,11 @@ function DocPanel({
                     viewMap={viewMap}
                     setViewMap={setViewMap}
                     navIndex={deliveryImgIdx}
-                    navCount={deliveryImages.length}
+                    navCount={filteredDeliveryImages.length}
                     onPrev={() => setDeliveryImgIdx((i) => Math.max(0, i - 1))}
                     onNext={() =>
                       setDeliveryImgIdx((i) =>
-                        Math.min(deliveryImages.length - 1, i + 1),
+                        Math.min(filteredDeliveryImages.length - 1, i + 1),
                       )
                     }
                     navLabel={"张"}
@@ -3694,11 +3749,11 @@ function DocPanel({
                     viewMap={viewMap}
                     setViewMap={setViewMap}
                     navIndex={shippingIdx}
-                    navCount={shippingImages.length}
+                    navCount={filteredShippingImages.length}
                     onPrev={() => setShippingIdx((i) => Math.max(0, i - 1))}
                     onNext={() =>
                       setShippingIdx((i) =>
-                        Math.min(shippingImages.length - 1, i + 1),
+                        Math.min(filteredShippingImages.length - 1, i + 1),
                       )
                     }
                     navLabel={"张"}
@@ -3725,7 +3780,7 @@ function DocPanel({
                 viewMap={viewMap}
                 setViewMap={setViewMap}
                 navIndex={showingShipping ? shippingIdx : deliveryImgIdx}
-                navCount={showingShipping ? shippingImages.length : deliveryImages.length}
+                navCount={showingShipping ? filteredShippingImages.length : filteredDeliveryImages.length}
                 onPrev={() => {
                   if (showingShipping) {
                     setShippingIdx((i) => Math.max(0, i - 1));
@@ -3735,9 +3790,9 @@ function DocPanel({
                 }}
                 onNext={() => {
                   if (showingShipping) {
-                    setShippingIdx((i) => Math.min(shippingImages.length - 1, i + 1));
+                    setShippingIdx((i) => Math.min(filteredShippingImages.length - 1, i + 1));
                   } else {
-                    setDeliveryImgIdx((i) => Math.min(deliveryImages.length - 1, i + 1));
+                    setDeliveryImgIdx((i) => Math.min(filteredDeliveryImages.length - 1, i + 1));
                   }
                 }}
                 navLabel={"张"}
@@ -3797,7 +3852,7 @@ function DocPanel({
                 onClick={() => {
                   const prev = deliveryPages[pageIdx - 1];
                   if (!prev) return;
-                  const nextImgIdx = deliveryImages.findIndex((img) => img.id === prev.imageId);
+                  const nextImgIdx = filteredDeliveryImages.findIndex((img) => img.id === prev.imageId);
                   if (nextImgIdx >= 0) setDeliveryImgIdx(nextImgIdx);
                   setActiveChunkId(null);
                 }}
@@ -3815,7 +3870,7 @@ function DocPanel({
                 onClick={() => {
                   const nxt = deliveryPages[pageIdx + 1];
                   if (!nxt) return;
-                  const nextImgIdx = deliveryImages.findIndex((img) => img.id === nxt.imageId);
+                  const nextImgIdx = filteredDeliveryImages.findIndex((img) => img.id === nxt.imageId);
                   if (nextImgIdx >= 0) setDeliveryImgIdx(nextImgIdx);
                   setActiveChunkId(null);
                 }}
