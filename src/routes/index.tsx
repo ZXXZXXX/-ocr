@@ -3505,9 +3505,20 @@ function DocPanel({
     deliveryImages.length ? "delivery_note" : "shipping_slip",
   );
   const [imageLayout, setImageLayout] = useState<"single" | "split">("single");
+  const [showInvalid, setShowInvalid] = useState(!!failureReason);
 
-  const deliveryImage = deliveryImages[deliveryImgIdx];
-  const shippingImage = shippingImages[shippingIdx];
+  // 按开关过滤无效图片
+  const filteredDeliveryImages = useMemo(
+    () => (showInvalid ? deliveryImages : deliveryImages.filter((i) => i.isValid !== false)),
+    [deliveryImages, showInvalid],
+  );
+  const filteredShippingImages = useMemo(
+    () => (showInvalid ? shippingImages : shippingImages.filter((i) => i.isValid !== false)),
+    [shippingImages, showInvalid],
+  );
+
+  const deliveryImage = filteredDeliveryImages[deliveryImgIdx];
+  const shippingImage = filteredShippingImages[shippingIdx];
   // Derive the recognition-result page from the current delivery image so they stay in sync.
   const pageIdx = Math.max(
     0,
@@ -3539,6 +3550,13 @@ function DocPanel({
                 chunks: [],
               }
             : undefined);
+
+  // 过滤列表变化时，下标归位并自动切换到有图片的 tab
+  useEffect(() => {
+    setDeliveryImgIdx((i) => Math.min(i, Math.max(0, filteredDeliveryImages.length - 1)));
+    setShippingIdx((i) => Math.min(i, Math.max(0, filteredShippingImages.length - 1)));
+  }, [filteredDeliveryImages.length, filteredShippingImages.length]);
+
 
 
   const scrollRef = useRef<HTMLDivElement>(null);
