@@ -4042,6 +4042,7 @@ function ImageWithBoxes({
   onPrev,
   onNext,
   navLabel,
+  onToggleInvalid,
 }: {
   image: UploadedImage;
   page: DocPage;
@@ -4057,7 +4058,9 @@ function ImageWithBoxes({
   onPrev?: () => void;
   onNext?: () => void;
   navLabel?: string;
+  onToggleInvalid?: (img: UploadedImage) => void;
 }) {
+
   const [w, h] = [page.pageBox[2] || image.width, page.pageBox[3] || image.height];
   const view = viewMap[image.id] ?? DEFAULT_IMG_VIEW;
 
