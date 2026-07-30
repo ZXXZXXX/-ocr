@@ -3656,14 +3656,30 @@ function DocPanel({
           </div>
           <div className="flex items-center gap-2">
             {(deliveryImages.some((i) => i.isValid === false) || shippingImages.some((i) => i.isValid === false)) && (
-              <div className="flex items-center gap-1.5 rounded border border-border bg-background/80 px-2 py-1">
-                <span className="text-[11px] text-muted-foreground">显示无效图片</span>
-                <Switch
-                  checked={showInvalid}
-                  onCheckedChange={setShowInvalid}
-                  className="data-[state=checked]:bg-primary h-4 w-7"
-                />
-              </div>
+              <button
+                type="button"
+                onClick={() => setShowInvalid((s) => !s)}
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded border border-border px-2 py-1 text-[11px] transition-colors",
+                  showInvalid ? "bg-primary text-primary-foreground border-primary" : "bg-background/80 text-muted-foreground hover:bg-accent",
+                )}
+                title={showInvalid ? "隐藏无效图片" : "显示无效图片"}
+              >
+                <span className="text-[11px]">显示无效图片</span>
+                <span
+                  className={cn(
+                    "relative inline-flex h-4 w-7 items-center rounded-full transition-colors",
+                    showInvalid ? "bg-primary-foreground/30" : "bg-muted-foreground/30",
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "block h-3 w-3 rounded-full bg-background shadow transition-transform",
+                      showInvalid ? "translate-x-3.5" : "translate-x-0.5",
+                    )}
+                  />
+                </span>
+              </button>
             )}
             <button
               type="button"
