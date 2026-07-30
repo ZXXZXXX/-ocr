@@ -3506,19 +3506,41 @@ function DocPanel({
   );
   const [imageLayout, setImageLayout] = useState<"single" | "split">("single");
   const [showInvalid, setShowInvalid] = useState(!!failureReason);
+  // 人工标记无效/恢复有效（覆盖 AI 判定），key 为图片 id，value 为「是否无效」
+  const [invalidOverride, setInvalidOverride] = useState<Record<string, boolean>>({});
+  const applyOverride = useCallback(
+    (imgs: UploadedImage[]) =>
+      imgs.map((i) =>
+        invalidOverride[i.id] === undefined ? i : { ...i, isValid: !invalidOverride[i.id] },
+      ),
+    [invalidOverride],
+  );
+  const toggleInvalid = useCallback(
+    (img: UploadedImage) => {
+      const currentlyInvalid = invalidOverride[img.id] ?? img.isValid === false;
+      setInvalidOverride((m) => ({ ...m, [img.id]: !currentlyInvalid }));
+      if (!currentlyInvalid) setShowInvalid(true);
+    },
+    [invalidOverride],
+  );
+  const allDeliveryImages = useMemo(() => applyOverride(deliveryImages), [applyOverride, deliveryImages]);
+  const allShippingImages = useMemo(() => applyOverride(shippingImages), [applyOverride, shippingImages]);
 
   // 按开关过滤无效图片
   const filteredDeliveryImages = useMemo(
-    () => (showInvalid ? deliveryImages : deliveryImages.filter((i) => i.isValid !== false)),
-    [deliveryImages, showInvalid],
+    () => (showInvalid ? allDeliveryImages : allDeliveryImages.filter((i) => i.isValid !== false)),
+    [allDeliveryImages, showInvalid],
   );
   const filteredShippingImages = useMemo(
-    () => (showInvalid ? shippingImages : shippingImages.filter((i) => i.isValid !== false)),
-    [shippingImages, showInvalid],
+    () => (showInvalid ? allShippingImages : allShippingImages.filter((i) => i.isValid !== false)),
+    [allShippingImages, showInvalid],
   );
 
-  const deliveryImage = filteredDeliveryImages[deliveryImgIdx];
-  const shippingImage = filteredShippingImages[shippingIdx];
+  const deliveryImage =
+    filteredDeliveryImages[Math.min(deliveryImgIdx, filteredDeliveryImages.length - 1)];
+  const shippingImage =
+    filteredShippingImages[Math.min(shippingIdx, filteredShippingImages.length - 1)];
+
   // Derive the recognition-result page from the current delivery image so they stay in sync.
   const pageIdx = Math.max(
     0,
