@@ -266,6 +266,8 @@ interface OcrRecord {
   // 新增：任务级字段
   driver: string;
   plateNo: string;
+  sdccOrderNos?: string[]; // SDCC 订单号，一个任务可能包含多个
+
   signatureStatus?: SignatureStatus;
   aiVerdict?: AiVerdict; // 识别完成后由AI给出
   aiRejectionReason?: AiRejectionReason; // AI 不通过原因
