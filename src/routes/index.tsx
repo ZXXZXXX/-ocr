@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Fragment, createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
   Upload,
   Plus,
@@ -19,8 +19,6 @@ import {
   Eye,
   Filter,
   RotateCcw,
-  Ban,
-
   RotateCw,
   ZoomIn,
   ZoomOut,
@@ -132,21 +130,24 @@ const CURRENT_USER = "审核员 · 李婷";
 const LOW_CONF_THRESHOLD = 0.8;
 const AI_FAILURE_REASONS = ["图片无法识别", "图片质量过低"] as const;
 const AI_REJECTION_REASONS = [
-  "《送货单》数据与《KA验收单》数据不匹配，请人工核实",
+  "OCR识别结果与《KA验收单》数据不匹配",
+  "《KA验收单》与《SDCC订单明细》不匹配",
 ] as const;
 type AiRejectionReason = (typeof AI_REJECTION_REASONS)[number];
 // 特定任务的固定不通过原因（用于演示）
 const AI_REJECTION_OVERRIDES: Record<string, AiRejectionReason> = {
-  CD202607143260522: "《送货单》数据与《KA验收单》数据不匹配，请人工核实",
-  CD202607141000274: "《送货单》数据与《KA验收单》数据不匹配，请人工核实",
+  CD202607143260522: "《KA验收单》与《SDCC订单明细》不匹配",
+  CD202607141000274: "OCR识别结果与《KA验收单》数据不匹配",
 };
 // 单元格勘误括号内展示的对比来源标签
 const REJECTION_SOURCE_LABEL: Record<AiRejectionReason, string> = {
-  "《送货单》数据与《KA验收单》数据不匹配，请人工核实": "KA验收单",
+  "OCR识别结果与《KA验收单》数据不匹配": "KA验收单",
+  "《KA验收单》与《SDCC订单明细》不匹配": "SDCC订单明细",
 };
 // 允许出现勘误标注的数量列 —— 统一仅限「签收数量」
 const REJECTION_MISMATCH_COLS: Record<AiRejectionReason, readonly string[]> = {
-  "《送货单》数据与《KA验收单》数据不匹配，请人工核实": ["签收数量"],
+  "OCR识别结果与《KA验收单》数据不匹配": ["签收数量"],
+  "《KA验收单》与《SDCC订单明细》不匹配": ["签收数量"],
 };
 // 每条记录不通过原因中「共发现 n 项商品存在差异」的 n，按记录种子稳定生成
 const rejectionMismatchCount = (record: { createdAt: number }) =>
@@ -222,9 +223,7 @@ interface UploadedImage {
   // natural dimensions used for bbox scaling (mocked)
   width: number;
   height: number;
-  isValid?: boolean; // 标记无效图片，可在图片区选择显示/隐藏
 }
-
 
 interface EditLog {
   by: string;
@@ -266,8 +265,6 @@ interface OcrRecord {
   // 新增：任务级字段
   driver: string;
   plateNo: string;
-  sdccOrderNos?: string[]; // SDCC 订单号，一个任务可能包含多个
-
   signatureStatus?: SignatureStatus;
   aiVerdict?: AiVerdict; // 识别完成后由AI给出
   aiRejectionReason?: AiRejectionReason; // AI 不通过原因
@@ -279,7 +276,6 @@ interface OcrRecord {
   verifiedAt?: number; // 人工提交验收结论时间
   verifiedBy?: string;
   shippingSlipNo?: string; // 出货传票单号，用于搜索
-  imageUpdated?: boolean; // 图片有更新，未被查看过
 }
 
 
@@ -327,13 +323,7 @@ const fmtTime = (t: number) =>
   new Date(t).toLocaleString("zh-CN", {
     hour12: false,
     timeZone: "Asia/Shanghai",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
   });
-
 
 function confidenceTone(c?: number) {
   if (c == null) return "high"; // absent = treat as clean
@@ -443,7 +433,12 @@ function deriveReviewStepStatuses(record: OcrRecord): {
     return { kaVsSdccStatus: "success", ocrVsKaStatus: "success" };
   }
   if (record.aiVerdict === "fail") {
-    return { kaVsSdccStatus: "success", ocrVsKaStatus: "fail" };
+    if (record.aiRejectionReason === "《KA验收单》与《SDCC订单明细》不匹配") {
+      return { kaVsSdccStatus: "fail", ocrVsKaStatus: "no_result" };
+    }
+    if (record.aiRejectionReason === "OCR识别结果与《KA验收单》数据不匹配") {
+      return { kaVsSdccStatus: "success", ocrVsKaStatus: "fail" };
+    }
   }
   return { kaVsSdccStatus: "no_result", ocrVsKaStatus: "no_result" };
 }
@@ -1467,45 +1462,17 @@ function pickDriver(seed: number) {
   return MOCK_DRIVERS[seed % MOCK_DRIVERS.length]!;
 }
 
-// SDCC 订单号：5位数字(13开头) + 1位大写字母 + YYYYMMDD + 4位序号
-function makeSdccOrderNos(ts: number, seed: number, count?: number): string[] {
-  const d = new Date(ts);
-  const ymd = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
-  const prefixNum = 13500 + (seed % 100);
-  const letter = String.fromCharCode(65 + (seed % 26));
-  const n = count ?? ((seed % 4) + 1);
-  const start = (seed % 20) + 1;
-  return Array.from(
-    { length: n },
-    (_, i) => `${prefixNum}${letter}${ymd}${String(start + i).padStart(4, "0")}`,
-  );
-}
-
-function recordSdccOrderNos(record: OcrRecord): string[] {
-  if (record.sdccOrderNos?.length) return record.sdccOrderNos;
-  const seed = Math.abs(
-    Array.from(record.id).reduce((acc, ch) => (acc * 31 + ch.charCodeAt(0)) | 0, 7),
-  );
-  return makeSdccOrderNos(record.createdAt, seed);
-}
-
-
 function seedRecords(): OcrRecord[] {
   const now = new Date(2026, 6, 15, 0, 0, 0, 0).getTime();
   type Seed = {
     minutesAgo: number;
     mode?: "high" | "mid" | "low";
-    signatureStatus?: SignatureStatus;
+    signatureStatus: SignatureStatus;
     status: Extract<Status, "pending_review" | "verified" | "failed">;
     aiVerdict?: AiVerdict;
     failedReason?: string;
     aiExceptionReason?: string;
-    noImages?: boolean;
-    imageUpdated?: boolean;
-    invalidImages?: DocType[]; // 标记为无效的图片
   };
-
-
   // 送货单始终有；出货传票作为参考图，一定附带
   const seeds: Seed[] = [
     {
@@ -1514,7 +1481,6 @@ function seedRecords(): OcrRecord[] {
       signatureStatus: "perfect",
       status: "pending_review",
       aiVerdict: "pass",
-      imageUpdated: true,
     },
     {
       minutesAgo: 45,
@@ -1529,8 +1495,6 @@ function seedRecords(): OcrRecord[] {
       signatureStatus: "partial",
       status: "pending_review",
       aiVerdict: "fail",
-      imageUpdated: true,
-      invalidImages: ["shipping_slip"], // 出货传票参考图被判定为无效
     },
     {
       minutesAgo: 320,
@@ -1541,26 +1505,24 @@ function seedRecords(): OcrRecord[] {
     },
     {
       minutesAgo: 90,
-      status: "failed",
-      failedReason: "图片质量过低",
-      invalidImages: ["delivery_note", "shipping_slip"],
+      signatureStatus: "perfect",
+      status: "pending_review",
+      aiVerdict: "exception",
+      aiExceptionReason: "图片无法识别",
     },
     {
       minutesAgo: 140,
       signatureStatus: "partial",
       status: "pending_review",
-      noImages: true,
+      aiVerdict: "exception",
+      aiExceptionReason: "图片质量过低",
     },
-
   ];
-
 
   const docTypes: DocType[] = ["delivery_note", "shipping_slip"];
   const records: OcrRecord[] = seeds.map((s, idx) => {
-    const isEmptyImage =
-      (s.status === "failed" && s.failedReason === "图片数据为空") || s.noImages === true;
+    const isEmptyImage = s.status === "failed" && s.failedReason === "图片数据为空";
     const images: UploadedImage[] = isEmptyImage
-
       ? []
       : docTypes.map((dt) => ({
           id: `img-${idx}-${dt}`,
@@ -1573,9 +1535,7 @@ function seedRecords(): OcrRecord[] {
           docType: dt,
           width: 1920,
           height: 720,
-          isValid: !s.invalidImages?.includes(dt),
         }));
-
     // 只对送货单执行 OCR；识别失败/图片无法识别的任务无结果
     const isFailed = s.status === "failed";
     const isRecognitionException =
@@ -1616,7 +1576,6 @@ function seedRecords(): OcrRecord[] {
       verifiedAt: s.status === "verified" ? now - (s.minutesAgo - 10) * 60_000 : undefined,
       verifiedBy: s.status === "verified" ? CURRENT_USER : undefined,
       shippingSlipNo: makeShippingSlipNo(createdAt, 1_000 + idx * 137),
-      imageUpdated: !isEmptyImage && s.imageUpdated ? true : undefined,
     };
     const canOutputVerdict = hasResults && !!s.signatureStatus && images.length > 0;
     return { ...record, aiRejectionReason: canOutputVerdict ? makeAiRejectionReason(record) : undefined };
@@ -1773,8 +1732,6 @@ function seedRecords(): OcrRecord[] {
     };
     return { ...record, aiRejectionReason: makeAiRejectionReason(record) };
   });
-
-
 
   // 多送货单任务：长沙统一企业 · 零食很忙SRM送货单（同一验收任务包含2张送货单照片）
   const tongyiCreatedAt = now - 6 * 60_000;
@@ -1957,7 +1914,7 @@ function Workbench() {
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 10;
-  const [sortConfig, setSortConfig] = useState<{ column: "syncTime" | "verifiedTime"; order: "asc" | "desc" }>({ column: "syncTime", order: "desc" });
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   // 筛选/搜索变化时重置到第一页
   useEffect(() => {
@@ -2058,19 +2015,8 @@ function Workbench() {
         }
         return true;
       })
-      .sort((a, b) => {
-        const order = sortConfig.order === "desc" ? -1 : 1;
-        if (sortConfig.column === "syncTime") {
-          return order * (a.createdAt - b.createdAt);
-        }
-        const aT = a.verifiedAt ?? 0;
-        const bT = b.verifiedAt ?? 0;
-        if (aT === 0 && bT === 0) return 0;
-        if (aT === 0) return 1;
-        if (bT === 0) return -1;
-        return order * (aT - bT);
-      });
-  }, [records, dateFrom, dateTo, selectedConfidenceTones, aiVerdictFilter, quickStatus, searchQuery, sortConfig]);
+      .sort((a, b) => (sortOrder === "desc" ? b.createdAt - a.createdAt : a.createdAt - b.createdAt));
+  }, [records, dateFrom, dateTo, selectedConfidenceTones, aiVerdictFilter, quickStatus, searchQuery, sortOrder]);
 
   const filterActive =
     !!dateFrom ||
@@ -2390,50 +2336,21 @@ function Workbench() {
                   <TableHead className="w-[200px]">KA 订单号</TableHead>
                   <TableHead
                     className="w-[150px] cursor-pointer select-none"
-                    onClick={() =>
-                      setSortConfig((s) =>
-                        s.column === "syncTime"
-                          ? { ...s, order: s.order === "desc" ? "asc" : "desc" }
-                          : { column: "syncTime", order: "desc" }
-                      )
-                    }
+                    onClick={() => setSortOrder((o) => (o === "desc" ? "asc" : "desc"))}
                   >
                     <div className="flex items-center gap-1">
-                      任务同步时间
-                      {sortConfig.column === "syncTime" &&
-                        (sortConfig.order === "desc" ? (
-                          <ArrowDown className="size-3 text-muted-foreground" />
-                        ) : (
-                          <ArrowUp className="size-3 text-muted-foreground" />
-                        ))}
+                      同步时间
+                      {sortOrder === "desc" ? (
+                        <ArrowDown className="size-3 text-muted-foreground" />
+                      ) : (
+                        <ArrowUp className="size-3 text-muted-foreground" />
+                      )}
                     </div>
                   </TableHead>
-                  <TableHead>图片状态</TableHead>
-                  <TableHead>AI识别进度</TableHead>
-                  <TableHead>AI置信度</TableHead>
                   <TableHead>签收状态</TableHead>
+                  <TableHead>AI置信度</TableHead>
                   <TableHead>AI预审结论</TableHead>
                   <TableHead>最终审核结论</TableHead>
-                  <TableHead
-                    className="w-[150px] cursor-pointer select-none"
-                    onClick={() =>
-                      setSortConfig((s) =>
-                        s.column === "verifiedTime"
-                          ? { ...s, order: s.order === "desc" ? "asc" : "desc" }
-                          : { column: "verifiedTime", order: "desc" }
-                      )
-                    }
-                  >
-                    <div className="flex items-center gap-1">
-                      完成审核时间
-                      {sortConfig.column === "verifiedTime" &&
-                        (sortConfig.order === "desc" ? (
-                          <ArrowDown className="size-3 text-muted-foreground" />
-                        ) : (
-                          <ArrowUp className="size-3 text-muted-foreground" />
-                        ))}
-                    </div>
-                  </TableHead>
                   <TableHead className="text-right">操作</TableHead>
 
                 </TableRow>
@@ -2441,7 +2358,7 @@ function Workbench() {
               <TableBody>
                 {filteredRecords.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={10} className="py-16 text-center">
+                    <TableCell colSpan={7} className="py-16 text-center">
 
                       <div className="mx-auto flex max-w-sm flex-col items-center gap-3 text-muted-foreground">
                         <div className="grid size-12 place-items-center rounded-full bg-secondary">
@@ -2464,41 +2381,24 @@ function Workbench() {
                   const inProgress = r.status === "recognizing" || r.status === "queued";
                   const canSelect = !inProgress && r.status !== "failed";
                   const pending = !inProgress && r.status !== "failed" ? pendingLowConf(r) : 0;
-                  const noImages = !r.images || r.images.length === 0;
                   return (
                     <TableRow key={r.id} className="hover:bg-muted/30">
                       <TableCell className="font-mono text-xs text-foreground">{r.id}</TableCell>
                       <TableCell className="text-sm text-muted-foreground" suppressHydrationWarning>
                         {fmtTime(r.createdAt)}
                       </TableCell>
-                      <TableCell>
-                        <ImageStatusBadge noImages={noImages} updated={!!r.imageUpdated} />
+                      <TableCell className="text-sm text-foreground">
+                        {r.signatureStatus ? SIGNATURE_LABEL[r.signatureStatus] : "—"}
                       </TableCell>
                       <TableCell>
-                        <RecognitionProgressBadge status={r.status} noImages={noImages} confidence={r.confidence} />
-                      </TableCell>
-                      <TableCell>
-                        {noImages ? (
-                          <EmptyBadge className="w-12" />
-                        ) : r.confidence != null ? (
+                        {r.confidence != null ? (
                           <ConfidenceBadge score={r.confidence} />
                         ) : (
                           <EmptyBadge className="w-12" />
                         )}
                       </TableCell>
-                      <TableCell className="text-sm text-foreground">
-                        {noImages || r.status === "failed" || r.status === "queued" || r.status === "recognizing" ? (
-                          "-"
-                        ) : r.signatureStatus ? (
-                          SIGNATURE_LABEL[r.signatureStatus]
-                        ) : (
-                          "—"
-                        )}
-                      </TableCell>
                       <TableCell>
-                        {noImages ? (
-                          <EmptyBadge />
-                        ) : r.aiVerdict ? (
+                        {r.aiVerdict ? (
                           <VerdictBadge value={r.aiVerdict} />
                         ) : r.status === "recognizing" ? (
                           <span className="text-xs text-secondary-foreground">AI 识别中</span>
@@ -2508,11 +2408,9 @@ function Workbench() {
                           <EmptyBadge />
                         )}
                       </TableCell>
+
                       <TableCell>
                         <AuditConclusionBadge status={r.status} aiVerdict={r.aiVerdict} />
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground" suppressHydrationWarning>
-                        {r.verifiedAt ? fmtTime(r.verifiedAt) : "-"}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
@@ -2520,15 +2418,9 @@ function Workbench() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="text-sm font-semibold text-primary hover:bg-primary/10 hover:text-primary disabled:text-muted-foreground disabled:opacity-60"
-                              disabled={noImages}
-                              title={noImages ? "图片数据未上传，暂不可审核" : undefined}
+                              className="text-sm font-semibold text-primary hover:bg-primary/10 hover:text-primary"
                               onClick={() => {
-                                if (noImages) return;
                                 setDetailId(r.id);
-                                if (r.imageUpdated) {
-                                  setRecords((prev) => prev.map((x) => x.id === r.id ? { ...x, imageUpdated: false } : x));
-                                }
                                 setDetailEditing(true);
                               }}
                             >
@@ -2543,15 +2435,11 @@ function Workbench() {
                             disabled={inProgress}
                             onClick={() => {
                               setDetailId(r.id);
-                              if (r.imageUpdated) {
-                                setRecords((prev) => prev.map((x) => x.id === r.id ? { ...x, imageUpdated: false } : x));
-                              }
                               setDetailEditing(false);
                             }}
                           >
                             查看
                           </Button>
-
 
 
 
@@ -2582,7 +2470,9 @@ function Workbench() {
             </div>
 
             <div className="grid grid-cols-3 items-center border-t border-border px-4 py-3">
-              <div />
+              <div className="text-xs text-muted-foreground">
+                本页 {paginatedRecords.length}&nbsp;项
+              </div>
               {filteredRecords.length > 0 ? (
                 <div className="flex items-center justify-center gap-2">
                   <Button
@@ -2614,9 +2504,7 @@ function Workbench() {
               ) : (
                 <div />
               )}
-              <div className="text-right text-xs text-muted-foreground">
-                本页 {paginatedRecords.length}&nbsp;项
-              </div>
+              <div />
             </div>
           </div>
         </main>
@@ -2754,40 +2642,6 @@ function EmptyBadge({ className }: { className?: string }) {
       —
     </Badge>
   );
-}
-
-function ImageStatusBadge({ noImages, updated }: { noImages: boolean; updated: boolean }) {
-  if (noImages) {
-    return <span className="text-sm text-muted-foreground">-</span>;
-  }
-  if (updated) {
-    return <span className="text-sm text-muted-foreground">有更新</span>;
-  }
-  return <span className="text-sm text-muted-foreground">已上传</span>;
-}
-
-function RecognitionProgressBadge({ status, noImages, confidence }: { status: Status; noImages: boolean; confidence?: number | null }) {
-  if (noImages) {
-    return <span className="text-sm text-muted-foreground">-</span>;
-  }
-  if (status === "queued") {
-    return (
-      <span className="inline-flex items-center gap-1 text-sm text-muted-foreground">
-        <Loader2 className="size-3" /> 等待识别
-      </span>
-    );
-  }
-  if (status === "recognizing") {
-    return (
-      <span className="inline-flex items-center gap-1 text-sm text-muted-foreground">
-        <Loader2 className="size-3 animate-spin" /> 识别中…
-      </span>
-    );
-  }
-  if (status === "failed" || confidence == null) {
-    return <span className="text-sm text-muted-foreground">识别失败</span>;
-  }
-  return <span className="text-sm text-muted-foreground">识别完成</span>;
 }
 
 function StatusBadge({ status, pending: _pending }: { status: Status; pending: number }) {
@@ -3054,59 +2908,31 @@ function DetailView({
               <SheetTitle className="flex flex-wrap items-center gap-2">
                 任务详情
                 <NeutralTag>
-                  {record.status === "verified" ? "已完成审核" : "待审核"}
+                  {STATUS_LABEL[record.status] ?? record.status}
                 </NeutralTag>
+                {record.signatureStatus && <span className="text-sm text-foreground">{SIGNATURE_LABEL[record.signatureStatus]}</span>}
               {editing && (
                 <span className="inline-flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-xs text-primary">
                   <Pencil className="size-3" /> 编辑中
                 </span>
               )}
             </SheetTitle>
-            {(record.aiVerdict || record.signatureStatus) && (
-              <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
-                {record.aiVerdict && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-muted-foreground">ai识别结果：</span>
-                    <VerdictBadge value={record.aiVerdict} />
-                    {record.confidence != null ? (
-                      <ConfidenceBadge score={record.confidence} />
-                    ) : (
-                      <EmptyBadge className="w-12" />
-                    )}
-                  </div>
-                )}
-                {record.status !== "failed" && record.status !== "queued" && record.status !== "recognizing" && record.images && record.images.length > 0 && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-muted-foreground">签收状态：</span>
-                    <Select
-                      value={record.signatureStatus ?? ""}
-                      onValueChange={(v) => onSignatureStatusChange(v as SignatureStatus)}
-                      disabled={record.status === "verified"}
-                    >
-                      <SelectTrigger className="h-7 w-[120px] text-xs">
-                        <SelectValue placeholder="待识别" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(Object.keys(SIGNATURE_LABEL) as SignatureStatus[]).map((k) => (
-                          <SelectItem key={k} value={k} className="text-xs">
-                            {SIGNATURE_LABEL[k]}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+            {record.aiVerdict && (
+              <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs">
+                <span className="text-muted-foreground">ai识别结果：</span>
+                <VerdictBadge value={record.aiVerdict} />
+                {record.confidence != null ? (
+                  <ConfidenceBadge score={record.confidence} />
+                ) : (
+                  <EmptyBadge className="w-12" />
                 )}
               </div>
             )}
             <SheetDescription className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs">
               <span>#{record.id}</span>
-              <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                <span className="text-muted-foreground">SDCC订单号</span>
-                {recordSdccOrderNos(record).map((no) => (
-                  <span key={no}>{no}</span>
-                ))}
+              <span>
+                {record.driver} · {record.plateNo}
               </span>
-
               <span>同步 {fmtTime(record.createdAt)}</span>
               {record.verifiedAt && (
                 <span className="text-[color:var(--success)]">
@@ -3136,41 +2962,47 @@ function DetailView({
             </SheetClose>
           </div>
         </div>
-      {record.status === "pending_review" && record.aiVerdict === "fail" && (
-        <div className="mt-4 flex items-start gap-3 rounded-xl border border-[color:var(--destructive)]/30 bg-[color:var(--destructive)]/10 px-4 py-3 text-xs text-[color:var(--destructive)]">
-          <XCircle className="mt-0.5 size-4 shrink-0" />
-          <div className="flex-1 leading-relaxed">
-            <span className="font-semibold">AI 预审不通过原因：</span>
-            {record.aiRejectionReason ?? "《送货单》数据与《KA验收单》数据不匹配，请人工核实"}
-          </div>
-        </div>
+      {record.aiVerdict && (
+        <AiReviewSteps record={record} onViewDetail={openCompare} />
       )}
       {record.status === "pending_review" && record.aiVerdict === "exception" && (
         <div className="mt-4 flex items-start gap-3 rounded-xl border border-[color:var(--warning)]/30 bg-[color:var(--warning)]/15 px-4 py-3 text-xs text-[color:var(--warning-foreground)]">
           <AlertTriangle className="mt-0.5 size-4 shrink-0" />
           <div className="flex-1 leading-relaxed">
             <span className="font-semibold">AI 预审异常原因：</span>
-            {record.aiExceptionReason === "图片无法识别" || record.aiExceptionReason === "图片质量过低"
-              ? "图片质量过低，无法识别出有效数据，请人工审核"
-              : "物料数量相关列无法匹配，请人工匹配列"}
+            {record.aiExceptionReason === "物流签收数据缺失"
+              ? "物流签收数据缺失"
+              : record.aiExceptionReason === "图片无法识别"
+              ? "图片无法识别，AI 无法从图片中提取有效单据信息，请确认图片内容是否完整或重新上传清晰图片。"
+              : record.aiExceptionReason === "图片质量过低"
+              ? "图片质量过低，AI 无法清晰识别单据内容，请重新上传清晰度更高的图片。"
+              : "物料数据列无法匹配"}
           </div>
         </div>
       )}
       </SheetHeader>
 
-      <DocPanel
-        deliveryPages={deliveryPages}
-        deliveryImages={deliveryImages}
-        shippingImages={shippingImages}
-        editing={editing}
-        autoFocus={autoFocus}
-        setAutoFocus={setAutoFocus}
-        failureReason={record.failedReason}
-        onChange={(pageIdx, chunkId, v) =>
-          handleEditChange("delivery_note", pageIdx, chunkId, v)
-        }
-      />
-
+      {compareOpen ? (
+        <CompareView
+          recordId={record.id}
+          count={rejectionMismatchCount(record)}
+          loading={compareLoading}
+          onBack={() => setCompareOpen(false)}
+        />
+      ) : (
+        <DocPanel
+          deliveryPages={deliveryPages}
+          deliveryImages={deliveryImages}
+          shippingImages={shippingImages}
+          editing={editing}
+          autoFocus={autoFocus}
+          setAutoFocus={setAutoFocus}
+          failureReason={record.failedReason}
+          onChange={(pageIdx, chunkId, v) =>
+            handleEditChange("delivery_note", pageIdx, chunkId, v)
+          }
+        />
+      )}
 
 
 
@@ -3536,43 +3368,9 @@ function DocPanel({
     deliveryImages.length ? "delivery_note" : "shipping_slip",
   );
   const [imageLayout, setImageLayout] = useState<"single" | "split">("single");
-  const [showInvalid, setShowInvalid] = useState(!!failureReason);
-  // 人工标记无效/恢复有效（覆盖 AI 判定），key 为图片 id，value 为「是否无效」
-  const [invalidOverride, setInvalidOverride] = useState<Record<string, boolean>>({});
-  const applyOverride = useCallback(
-    (imgs: UploadedImage[]): UploadedImage[] =>
 
-      imgs.map((i) =>
-        invalidOverride[i.id] === undefined ? i : { ...i, isValid: !invalidOverride[i.id] },
-      ),
-    [invalidOverride],
-  );
-  const toggleInvalid = useCallback(
-    (img: UploadedImage) => {
-      const currentlyInvalid = invalidOverride[img.id] ?? img.isValid === false;
-      setInvalidOverride((m) => ({ ...m, [img.id]: !currentlyInvalid }));
-      if (!currentlyInvalid) setShowInvalid(true);
-    },
-    [invalidOverride],
-  );
-  const allDeliveryImages = useMemo(() => applyOverride(deliveryImages), [applyOverride, deliveryImages]);
-  const allShippingImages = useMemo(() => applyOverride(shippingImages), [applyOverride, shippingImages]);
-
-  // 按开关过滤无效图片
-  const filteredDeliveryImages = useMemo(
-    () => (showInvalid ? allDeliveryImages : allDeliveryImages.filter((i) => i.isValid !== false)),
-    [allDeliveryImages, showInvalid],
-  );
-  const filteredShippingImages = useMemo(
-    () => (showInvalid ? allShippingImages : allShippingImages.filter((i) => i.isValid !== false)),
-    [allShippingImages, showInvalid],
-  );
-
-  const deliveryImage =
-    filteredDeliveryImages[Math.min(deliveryImgIdx, filteredDeliveryImages.length - 1)];
-  const shippingImage =
-    filteredShippingImages[Math.min(shippingIdx, filteredShippingImages.length - 1)];
-
+  const deliveryImage = deliveryImages[deliveryImgIdx];
+  const shippingImage = shippingImages[shippingIdx];
   // Derive the recognition-result page from the current delivery image so they stay in sync.
   const pageIdx = Math.max(
     0,
@@ -3604,9 +3402,6 @@ function DocPanel({
                 chunks: [],
               }
             : undefined);
-
-  // Indices are manually reset via the prev/next controls to avoid state loops.
-
 
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -3648,9 +3443,6 @@ function DocPanel({
     container.scrollTo({ top: container.scrollTop + delta, behavior: "smooth" });
   }, [activeChunkId, pageIdx]);
 
-  // Note: Tab/index switching is intentionally manual to avoid render loops with Switch components.
-
-
   return (
     <div ref={containerRef} className="flex flex-1 overflow-hidden">
       {/* LEFT: image (tabs switch between delivery_note & shipping_slip) */}
@@ -3675,7 +3467,7 @@ function DocPanel({
             >
               <Truck className="size-3.5" /> 送货单
               <span className="rounded bg-black/10 px-1 text-[10px] tabular-nums">
-                {filteredDeliveryImages.length}
+                {deliveryImages.length}
               </span>
             </button>
             <button
@@ -3693,58 +3485,29 @@ function DocPanel({
             >
               <ScrollText className="size-3.5" /> 出货传票
               <span className="rounded bg-black/10 px-1 text-[10px] tabular-nums">
-                {filteredShippingImages.length}
+                {shippingImages.length}
               </span>
             </button>
           </div>
-          <div className="flex items-center gap-2">
-            {(allDeliveryImages.some((i) => i.isValid === false) || allShippingImages.some((i) => i.isValid === false)) && (
-              <button
-                type="button"
-                onClick={() => setShowInvalid((s) => !s)}
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded border border-border px-2 py-1 text-[11px] transition-colors",
-                  showInvalid ? "bg-primary text-primary-foreground border-primary" : "bg-background/80 text-muted-foreground hover:bg-accent",
-                )}
-                title={showInvalid ? "隐藏无效图片" : "显示无效图片"}
-              >
-                <span className="text-[11px]">显示无效图片</span>
-                <span
-                  className={cn(
-                    "relative inline-flex h-4 w-7 items-center rounded-full transition-colors",
-                    showInvalid ? "bg-primary-foreground/30" : "bg-muted-foreground/30",
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "block h-3 w-3 rounded-full bg-background shadow transition-transform",
-                      showInvalid ? "translate-x-3.5" : "translate-x-0.5",
-                    )}
-                  />
-                </span>
-              </button>
+          <button
+            type="button"
+            onClick={() =>
+              setImageLayout((l) => (l === "single" ? "split" : "single"))
+            }
+            className="inline-flex items-center gap-1 rounded border border-border bg-background/80 px-2 py-1 text-[11px] text-muted-foreground hover:bg-accent hover:text-foreground"
+            title={imageLayout === "single" ? "上下分屏查看" : "恢复单独窗口"}
+          >
+            {imageLayout === "single" ? (
+              <>
+                <Rows2 className="size-3.5" /> 上下视图
+              </>
+            ) : (
+              <>
+                <Maximize2 className="size-3.5" /> 单独窗口
+              </>
             )}
-            <button
-              type="button"
-              onClick={() =>
-                setImageLayout((l) => (l === "single" ? "split" : "single"))
-              }
-              className="inline-flex items-center gap-1 rounded border border-border bg-background/80 px-2 py-1 text-[11px] text-muted-foreground hover:bg-accent hover:text-foreground"
-              title={imageLayout === "single" ? "上下分屏查看" : "恢复单独窗口"}
-            >
-              {imageLayout === "single" ? (
-                <>
-                  <Rows2 className="size-3.5" /> 上下视图
-                </>
-              ) : (
-                <>
-                  <Maximize2 className="size-3.5" /> 单独窗口
-                </>
-              )}
-            </button>
-          </div>
+          </button>
         </div>
-
 
         {imageLayout === "split" ? (
           <div className="flex-1 flex flex-col overflow-hidden">
@@ -3765,15 +3528,14 @@ function DocPanel({
                     viewMap={viewMap}
                     setViewMap={setViewMap}
                     navIndex={deliveryImgIdx}
-                    navCount={filteredDeliveryImages.length}
+                    navCount={deliveryImages.length}
                     onPrev={() => setDeliveryImgIdx((i) => Math.max(0, i - 1))}
                     onNext={() =>
                       setDeliveryImgIdx((i) =>
-                        Math.min(filteredDeliveryImages.length - 1, i + 1),
+                        Math.min(deliveryImages.length - 1, i + 1),
                       )
                     }
                     navLabel={"张"}
-                    onToggleInvalid={toggleInvalid}
                   />
                 ) : (
                   <div className="rounded-lg border border-dashed border-border p-6 text-center text-xs text-muted-foreground">
@@ -3804,15 +3566,14 @@ function DocPanel({
                     viewMap={viewMap}
                     setViewMap={setViewMap}
                     navIndex={shippingIdx}
-                    navCount={filteredShippingImages.length}
+                    navCount={shippingImages.length}
                     onPrev={() => setShippingIdx((i) => Math.max(0, i - 1))}
                     onNext={() =>
                       setShippingIdx((i) =>
-                        Math.min(filteredShippingImages.length - 1, i + 1),
+                        Math.min(shippingImages.length - 1, i + 1),
                       )
                     }
                     navLabel={"张"}
-                    onToggleInvalid={toggleInvalid}
                   />
                 ) : (
                   <div className="rounded-lg border border-dashed border-border p-6 text-center text-xs text-muted-foreground">
@@ -3836,7 +3597,7 @@ function DocPanel({
                 viewMap={viewMap}
                 setViewMap={setViewMap}
                 navIndex={showingShipping ? shippingIdx : deliveryImgIdx}
-                navCount={showingShipping ? filteredShippingImages.length : filteredDeliveryImages.length}
+                navCount={showingShipping ? shippingImages.length : deliveryImages.length}
                 onPrev={() => {
                   if (showingShipping) {
                     setShippingIdx((i) => Math.max(0, i - 1));
@@ -3846,13 +3607,12 @@ function DocPanel({
                 }}
                 onNext={() => {
                   if (showingShipping) {
-                    setShippingIdx((i) => Math.min(filteredShippingImages.length - 1, i + 1));
+                    setShippingIdx((i) => Math.min(shippingImages.length - 1, i + 1));
                   } else {
-                    setDeliveryImgIdx((i) => Math.min(filteredDeliveryImages.length - 1, i + 1));
+                    setDeliveryImgIdx((i) => Math.min(deliveryImages.length - 1, i + 1));
                   }
                 }}
                 navLabel={"张"}
-                onToggleInvalid={toggleInvalid}
               />
             ) : (
               <div className="rounded-lg border border-dashed border-border p-8 text-center text-xs text-muted-foreground">
@@ -3909,7 +3669,7 @@ function DocPanel({
                 onClick={() => {
                   const prev = deliveryPages[pageIdx - 1];
                   if (!prev) return;
-                  const nextImgIdx = filteredDeliveryImages.findIndex((img) => img.id === prev.imageId);
+                  const nextImgIdx = deliveryImages.findIndex((img) => img.id === prev.imageId);
                   if (nextImgIdx >= 0) setDeliveryImgIdx(nextImgIdx);
                   setActiveChunkId(null);
                 }}
@@ -3927,7 +3687,7 @@ function DocPanel({
                 onClick={() => {
                   const nxt = deliveryPages[pageIdx + 1];
                   if (!nxt) return;
-                  const nextImgIdx = filteredDeliveryImages.findIndex((img) => img.id === nxt.imageId);
+                  const nextImgIdx = deliveryImages.findIndex((img) => img.id === nxt.imageId);
                   if (nextImgIdx >= 0) setDeliveryImgIdx(nextImgIdx);
                   setActiveChunkId(null);
                 }}
@@ -4074,7 +3834,6 @@ function ImageWithBoxes({
   onPrev,
   onNext,
   navLabel,
-  onToggleInvalid,
 }: {
   image: UploadedImage;
   page: DocPage;
@@ -4090,9 +3849,7 @@ function ImageWithBoxes({
   onPrev?: () => void;
   onNext?: () => void;
   navLabel?: string;
-  onToggleInvalid?: (img: UploadedImage) => void;
 }) {
-
   const [w, h] = [page.pageBox[2] || image.width, page.pageBox[3] || image.height];
   const view = viewMap[image.id] ?? DEFAULT_IMG_VIEW;
 
@@ -4359,28 +4116,6 @@ function ImageWithBoxes({
             <span className="text-xs">{autoFocus ? "自动聚焦" : "断开聚焦"}</span>
           </Button>
         )}
-
-        {onToggleInvalid && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className={cn(
-              "absolute right-3 z-20 gap-1.5 rounded-full border border-border/50 bg-background/90 px-2.5 py-1 shadow-sm backdrop-blur-sm hover:bg-background",
-              showAutoFocus && setAutoFocus ? "top-12" : "top-3",
-              image.isValid === false
-                ? "text-destructive hover:text-destructive"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-            onClick={() => onToggleInvalid(image)}
-            onPointerDown={(e) => e.stopPropagation()}
-            aria-label={image.isValid === false ? "取消标记" : "标记为无效图片"}
-            title={image.isValid === false ? "取消标记" : "将该图片标记为无效"}
-          >
-            {image.isValid === false ? <RotateCcw className="size-4" /> : <Ban className="size-4" />}
-            <span className="text-xs">{image.isValid === false ? "取消标记" : "标记无效"}</span>
-          </Button>
-        )}
-
 
         {(!navCount || navCount <= 1) && (
           <div
