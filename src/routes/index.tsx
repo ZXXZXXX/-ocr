@@ -105,8 +105,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -1916,7 +1918,6 @@ function seedRecords(): OcrRecord[] {
 
 // ---------- Main Workbench ----------
 function Workbench() {
-  console.log("WB render");
   const [records, setRecords] = useState<OcrRecord[]>(() => seedRecords());
 
   const [progressMinimized, setProgressMinimized] = useState(false);
@@ -2247,26 +2248,13 @@ function Workbench() {
 
                 <div className="flex items-center gap-2 rounded-md border border-border bg-background px-3 py-1.5">
                   <span className="text-sm font-medium">仅查看未审核</span>
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={quickStatus === "unreviewed"}
-                    aria-label="仅查看未审核"
-                    onClick={() =>
-                      setQuickStatus(quickStatus === "unreviewed" ? "all" : "unreviewed")
+                  <Switch
+                    checked={quickStatus === "unreviewed"}
+                    onCheckedChange={(checked) =>
+                      setQuickStatus(checked ? "unreviewed" : "all")
                     }
-                    className={cn(
-                      "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors",
-                      quickStatus === "unreviewed" ? "bg-primary" : "bg-input",
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        "pointer-events-none block size-4 rounded-full bg-background shadow transition-transform",
-                        quickStatus === "unreviewed" ? "translate-x-4" : "translate-x-0",
-                      )}
-                    />
-                  </button>
+                    aria-label="仅查看未审核"
+                  />
                 </div>
 
                 <Popover open={filterOpen} onOpenChange={setFilterOpen}>
@@ -2721,9 +2709,6 @@ function Workbench() {
             className="flex w-[80vw] flex-col gap-0 p-0 sm:max-w-[80vw] [&>button]:hidden"
           >
             {detailRecord && (
-              <div>hello</div>
-            )}
-            {false && detailRecord && (
               <DetailView
                 record={detailRecord}
                 initialEditing={detailEditing}
@@ -3175,18 +3160,19 @@ function DetailView({
       <AiReviewSteps record={record} onViewDetail={openCompare} />
       </SheetHeader>
 
-      {compareOpen && (
-        <div className="absolute inset-0 z-50 flex bg-[color:var(--background)] animate-in slide-in-from-right duration-200">
-          <div className="flex h-full w-full flex-col overflow-hidden">
-            <CompareView
-              recordId={record.id}
-              count={rejectionMismatchCount(record)}
-              loading={compareLoading}
-              onBack={() => setCompareOpen(false)}
-            />
-          </div>
-        </div>
-      )}
+      <Dialog open={compareOpen} onOpenChange={setCompareOpen}>
+        <DialogContent className="flex h-[85vh] max-w-[min(1100px,92vw)] flex-col gap-0 overflow-hidden p-0">
+          <DialogHeader className="sr-only">
+            <DialogTitle>KA验收单与SDCC订单明细对碰</DialogTitle>
+          </DialogHeader>
+          <CompareView
+            recordId={record.id}
+            count={rejectionMismatchCount(record)}
+            loading={compareLoading}
+            onBack={() => setCompareOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
 
 
       <DocPanel
@@ -5133,25 +5119,7 @@ function TableChunkView({
         <Label htmlFor="filter-toggle" className="cursor-pointer">
           过滤展示
         </Label>
-        <button
-          type="button"
-          id="filter-toggle"
-          role="switch"
-          aria-checked={filterOn}
-          aria-label="过滤展示"
-          onClick={() => setFilterOn((v) => !v)}
-          className={cn(
-            "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors",
-            filterOn ? "bg-primary" : "bg-input",
-          )}
-        >
-          <span
-            className={cn(
-              "pointer-events-none block size-4 rounded-full bg-background shadow transition-transform",
-              filterOn ? "translate-x-4" : "translate-x-0",
-            )}
-          />
-        </button>
+        <Switch id="filter-toggle" checked={filterOn} onCheckedChange={setFilterOn} />
       </div>
       {filterOn ? (
         <FilteredTableView
