@@ -3100,9 +3100,13 @@ function DetailView({
             )}
             <SheetDescription className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs">
               <span>#{record.id}</span>
-              <span>
-                {record.driver} · {record.plateNo}
+              <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <span className="text-muted-foreground">SDCC订单号</span>
+                {recordSdccOrderNos(record).map((no) => (
+                  <span key={no}>{no}</span>
+                ))}
               </span>
+
               <span>同步 {fmtTime(record.createdAt)}</span>
               {record.verifiedAt && (
                 <span className="text-[color:var(--success)]">
