@@ -1467,6 +1467,29 @@ function pickDriver(seed: number) {
   return MOCK_DRIVERS[seed % MOCK_DRIVERS.length]!;
 }
 
+// SDCC 订单号：5位数字(13开头) + 1位大写字母 + YYYYMMDD + 4位序号
+function makeSdccOrderNos(ts: number, seed: number, count?: number): string[] {
+  const d = new Date(ts);
+  const ymd = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+  const prefixNum = 13500 + (seed % 100);
+  const letter = String.fromCharCode(65 + (seed % 26));
+  const n = count ?? ((seed % 4) + 1);
+  const start = (seed % 20) + 1;
+  return Array.from(
+    { length: n },
+    (_, i) => `${prefixNum}${letter}${ymd}${String(start + i).padStart(4, "0")}`,
+  );
+}
+
+function recordSdccOrderNos(record: OcrRecord): string[] {
+  if (record.sdccOrderNos?.length) return record.sdccOrderNos;
+  const seed = Math.abs(
+    Array.from(record.id).reduce((acc, ch) => (acc * 31 + ch.charCodeAt(0)) | 0, 7),
+  );
+  return makeSdccOrderNos(record.createdAt, seed);
+}
+
+
 function seedRecords(): OcrRecord[] {
   const now = new Date(2026, 6, 15, 0, 0, 0, 0).getTime();
   type Seed = {
