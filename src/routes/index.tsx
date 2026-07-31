@@ -107,7 +107,6 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -2033,7 +2032,7 @@ function Workbench() {
         promote.has(r.id) ? { ...r, status: "recognizing" as Status, progress: 4 } : r,
       );
     });
-  }, [records]);
+  }, [records.map((r) => `${r.id}:${r.status}`).join(",")]);
 
   const filteredRecords = useMemo(() => {
     const allTonesSelected = selectedConfidenceTones.size === 3;
@@ -2247,13 +2246,26 @@ function Workbench() {
 
                 <div className="flex items-center gap-2 rounded-md border border-border bg-background px-3 py-1.5">
                   <span className="text-sm font-medium">仅查看未审核</span>
-                  <Switch
-                    checked={quickStatus === "unreviewed"}
-                    onCheckedChange={(checked) =>
-                      setQuickStatus(checked ? "unreviewed" : "all")
-                    }
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={quickStatus === "unreviewed"}
                     aria-label="仅查看未审核"
-                  />
+                    onClick={() =>
+                      setQuickStatus(quickStatus === "unreviewed" ? "all" : "unreviewed")
+                    }
+                    className={cn(
+                      "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors",
+                      quickStatus === "unreviewed" ? "bg-primary" : "bg-input",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "pointer-events-none block size-4 rounded-full bg-background shadow transition-transform",
+                        quickStatus === "unreviewed" ? "translate-x-4" : "translate-x-0",
+                      )}
+                    />
+                  </button>
                 </div>
 
                 <Popover open={filterOpen} onOpenChange={setFilterOpen}>
@@ -2705,7 +2717,7 @@ function Workbench() {
         <Sheet open={!!detailRecord} onOpenChange={(o) => { if (!o) { setDetailId(null); setDetailEditing(false); }}}>
           <SheetContent
             side="right"
-            className="relative flex w-[80vw] flex-col gap-0 overflow-hidden p-0 sm:max-w-[80vw] [&>button]:hidden"
+            className="flex w-[80vw] flex-col gap-0 p-0 sm:max-w-[80vw] [&>button]:hidden"
           >
             {detailRecord && (
               <DetailView
@@ -5117,7 +5129,25 @@ function TableChunkView({
         <Label htmlFor="filter-toggle" className="cursor-pointer">
           过滤展示
         </Label>
-        <Switch id="filter-toggle" checked={filterOn} onCheckedChange={setFilterOn} />
+        <button
+          type="button"
+          id="filter-toggle"
+          role="switch"
+          aria-checked={filterOn}
+          aria-label="过滤展示"
+          onClick={() => setFilterOn((v) => !v)}
+          className={cn(
+            "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors",
+            filterOn ? "bg-primary" : "bg-input",
+          )}
+        >
+          <span
+            className={cn(
+              "pointer-events-none block size-4 rounded-full bg-background shadow transition-transform",
+              filterOn ? "translate-x-4" : "translate-x-0",
+            )}
+          />
+        </button>
       </div>
       {filterOn ? (
         <FilteredTableView
