@@ -1916,6 +1916,7 @@ function seedRecords(): OcrRecord[] {
 
 // ---------- Main Workbench ----------
 function Workbench() {
+  console.log("WB render");
   const [records, setRecords] = useState<OcrRecord[]>(() => seedRecords());
 
   const [progressMinimized, setProgressMinimized] = useState(false);
