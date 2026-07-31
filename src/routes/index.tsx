@@ -1916,7 +1916,6 @@ function seedRecords(): OcrRecord[] {
 
 // ---------- Main Workbench ----------
 function Workbench() {
-  console.log("WB render", new Error().stack?.split("\n").slice(1,6).join(" | "));
   const [records, setRecords] = useState<OcrRecord[]>(() => seedRecords());
 
   const [progressMinimized, setProgressMinimized] = useState(false);
@@ -2033,7 +2032,7 @@ function Workbench() {
         promote.has(r.id) ? { ...r, status: "recognizing" as Status, progress: 4 } : r,
       );
     });
-  }, [records]);
+  }, [records.map((r) => `${r.id}:${r.status}`).join(",")]);
 
   const filteredRecords = useMemo(() => {
     const allTonesSelected = selectedConfidenceTones.size === 3;
@@ -2721,9 +2720,6 @@ function Workbench() {
             className="flex w-[80vw] flex-col gap-0 p-0 sm:max-w-[80vw] [&>button]:hidden"
           >
             {detailRecord && (
-              <div>hello</div>
-            )}
-            {false && detailRecord && (
               <DetailView
                 record={detailRecord}
                 initialEditing={detailEditing}
