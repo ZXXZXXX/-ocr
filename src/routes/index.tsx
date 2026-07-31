@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Fragment, createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
   Upload,
   Plus,
@@ -19,6 +19,8 @@ import {
   Eye,
   Filter,
   RotateCcw,
+  Ban,
+
   RotateCw,
   ZoomIn,
   ZoomOut,
@@ -105,7 +107,6 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -220,7 +221,9 @@ interface UploadedImage {
   // natural dimensions used for bbox scaling (mocked)
   width: number;
   height: number;
+  isValid?: boolean; // 标记无效图片，可在图片区选择显示/隐藏
 }
+
 
 interface EditLog {
   by: string;
@@ -262,6 +265,8 @@ interface OcrRecord {
   // 新增：任务级字段
   driver: string;
   plateNo: string;
+  sdccOrderNos?: string[]; // SDCC 订单号，一个任务可能包含多个
+
   signatureStatus?: SignatureStatus;
   aiVerdict?: AiVerdict; // 识别完成后由AI给出
   aiRejectionReason?: AiRejectionReason; // AI 不通过原因
@@ -1461,6 +1466,29 @@ function pickDriver(seed: number) {
   return MOCK_DRIVERS[seed % MOCK_DRIVERS.length]!;
 }
 
+// SDCC 订单号：5位数字(13开头) + 1位大写字母 + YYYYMMDD + 4位序号
+function makeSdccOrderNos(ts: number, seed: number, count?: number): string[] {
+  const d = new Date(ts);
+  const ymd = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+  const prefixNum = 13500 + (seed % 100);
+  const letter = String.fromCharCode(65 + (seed % 26));
+  const n = count ?? ((seed % 4) + 1);
+  const start = (seed % 20) + 1;
+  return Array.from(
+    { length: n },
+    (_, i) => `${prefixNum}${letter}${ymd}${String(start + i).padStart(4, "0")}`,
+  );
+}
+
+function recordSdccOrderNos(record: OcrRecord): string[] {
+  if (record.sdccOrderNos?.length) return record.sdccOrderNos;
+  const seed = Math.abs(
+    Array.from(record.id).reduce((acc, ch) => (acc * 31 + ch.charCodeAt(0)) | 0, 7),
+  );
+  return makeSdccOrderNos(record.createdAt, seed);
+}
+
+
 function seedRecords(): OcrRecord[] {
   const now = new Date(2026, 6, 15, 0, 0, 0, 0).getTime();
   type Seed = {
@@ -1473,7 +1501,9 @@ function seedRecords(): OcrRecord[] {
     aiExceptionReason?: string;
     noImages?: boolean;
     imageUpdated?: boolean;
+    invalidImages?: DocType[]; // 标记为无效的图片
   };
+
 
   // 送货单始终有；出货传票作为参考图，一定附带
   const seeds: Seed[] = [
@@ -1499,6 +1529,7 @@ function seedRecords(): OcrRecord[] {
       status: "pending_review",
       aiVerdict: "fail",
       imageUpdated: true,
+      invalidImages: ["shipping_slip"], // 出货传票参考图被判定为无效
     },
     {
       minutesAgo: 320,
@@ -1511,6 +1542,7 @@ function seedRecords(): OcrRecord[] {
       minutesAgo: 90,
       status: "failed",
       failedReason: "图片质量过低",
+      invalidImages: ["delivery_note", "shipping_slip"],
     },
     {
       minutesAgo: 140,
@@ -1520,6 +1552,7 @@ function seedRecords(): OcrRecord[] {
     },
 
   ];
+
 
   const docTypes: DocType[] = ["delivery_note", "shipping_slip"];
   const records: OcrRecord[] = seeds.map((s, idx) => {
@@ -1539,7 +1572,9 @@ function seedRecords(): OcrRecord[] {
           docType: dt,
           width: 1920,
           height: 720,
+          isValid: !s.invalidImages?.includes(dt),
         }));
+
     // 只对送货单执行 OCR；识别失败/图片无法识别的任务无结果
     const isFailed = s.status === "failed";
     const isRecognitionException =
@@ -1738,36 +1773,6 @@ function seedRecords(): OcrRecord[] {
     return { ...record, aiRejectionReason: makeAiRejectionReason(record) };
   });
 
-  // 识别失败任务：#CD202607141000548
-  const failedRecognitionRecord: OcrRecord = {
-    id: "CD202607141000548",
-    createdAt: new Date(2026, 6, 14, 8, 32, 0, 0).getTime(),
-    status: "failed",
-    progress: 100,
-    deliveryCount: 1,
-    shippingCount: 1,
-    images: [
-      {
-        id: "img-failed-delivery",
-        name: "failed_delivery_sample.jpg",
-        url: placeholderImg(1920, 720, "送货单示例"),
-        docType: "delivery_note",
-        width: 1920,
-        height: 720,
-      },
-      {
-        id: "img-failed-shipping",
-        name: "failed_shipping_sample.jpg",
-        url: placeholderImg(1920, 720, "出货传票示例（参考）"),
-        docType: "shipping_slip",
-        width: 1920,
-        height: 720,
-      },
-    ],
-    driver: "赵强",
-    plateNo: "京A·88888",
-    failedReason: "图片质量过低",
-  };
 
 
   // 多送货单任务：长沙统一企业 · 零食很忙SRM送货单（同一验收任务包含2张送货单照片）
@@ -1900,7 +1905,7 @@ function seedRecords(): OcrRecord[] {
     aiRejectionReason: makeAiRejectionReason(lingshiRecord),
   };
 
-  const allRecords = [failedRecognitionRecord, lingshiRecordFinal, tongyiRecordFinal, realRecord, ...noSlipRecords, ...records];
+  const allRecords = [lingshiRecordFinal, tongyiRecordFinal, realRecord, ...noSlipRecords, ...records];
   return allRecords.map((r) => ({ ...r, ...deriveReviewStepStatuses(r) }));
 }
 
@@ -1911,6 +1916,7 @@ function seedRecords(): OcrRecord[] {
 
 // ---------- Main Workbench ----------
 function Workbench() {
+  console.log("WB render");
   const [records, setRecords] = useState<OcrRecord[]>(() => seedRecords());
 
   const [progressMinimized, setProgressMinimized] = useState(false);
@@ -2241,13 +2247,26 @@ function Workbench() {
 
                 <div className="flex items-center gap-2 rounded-md border border-border bg-background px-3 py-1.5">
                   <span className="text-sm font-medium">仅查看未审核</span>
-                  <Switch
-                    checked={quickStatus === "unreviewed"}
-                    onCheckedChange={(checked) =>
-                      setQuickStatus(checked ? "unreviewed" : "all")
-                    }
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={quickStatus === "unreviewed"}
                     aria-label="仅查看未审核"
-                  />
+                    onClick={() =>
+                      setQuickStatus(quickStatus === "unreviewed" ? "all" : "unreviewed")
+                    }
+                    className={cn(
+                      "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors",
+                      quickStatus === "unreviewed" ? "bg-primary" : "bg-input",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "pointer-events-none block size-4 rounded-full bg-background shadow transition-transform",
+                        quickStatus === "unreviewed" ? "translate-x-4" : "translate-x-0",
+                      )}
+                    />
+                  </button>
                 </div>
 
                 <Popover open={filterOpen} onOpenChange={setFilterOpen}>
@@ -2481,13 +2500,13 @@ function Workbench() {
                         )}
                       </TableCell>
                       <TableCell className="text-sm text-foreground">
-                        {(() => {
-                          const hide = noImages || r.status === "failed" || r.status === "queued" || r.status === "recognizing";
-                          if (r.id === "CD202607141000548") {
-                            console.log("[sig-status]", r.id, "status=", r.status, "signatureStatus=", r.signatureStatus, "hide=", hide);
-                          }
-                          return hide ? "-" : r.signatureStatus ? SIGNATURE_LABEL[r.signatureStatus] : "—";
-                        })()}
+                        {noImages || r.status === "failed" || r.status === "queued" || r.status === "recognizing" ? (
+                          "-"
+                        ) : r.signatureStatus ? (
+                          SIGNATURE_LABEL[r.signatureStatus]
+                        ) : (
+                          "—"
+                        )}
                       </TableCell>
                       <TableCell>
                         {noImages ? (
@@ -2702,6 +2721,9 @@ function Workbench() {
             className="flex w-[80vw] flex-col gap-0 p-0 sm:max-w-[80vw] [&>button]:hidden"
           >
             {detailRecord && (
+              <div>hello</div>
+            )}
+            {false && detailRecord && (
               <DetailView
                 record={detailRecord}
                 initialEditing={detailEditing}
@@ -3048,7 +3070,7 @@ function DetailView({
               <SheetTitle className="flex flex-wrap items-center gap-2">
                 任务详情
                 <NeutralTag>
-                  {STATUS_LABEL[record.status] ?? record.status}
+                  {record.status === "verified" ? "已完成审核" : "待审核"}
                 </NeutralTag>
               {editing && (
                 <span className="inline-flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-xs text-primary">
@@ -3094,9 +3116,13 @@ function DetailView({
             )}
             <SheetDescription className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs">
               <span>#{record.id}</span>
-              <span>
-                {record.driver} · {record.plateNo}
+              <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <span className="text-muted-foreground">SDCC订单号</span>
+                {recordSdccOrderNos(record).map((no) => (
+                  <span key={no}>{no}</span>
+                ))}
               </span>
+
               <span>同步 {fmtTime(record.createdAt)}</span>
               {record.verifiedAt && (
                 <span className="text-[color:var(--success)]">
@@ -3146,7 +3172,22 @@ function DetailView({
           </div>
         </div>
       )}
+      <AiReviewSteps record={record} onViewDetail={openCompare} />
       </SheetHeader>
+
+      {compareOpen && (
+        <div className="absolute inset-0 z-50 flex bg-[color:var(--background)] animate-in slide-in-from-right duration-200">
+          <div className="flex h-full w-full flex-col overflow-hidden">
+            <CompareView
+              recordId={record.id}
+              count={rejectionMismatchCount(record)}
+              loading={compareLoading}
+              onBack={() => setCompareOpen(false)}
+            />
+          </div>
+        </div>
+      )}
+
 
       <DocPanel
         deliveryPages={deliveryPages}
@@ -3526,9 +3567,43 @@ function DocPanel({
     deliveryImages.length ? "delivery_note" : "shipping_slip",
   );
   const [imageLayout, setImageLayout] = useState<"single" | "split">("single");
+  const [showInvalid, setShowInvalid] = useState(!!failureReason);
+  // 人工标记无效/恢复有效（覆盖 AI 判定），key 为图片 id，value 为「是否无效」
+  const [invalidOverride, setInvalidOverride] = useState<Record<string, boolean>>({});
+  const applyOverride = useCallback(
+    (imgs: UploadedImage[]): UploadedImage[] =>
 
-  const deliveryImage = deliveryImages[deliveryImgIdx];
-  const shippingImage = shippingImages[shippingIdx];
+      imgs.map((i) =>
+        invalidOverride[i.id] === undefined ? i : { ...i, isValid: !invalidOverride[i.id] },
+      ),
+    [invalidOverride],
+  );
+  const toggleInvalid = useCallback(
+    (img: UploadedImage) => {
+      const currentlyInvalid = invalidOverride[img.id] ?? img.isValid === false;
+      setInvalidOverride((m) => ({ ...m, [img.id]: !currentlyInvalid }));
+      if (!currentlyInvalid) setShowInvalid(true);
+    },
+    [invalidOverride],
+  );
+  const allDeliveryImages = useMemo(() => applyOverride(deliveryImages), [applyOverride, deliveryImages]);
+  const allShippingImages = useMemo(() => applyOverride(shippingImages), [applyOverride, shippingImages]);
+
+  // 按开关过滤无效图片
+  const filteredDeliveryImages = useMemo(
+    () => (showInvalid ? allDeliveryImages : allDeliveryImages.filter((i) => i.isValid !== false)),
+    [allDeliveryImages, showInvalid],
+  );
+  const filteredShippingImages = useMemo(
+    () => (showInvalid ? allShippingImages : allShippingImages.filter((i) => i.isValid !== false)),
+    [allShippingImages, showInvalid],
+  );
+
+  const deliveryImage =
+    filteredDeliveryImages[Math.min(deliveryImgIdx, filteredDeliveryImages.length - 1)];
+  const shippingImage =
+    filteredShippingImages[Math.min(shippingIdx, filteredShippingImages.length - 1)];
+
   // Derive the recognition-result page from the current delivery image so they stay in sync.
   const pageIdx = Math.max(
     0,
@@ -3560,6 +3635,9 @@ function DocPanel({
                 chunks: [],
               }
             : undefined);
+
+  // Indices are manually reset via the prev/next controls to avoid state loops.
+
 
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -3601,6 +3679,9 @@ function DocPanel({
     container.scrollTo({ top: container.scrollTop + delta, behavior: "smooth" });
   }, [activeChunkId, pageIdx]);
 
+  // Note: Tab/index switching is intentionally manual to avoid render loops with Switch components.
+
+
   return (
     <div ref={containerRef} className="flex flex-1 overflow-hidden">
       {/* LEFT: image (tabs switch between delivery_note & shipping_slip) */}
@@ -3625,7 +3706,7 @@ function DocPanel({
             >
               <Truck className="size-3.5" /> 送货单
               <span className="rounded bg-black/10 px-1 text-[10px] tabular-nums">
-                {deliveryImages.length}
+                {filteredDeliveryImages.length}
               </span>
             </button>
             <button
@@ -3643,29 +3724,58 @@ function DocPanel({
             >
               <ScrollText className="size-3.5" /> 出货传票
               <span className="rounded bg-black/10 px-1 text-[10px] tabular-nums">
-                {shippingImages.length}
+                {filteredShippingImages.length}
               </span>
             </button>
           </div>
-          <button
-            type="button"
-            onClick={() =>
-              setImageLayout((l) => (l === "single" ? "split" : "single"))
-            }
-            className="inline-flex items-center gap-1 rounded border border-border bg-background/80 px-2 py-1 text-[11px] text-muted-foreground hover:bg-accent hover:text-foreground"
-            title={imageLayout === "single" ? "上下分屏查看" : "恢复单独窗口"}
-          >
-            {imageLayout === "single" ? (
-              <>
-                <Rows2 className="size-3.5" /> 上下视图
-              </>
-            ) : (
-              <>
-                <Maximize2 className="size-3.5" /> 单独窗口
-              </>
+          <div className="flex items-center gap-2">
+            {(allDeliveryImages.some((i) => i.isValid === false) || allShippingImages.some((i) => i.isValid === false)) && (
+              <button
+                type="button"
+                onClick={() => setShowInvalid((s) => !s)}
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded border border-border px-2 py-1 text-[11px] transition-colors",
+                  showInvalid ? "bg-primary text-primary-foreground border-primary" : "bg-background/80 text-muted-foreground hover:bg-accent",
+                )}
+                title={showInvalid ? "隐藏无效图片" : "显示无效图片"}
+              >
+                <span className="text-[11px]">显示无效图片</span>
+                <span
+                  className={cn(
+                    "relative inline-flex h-4 w-7 items-center rounded-full transition-colors",
+                    showInvalid ? "bg-primary-foreground/30" : "bg-muted-foreground/30",
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "block h-3 w-3 rounded-full bg-background shadow transition-transform",
+                      showInvalid ? "translate-x-3.5" : "translate-x-0.5",
+                    )}
+                  />
+                </span>
+              </button>
             )}
-          </button>
+            <button
+              type="button"
+              onClick={() =>
+                setImageLayout((l) => (l === "single" ? "split" : "single"))
+              }
+              className="inline-flex items-center gap-1 rounded border border-border bg-background/80 px-2 py-1 text-[11px] text-muted-foreground hover:bg-accent hover:text-foreground"
+              title={imageLayout === "single" ? "上下分屏查看" : "恢复单独窗口"}
+            >
+              {imageLayout === "single" ? (
+                <>
+                  <Rows2 className="size-3.5" /> 上下视图
+                </>
+              ) : (
+                <>
+                  <Maximize2 className="size-3.5" /> 单独窗口
+                </>
+              )}
+            </button>
+          </div>
         </div>
+
 
         {imageLayout === "split" ? (
           <div className="flex-1 flex flex-col overflow-hidden">
@@ -3686,14 +3796,15 @@ function DocPanel({
                     viewMap={viewMap}
                     setViewMap={setViewMap}
                     navIndex={deliveryImgIdx}
-                    navCount={deliveryImages.length}
+                    navCount={filteredDeliveryImages.length}
                     onPrev={() => setDeliveryImgIdx((i) => Math.max(0, i - 1))}
                     onNext={() =>
                       setDeliveryImgIdx((i) =>
-                        Math.min(deliveryImages.length - 1, i + 1),
+                        Math.min(filteredDeliveryImages.length - 1, i + 1),
                       )
                     }
                     navLabel={"张"}
+                    onToggleInvalid={toggleInvalid}
                   />
                 ) : (
                   <div className="rounded-lg border border-dashed border-border p-6 text-center text-xs text-muted-foreground">
@@ -3724,14 +3835,15 @@ function DocPanel({
                     viewMap={viewMap}
                     setViewMap={setViewMap}
                     navIndex={shippingIdx}
-                    navCount={shippingImages.length}
+                    navCount={filteredShippingImages.length}
                     onPrev={() => setShippingIdx((i) => Math.max(0, i - 1))}
                     onNext={() =>
                       setShippingIdx((i) =>
-                        Math.min(shippingImages.length - 1, i + 1),
+                        Math.min(filteredShippingImages.length - 1, i + 1),
                       )
                     }
                     navLabel={"张"}
+                    onToggleInvalid={toggleInvalid}
                   />
                 ) : (
                   <div className="rounded-lg border border-dashed border-border p-6 text-center text-xs text-muted-foreground">
@@ -3755,7 +3867,7 @@ function DocPanel({
                 viewMap={viewMap}
                 setViewMap={setViewMap}
                 navIndex={showingShipping ? shippingIdx : deliveryImgIdx}
-                navCount={showingShipping ? shippingImages.length : deliveryImages.length}
+                navCount={showingShipping ? filteredShippingImages.length : filteredDeliveryImages.length}
                 onPrev={() => {
                   if (showingShipping) {
                     setShippingIdx((i) => Math.max(0, i - 1));
@@ -3765,12 +3877,13 @@ function DocPanel({
                 }}
                 onNext={() => {
                   if (showingShipping) {
-                    setShippingIdx((i) => Math.min(shippingImages.length - 1, i + 1));
+                    setShippingIdx((i) => Math.min(filteredShippingImages.length - 1, i + 1));
                   } else {
-                    setDeliveryImgIdx((i) => Math.min(deliveryImages.length - 1, i + 1));
+                    setDeliveryImgIdx((i) => Math.min(filteredDeliveryImages.length - 1, i + 1));
                   }
                 }}
                 navLabel={"张"}
+                onToggleInvalid={toggleInvalid}
               />
             ) : (
               <div className="rounded-lg border border-dashed border-border p-8 text-center text-xs text-muted-foreground">
@@ -3827,7 +3940,7 @@ function DocPanel({
                 onClick={() => {
                   const prev = deliveryPages[pageIdx - 1];
                   if (!prev) return;
-                  const nextImgIdx = deliveryImages.findIndex((img) => img.id === prev.imageId);
+                  const nextImgIdx = filteredDeliveryImages.findIndex((img) => img.id === prev.imageId);
                   if (nextImgIdx >= 0) setDeliveryImgIdx(nextImgIdx);
                   setActiveChunkId(null);
                 }}
@@ -3845,7 +3958,7 @@ function DocPanel({
                 onClick={() => {
                   const nxt = deliveryPages[pageIdx + 1];
                   if (!nxt) return;
-                  const nextImgIdx = deliveryImages.findIndex((img) => img.id === nxt.imageId);
+                  const nextImgIdx = filteredDeliveryImages.findIndex((img) => img.id === nxt.imageId);
                   if (nextImgIdx >= 0) setDeliveryImgIdx(nextImgIdx);
                   setActiveChunkId(null);
                 }}
@@ -3992,6 +4105,7 @@ function ImageWithBoxes({
   onPrev,
   onNext,
   navLabel,
+  onToggleInvalid,
 }: {
   image: UploadedImage;
   page: DocPage;
@@ -4007,7 +4121,9 @@ function ImageWithBoxes({
   onPrev?: () => void;
   onNext?: () => void;
   navLabel?: string;
+  onToggleInvalid?: (img: UploadedImage) => void;
 }) {
+
   const [w, h] = [page.pageBox[2] || image.width, page.pageBox[3] || image.height];
   const view = viewMap[image.id] ?? DEFAULT_IMG_VIEW;
 
@@ -4274,6 +4390,28 @@ function ImageWithBoxes({
             <span className="text-xs">{autoFocus ? "自动聚焦" : "断开聚焦"}</span>
           </Button>
         )}
+
+        {onToggleInvalid && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn(
+              "absolute right-3 z-20 gap-1.5 rounded-full border border-border/50 bg-background/90 px-2.5 py-1 shadow-sm backdrop-blur-sm hover:bg-background",
+              showAutoFocus && setAutoFocus ? "top-12" : "top-3",
+              image.isValid === false
+                ? "text-destructive hover:text-destructive"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+            onClick={() => onToggleInvalid(image)}
+            onPointerDown={(e) => e.stopPropagation()}
+            aria-label={image.isValid === false ? "取消标记" : "标记为无效图片"}
+            title={image.isValid === false ? "取消标记" : "将该图片标记为无效"}
+          >
+            {image.isValid === false ? <RotateCcw className="size-4" /> : <Ban className="size-4" />}
+            <span className="text-xs">{image.isValid === false ? "取消标记" : "标记无效"}</span>
+          </Button>
+        )}
+
 
         {(!navCount || navCount <= 1) && (
           <div
@@ -4995,7 +5133,25 @@ function TableChunkView({
         <Label htmlFor="filter-toggle" className="cursor-pointer">
           过滤展示
         </Label>
-        <Switch id="filter-toggle" checked={filterOn} onCheckedChange={setFilterOn} />
+        <button
+          type="button"
+          id="filter-toggle"
+          role="switch"
+          aria-checked={filterOn}
+          aria-label="过滤展示"
+          onClick={() => setFilterOn((v) => !v)}
+          className={cn(
+            "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors",
+            filterOn ? "bg-primary" : "bg-input",
+          )}
+        >
+          <span
+            className={cn(
+              "pointer-events-none block size-4 rounded-full bg-background shadow transition-transform",
+              filterOn ? "translate-x-4" : "translate-x-0",
+            )}
+          />
+        </button>
       </div>
       {filterOn ? (
         <FilteredTableView
