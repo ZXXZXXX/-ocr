@@ -3156,7 +3156,23 @@ function DetailView({
           </div>
         </div>
       )}
+      <AiReviewSteps record={record} onViewDetail={openCompare} />
       </SheetHeader>
+
+      <Dialog open={compareOpen} onOpenChange={setCompareOpen}>
+        <DialogContent className="flex h-[85vh] max-w-[min(1100px,92vw)] flex-col gap-0 overflow-hidden p-0">
+          <DialogHeader className="sr-only">
+            <DialogTitle>KA验收单与SDCC订单明细对碰</DialogTitle>
+          </DialogHeader>
+          <CompareView
+            recordId={record.id}
+            count={rejectionMismatchCount(record)}
+            loading={compareLoading}
+            onBack={() => setCompareOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
 
       <DocPanel
         deliveryPages={deliveryPages}
