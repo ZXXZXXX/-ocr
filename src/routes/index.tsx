@@ -105,7 +105,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
@@ -2706,7 +2705,7 @@ function Workbench() {
         <Sheet open={!!detailRecord} onOpenChange={(o) => { if (!o) { setDetailId(null); setDetailEditing(false); }}}>
           <SheetContent
             side="right"
-            className="flex w-[80vw] flex-col gap-0 p-0 sm:max-w-[80vw] [&>button]:hidden"
+            className="relative flex w-[80vw] flex-col gap-0 overflow-hidden p-0 sm:max-w-[80vw] [&>button]:hidden"
           >
             {detailRecord && (
               <DetailView
@@ -3160,19 +3159,18 @@ function DetailView({
       <AiReviewSteps record={record} onViewDetail={openCompare} />
       </SheetHeader>
 
-      <Dialog open={compareOpen} onOpenChange={setCompareOpen}>
-        <DialogContent className="flex h-[85vh] max-w-[min(1100px,92vw)] flex-col gap-0 overflow-hidden p-0">
-          <DialogHeader className="sr-only">
-            <DialogTitle>KA验收单与SDCC订单明细对碰</DialogTitle>
-          </DialogHeader>
-          <CompareView
-            recordId={record.id}
-            count={rejectionMismatchCount(record)}
-            loading={compareLoading}
-            onBack={() => setCompareOpen(false)}
-          />
-        </DialogContent>
-      </Dialog>
+      {compareOpen && (
+        <div className="absolute inset-0 z-50 flex bg-[color:var(--background)] animate-in slide-in-from-right duration-200">
+          <div className="flex h-full w-full flex-col overflow-hidden">
+            <CompareView
+              recordId={record.id}
+              count={rejectionMismatchCount(record)}
+              loading={compareLoading}
+              onBack={() => setCompareOpen(false)}
+            />
+          </div>
+        </div>
+      )}
 
 
       <DocPanel
