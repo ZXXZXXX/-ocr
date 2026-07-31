@@ -4373,11 +4373,11 @@ function ImageWithBoxes({
             )}
             onClick={() => onToggleInvalid(image)}
             onPointerDown={(e) => e.stopPropagation()}
-            aria-label={image.isValid === false ? "取消标记无效" : "标记为无效图片"}
-            title={image.isValid === false ? "取消无效标记" : "将该图片标记为无效"}
+            aria-label={image.isValid === false ? "取消标记" : "标记为无效图片"}
+            title={image.isValid === false ? "取消标记" : "将该图片标记为无效"}
           >
             {image.isValid === false ? <RotateCcw className="size-4" /> : <Ban className="size-4" />}
-            <span className="text-xs">{image.isValid === false ? "取消标记无效" : "标记无效"}</span>
+            <span className="text-xs">{image.isValid === false ? "取消标记" : "标记无效"}</span>
           </Button>
         )}
 
