@@ -3161,15 +3161,6 @@ function DetailView({
             </SheetClose>
           </div>
         </div>
-      {record.status === "pending_review" && record.aiVerdict === "fail" && (
-        <div className="mt-4 flex items-start gap-3 rounded-xl border border-[color:var(--destructive)]/30 bg-[color:var(--destructive)]/10 px-4 py-3 text-xs text-[color:var(--destructive)]">
-          <XCircle className="mt-0.5 size-4 shrink-0" />
-          <div className="flex-1 leading-relaxed">
-            <span className="font-semibold">AI 预审不通过原因：</span>
-            {record.aiRejectionReason ?? "《送货单》数据与《KA验收单》数据不匹配，请人工核实"}
-          </div>
-        </div>
-      )}
       {record.status === "pending_review" && record.aiVerdict === "exception" && (
         <div className="mt-4 flex items-start gap-3 rounded-xl border border-[color:var(--warning)]/30 bg-[color:var(--warning)]/15 px-4 py-3 text-xs text-[color:var(--warning-foreground)]">
           <AlertTriangle className="mt-0.5 size-4 shrink-0" />
