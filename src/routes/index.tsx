@@ -448,15 +448,17 @@ function deriveReviewStepStatuses(record: OcrRecord): OcrRecord {
     return { ...record, kaVsSdccStatus: "no_result", ocrVsKaStatus: "no_result" };
   }
   const step1 = kaVsSdccStatusFor(record);
+  // 第二步只取决于 OCR 与 KA 验收单自身的对碰结果，与第一步无关
+  const step2: StepStatus = record.aiVerdict === "fail" ? "fail" : "success";
   if (step1 === "fail") {
     // 第一步对碰失败 → 预审结论必须为「不通过」
-    const failed: OcrRecord = { ...record, aiVerdict: "fail", kaVsSdccStatus: "fail", ocrVsKaStatus: "fail" };
+    const failed: OcrRecord = { ...record, aiVerdict: "fail", kaVsSdccStatus: "fail", ocrVsKaStatus: step2 };
     return { ...failed, aiRejectionReason: makeAiRejectionReason(failed) };
   }
   return {
     ...record,
     kaVsSdccStatus: "success",
-    ocrVsKaStatus: record.aiVerdict === "fail" ? "fail" : "success",
+    ocrVsKaStatus: step2,
   };
 }
 
