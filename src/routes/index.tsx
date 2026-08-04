@@ -2018,7 +2018,7 @@ function Workbench() {
               results: result.results,
               aiVerdict: verdict,
             };
-            return { ...updated, aiRejectionReason: makeAiRejectionReason(updated) };
+            return deriveReviewStepStatuses(updated);
           }
 
           return { ...r, progress: next };
