@@ -3184,9 +3184,22 @@ function DetailView({
       <AiReviewSteps record={record} onViewDetail={openCompare} />
       </SheetHeader>
 
-      {compareOpen && (
-        <div className="absolute inset-0 z-50 flex bg-[color:var(--background)] animate-in slide-in-from-right duration-200">
-          <div className="flex h-full w-full flex-col overflow-hidden">
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+        <DocPanel
+          deliveryPages={deliveryPages}
+          deliveryImages={deliveryImages}
+          shippingImages={shippingImages}
+          editing={editing}
+          autoFocus={autoFocus}
+          setAutoFocus={setAutoFocus}
+          failureReason={record.failedReason}
+          onChange={(pageIdx, chunkId, v) =>
+            handleEditChange("delivery_note", pageIdx, chunkId, v)
+          }
+        />
+
+        {compareOpen && (
+          <div className="absolute inset-0 z-50 flex flex-col overflow-hidden bg-[color:var(--background)] animate-in slide-in-from-right duration-200">
             <CompareView
               recordId={record.id}
               count={compareCountFor(record)}
@@ -3194,22 +3207,9 @@ function DetailView({
               onBack={() => setCompareOpen(false)}
             />
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-
-      <DocPanel
-        deliveryPages={deliveryPages}
-        deliveryImages={deliveryImages}
-        shippingImages={shippingImages}
-        editing={editing}
-        autoFocus={autoFocus}
-        setAutoFocus={setAutoFocus}
-        failureReason={record.failedReason}
-        onChange={(pageIdx, chunkId, v) =>
-          handleEditChange("delivery_note", pageIdx, chunkId, v)
-        }
-      />
 
 
 
