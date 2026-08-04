@@ -430,21 +430,34 @@ function makeAiRejectionReason(record: OcrRecord): AiRejectionReason | undefined
   return AI_REJECTION_REASONS[idx];
 }
 
+// 对碰明细的行数种子：预审通过的任务不制造差异
+function compareCountFor(record: { createdAt: number; aiVerdict?: AiVerdict }) {
+  return record.aiVerdict === "pass" ? 0 : rejectionMismatchCount(record);
+}
+
+// 第一步「KA验收单与SDCC订单明细对碰」的真实状态：任一分组「未映射」或「数量不一致」即失败
+function kaVsSdccStatusFor(record: OcrRecord): StepStatus {
+  if (!record.aiVerdict || record.aiVerdict === "exception") return "no_result";
+  const groups = COMPARE_REAL_GROUPS[record.id] ?? fallbackGroups(record.id, compareCountFor(record));
+  return groups.every((g) => groupStatus(g).pass) ? "success" : "fail";
+}
+
 // 根据当前 AI 审核结论推导两步对碰状态（算法平台未来会直接推送该字段）
-function deriveReviewStepStatuses(record: OcrRecord): {
-  kaVsSdccStatus?: StepStatus;
-  ocrVsKaStatus?: StepStatus;
-} {
-  if (record.aiVerdict === "exception") {
-    return { kaVsSdccStatus: "no_result", ocrVsKaStatus: "no_result" };
+function deriveReviewStepStatuses(record: OcrRecord): OcrRecord {
+  if (record.aiVerdict === "exception" || !record.aiVerdict) {
+    return { ...record, kaVsSdccStatus: "no_result", ocrVsKaStatus: "no_result" };
   }
-  if (record.aiVerdict === "pass") {
-    return { kaVsSdccStatus: "success", ocrVsKaStatus: "success" };
+  const step1 = kaVsSdccStatusFor(record);
+  if (step1 === "fail") {
+    // 第一步对碰失败 → 预审结论必须为「不通过」
+    const failed: OcrRecord = { ...record, aiVerdict: "fail", kaVsSdccStatus: "fail", ocrVsKaStatus: "fail" };
+    return { ...failed, aiRejectionReason: makeAiRejectionReason(failed) };
   }
-  if (record.aiVerdict === "fail") {
-    return { kaVsSdccStatus: "success", ocrVsKaStatus: "fail" };
-  }
-  return { kaVsSdccStatus: "no_result", ocrVsKaStatus: "no_result" };
+  return {
+    ...record,
+    kaVsSdccStatus: "success",
+    ocrVsKaStatus: record.aiVerdict === "fail" ? "fail" : "success",
+  };
 }
 
 // Extract plain text from a simple HTML string (handles <p>, <br>, entities)
@@ -1906,7 +1919,7 @@ function seedRecords(): OcrRecord[] {
   };
 
   const allRecords = [lingshiRecordFinal, tongyiRecordFinal, realRecord, ...noSlipRecords, ...records];
-  return allRecords.map((r) => ({ ...r, ...deriveReviewStepStatuses(r) }));
+  return allRecords.map((r) => deriveReviewStepStatuses(r));
 }
 
 
@@ -2005,7 +2018,7 @@ function Workbench() {
               results: result.results,
               aiVerdict: verdict,
             };
-            return { ...updated, aiRejectionReason: makeAiRejectionReason(updated) };
+            return deriveReviewStepStatuses(updated);
           }
 
           return { ...r, progress: next };
@@ -3176,7 +3189,7 @@ function DetailView({
           <div className="flex h-full w-full flex-col overflow-hidden">
             <CompareView
               recordId={record.id}
-              count={rejectionMismatchCount(record)}
+              count={compareCountFor(record)}
               loading={compareLoading}
               onBack={() => setCompareOpen(false)}
             />
