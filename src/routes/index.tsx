@@ -1919,7 +1919,7 @@ function seedRecords(): OcrRecord[] {
   };
 
   const allRecords = [lingshiRecordFinal, tongyiRecordFinal, realRecord, ...noSlipRecords, ...records];
-  return allRecords.map((r) => ({ ...r, ...deriveReviewStepStatuses(r) }));
+  return allRecords.map((r) => deriveReviewStepStatuses(r));
 }
 
 
