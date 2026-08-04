@@ -3189,7 +3189,7 @@ function DetailView({
           <div className="flex h-full w-full flex-col overflow-hidden">
             <CompareView
               recordId={record.id}
-              count={rejectionMismatchCount(record)}
+              count={compareCountFor(record)}
               loading={compareLoading}
               onBack={() => setCompareOpen(false)}
             />
