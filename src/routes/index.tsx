@@ -2910,18 +2910,11 @@ const CONFIDENCE_LABEL: Record<"high" | "mid" | "low", string> = {
 
 function ConfidenceBadge({ score }: { score: number }) {
   const tone = confidenceTone(score / 100);
-  const Icon = tone === "high" ? CheckCircle2 : AlertTriangle;
   return (
-    <Badge
-      variant="status"
-      className={cn(
-        "w-12 justify-center gap-1 border-0 font-normal",
-        confidenceBadgeClasses(tone),
-      )}
-    >
-      <Icon className="size-3" />
+    <span className={cn("inline-flex items-center gap-1.5 text-xs font-normal", confidenceTextClasses(tone))}>
+      <span className={cn("size-2 rounded-full", confidenceDotClasses(tone))} />
       {CONFIDENCE_LABEL[tone]}
-    </Badge>
+    </span>
   );
 }
 
