@@ -2415,26 +2415,7 @@ function Workbench() {
               <TableHeader>
                 <TableRow className="bg-muted/40">
                   <TableHead className="w-[200px]">KA 订单号</TableHead>
-                  <TableHead
-                    className="w-[150px] cursor-pointer select-none"
-                    onClick={() =>
-                      setSortConfig((s) =>
-                        s.column === "syncTime"
-                          ? { ...s, order: s.order === "desc" ? "asc" : "desc" }
-                          : { column: "syncTime", order: "desc" }
-                      )
-                    }
-                  >
-                    <div className="flex items-center gap-1">
-                      任务同步时间
-                      {sortConfig.column === "syncTime" &&
-                        (sortConfig.order === "desc" ? (
-                          <ArrowDown className="size-3 text-muted-foreground" />
-                        ) : (
-                          <ArrowUp className="size-3 text-muted-foreground" />
-                        ))}
-                    </div>
-                  </TableHead>
+                  <TableHead className="w-[150px]">SDCC数据状态</TableHead>
                   <TableHead>图片状态</TableHead>
                   <TableHead>AI识别进度</TableHead>
                   <TableHead>AI置信度</TableHead>
@@ -2495,8 +2476,8 @@ function Workbench() {
                   return (
                     <TableRow key={r.id} className="hover:bg-muted/30">
                       <TableCell className="font-mono text-xs text-foreground">{r.id}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground" suppressHydrationWarning>
-                        {fmtTime(r.createdAt)}
+                      <TableCell>
+                        <SdccDataStatusBadge record={r} noImages={noImages} />
                       </TableCell>
                       <TableCell>
                         <ImageStatusBadge noImages={noImages} updated={!!r.imageUpdated} />
@@ -2767,6 +2748,23 @@ function NeutralTag({ children }: { children: React.ReactNode }) {
       {children}
     </span>
   );
+}
+
+function SdccDataStatusBadge({ record, noImages }: { record: OcrRecord; noImages: boolean }) {
+  const status = noImages ? "no_result" : kaVsSdccStatusFor(record);
+  if (status === "success")
+    return (
+      <Badge variant="status" className="w-24 justify-center border-0 bg-[color:var(--success)]/15 font-normal text-[color:var(--success)]">
+        完全一致
+      </Badge>
+    );
+  if (status === "fail")
+    return (
+      <Badge variant="status" className="w-24 justify-center border-0 bg-destructive/15 font-normal text-destructive">
+        数据不一致
+      </Badge>
+    );
+  return <EmptyBadge className="w-24" />;
 }
 
 function EmptyBadge({ className }: { className?: string }) {
