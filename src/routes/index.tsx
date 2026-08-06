@@ -2750,6 +2750,23 @@ function NeutralTag({ children }: { children: React.ReactNode }) {
   );
 }
 
+function SdccDataStatusBadge({ record, noImages }: { record: OcrRecord; noImages: boolean }) {
+  const status = noImages ? "no_result" : kaVsSdccStatusFor(record);
+  if (status === "success")
+    return (
+      <Badge variant="status" className="w-24 justify-center border-0 bg-[color:var(--success)]/15 font-normal text-[color:var(--success)]">
+        完全一致
+      </Badge>
+    );
+  if (status === "fail")
+    return (
+      <Badge variant="status" className="w-24 justify-center border-0 bg-destructive/15 font-normal text-destructive">
+        数据不一致
+      </Badge>
+    );
+  return <EmptyBadge className="w-24" />;
+}
+
 function EmptyBadge({ className }: { className?: string }) {
   return (
     <Badge
