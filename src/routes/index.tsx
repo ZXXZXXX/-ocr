@@ -2534,10 +2534,10 @@ function Workbench() {
                               variant="ghost"
                               size="sm"
                               className="text-sm font-semibold text-primary hover:bg-primary/10 hover:text-primary disabled:text-muted-foreground disabled:opacity-60"
-                              disabled={noImages}
-                              title={noImages ? "图片数据未上传，暂不可审核" : undefined}
+                              disabled={reviewDisabled}
+                              title={reviewDisabled ? "SDCC 对碰结果与图片数据均未就绪，暂不可审核" : undefined}
                               onClick={() => {
-                                if (noImages) return;
+                                if (reviewDisabled) return;
                                 setDetailId(r.id);
                                 if (r.imageUpdated) {
                                   setRecords((prev) => prev.map((x) => x.id === r.id ? { ...x, imageUpdated: false } : x));
