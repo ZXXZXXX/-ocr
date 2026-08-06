@@ -2415,26 +2415,7 @@ function Workbench() {
               <TableHeader>
                 <TableRow className="bg-muted/40">
                   <TableHead className="w-[200px]">KA 订单号</TableHead>
-                  <TableHead
-                    className="w-[150px] cursor-pointer select-none"
-                    onClick={() =>
-                      setSortConfig((s) =>
-                        s.column === "syncTime"
-                          ? { ...s, order: s.order === "desc" ? "asc" : "desc" }
-                          : { column: "syncTime", order: "desc" }
-                      )
-                    }
-                  >
-                    <div className="flex items-center gap-1">
-                      任务同步时间
-                      {sortConfig.column === "syncTime" &&
-                        (sortConfig.order === "desc" ? (
-                          <ArrowDown className="size-3 text-muted-foreground" />
-                        ) : (
-                          <ArrowUp className="size-3 text-muted-foreground" />
-                        ))}
-                    </div>
-                  </TableHead>
+                  <TableHead className="w-[150px]">SDCC数据状态</TableHead>
                   <TableHead>图片状态</TableHead>
                   <TableHead>AI识别进度</TableHead>
                   <TableHead>AI置信度</TableHead>
