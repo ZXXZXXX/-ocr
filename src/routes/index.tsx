@@ -2476,11 +2476,13 @@ function Workbench() {
                   const canSelect = !inProgress && r.status !== "failed";
                   const pending = !inProgress && r.status !== "failed" ? pendingLowConf(r) : 0;
                   const noImages = !r.images || r.images.length === 0;
+                  const sdccDone = kaVsSdccStatusFor(r) !== "no_result";
+                  const reviewDisabled = noImages && !sdccDone;
                   return (
                     <TableRow key={r.id} className="hover:bg-muted/30">
                       <TableCell className="font-mono text-xs text-foreground">{r.id}</TableCell>
                       <TableCell>
-                        <SdccDataStatusBadge record={r} noImages={noImages} />
+                        <SdccDataStatusBadge record={r} />
                       </TableCell>
                       <TableCell>
                         <ImageStatusBadge noImages={noImages} updated={!!r.imageUpdated} />
