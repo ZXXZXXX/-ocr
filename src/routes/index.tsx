@@ -1518,6 +1518,7 @@ function seedRecords(): OcrRecord[] {
     failedReason?: string;
     aiExceptionReason?: string;
     noImages?: boolean;
+    sdccCompareDone?: boolean;
     imageUpdated?: boolean;
     invalidImages?: DocType[]; // 标记为无效的图片
   };
@@ -1563,10 +1564,20 @@ function seedRecords(): OcrRecord[] {
       invalidImages: ["delivery_note", "shipping_slip"],
     },
     {
+      // 图片未上传，但 SDCC 对碰已出结果 → 可进入审核，识别结果为空
       minutesAgo: 140,
       signatureStatus: "partial",
       status: "pending_review",
       noImages: true,
+      sdccCompareDone: true,
+    },
+    {
+      // SDCC 对碰尚未出结果，且无图片 → 状态列显示「-」，不可审核
+      minutesAgo: 20,
+      signatureStatus: "partial",
+      status: "pending_review",
+      noImages: true,
+      sdccCompareDone: false,
     },
 
   ];
@@ -1634,6 +1645,7 @@ function seedRecords(): OcrRecord[] {
       verifiedBy: s.status === "verified" ? CURRENT_USER : undefined,
       shippingSlipNo: makeShippingSlipNo(createdAt, 1_000 + idx * 137),
       imageUpdated: !isEmptyImage && s.imageUpdated ? true : undefined,
+      sdccCompareDone: s.sdccCompareDone,
     };
     const canOutputVerdict = hasResults && !!s.signatureStatus && images.length > 0;
     return { ...record, aiRejectionReason: canOutputVerdict ? makeAiRejectionReason(record) : undefined };
