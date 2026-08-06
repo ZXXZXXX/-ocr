@@ -2476,8 +2476,8 @@ function Workbench() {
                   return (
                     <TableRow key={r.id} className="hover:bg-muted/30">
                       <TableCell className="font-mono text-xs text-foreground">{r.id}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground" suppressHydrationWarning>
-                        {fmtTime(r.createdAt)}
+                      <TableCell>
+                        <SdccDataStatusBadge record={r} noImages={noImages} />
                       </TableCell>
                       <TableCell>
                         <ImageStatusBadge noImages={noImages} updated={!!r.imageUpdated} />
