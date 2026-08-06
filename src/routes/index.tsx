@@ -2754,17 +2754,17 @@ function SdccDataStatusBadge({ record, noImages }: { record: OcrRecord; noImages
   const status = noImages ? "no_result" : kaVsSdccStatusFor(record);
   if (status === "success")
     return (
-      <Badge variant="status" className="w-24 justify-center border-0 bg-[color:var(--success)]/15 font-normal text-[color:var(--success)]">
-        完全一致
+      <Badge variant="status" className="w-20 justify-center gap-1 border-0 bg-[color:var(--success)]/15 font-normal text-[color:var(--success)]">
+        <CheckCircle2 className="size-3" /> 一致
       </Badge>
     );
   if (status === "fail")
     return (
-      <Badge variant="status" className="w-24 justify-center border-0 bg-destructive/15 font-normal text-destructive">
-        数据不一致
+      <Badge variant="status" className="w-20 justify-center gap-1 border-0 bg-destructive/15 font-normal text-destructive">
+        <X className="size-3" /> 不一致
       </Badge>
     );
-  return <EmptyBadge className="w-24" />;
+  return <EmptyBadge className="w-20" />;
 }
 
 function EmptyBadge({ className }: { className?: string }) {
@@ -2910,18 +2910,11 @@ const CONFIDENCE_LABEL: Record<"high" | "mid" | "low", string> = {
 
 function ConfidenceBadge({ score }: { score: number }) {
   const tone = confidenceTone(score / 100);
-  const Icon = tone === "high" ? CheckCircle2 : AlertTriangle;
   return (
-    <Badge
-      variant="status"
-      className={cn(
-        "w-12 justify-center gap-1 border-0 font-normal",
-        confidenceBadgeClasses(tone),
-      )}
-    >
-      <Icon className="size-3" />
+    <span className={cn("inline-flex items-center gap-1.5 text-xs font-normal", confidenceTextClasses(tone))}>
+      <span className={cn("size-2 rounded-full", confidenceDotClasses(tone))} />
       {CONFIDENCE_LABEL[tone]}
-    </Badge>
+    </span>
   );
 }
 
