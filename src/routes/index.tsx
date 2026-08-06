@@ -273,6 +273,7 @@ interface OcrRecord {
   aiExceptionReason?: string; // AI 审核异常原因（如 "物料数据列无法匹配" / "物流签收数据缺失"）
   failedReason?: string; // AI 识别失败原因，如 "图片无法识别" / "图片质量过低"
   // AI 对碰两步状态：算法平台完成后推送
+  sdccCompareDone?: boolean; // SDCC 与 KA 验收单的后台对碰是否已出结果（undefined 视为已出）
   kaVsSdccStatus?: StepStatus;
   ocrVsKaStatus?: StepStatus;
   verifiedAt?: number; // 人工提交验收结论时间
@@ -436,8 +437,9 @@ function compareCountFor(record: { createdAt: number; aiVerdict?: AiVerdict }) {
 }
 
 // 第一步「KA验收单与SDCC订单明细对碰」的真实状态：任一分组「未映射」或「数量不一致」即失败
+// 该步骤在后台独立进行，与图片/OCR 无关；只有对碰出了结果才有状态
 function kaVsSdccStatusFor(record: OcrRecord): StepStatus {
-  if (!record.aiVerdict || record.aiVerdict === "exception") return "no_result";
+  if (record.sdccCompareDone === false) return "no_result";
   const groups = COMPARE_REAL_GROUPS[record.id] ?? fallbackGroups(record.id, compareCountFor(record));
   return groups.every((g) => groupStatus(g).pass) ? "success" : "fail";
 }
@@ -445,7 +447,8 @@ function kaVsSdccStatusFor(record: OcrRecord): StepStatus {
 // 根据当前 AI 审核结论推导两步对碰状态（算法平台未来会直接推送该字段）
 function deriveReviewStepStatuses(record: OcrRecord): OcrRecord {
   if (record.aiVerdict === "exception" || !record.aiVerdict) {
-    return { ...record, kaVsSdccStatus: "no_result", ocrVsKaStatus: "no_result" };
+    // OCR 尚未出结果：第一步仍可能已完成对碰
+    return { ...record, kaVsSdccStatus: kaVsSdccStatusFor(record), ocrVsKaStatus: "no_result" };
   }
   const step1 = kaVsSdccStatusFor(record);
   // 第二步只取决于 OCR 与 KA 验收单自身的对碰结果，与第一步无关
@@ -2750,8 +2753,9 @@ function NeutralTag({ children }: { children: React.ReactNode }) {
   );
 }
 
-function SdccDataStatusBadge({ record, noImages }: { record: OcrRecord; noImages: boolean }) {
-  const status = noImages ? "no_result" : kaVsSdccStatusFor(record);
+function SdccDataStatusBadge({ record }: { record: OcrRecord }) {
+  // SDCC 对碰在后台独立进行，与图片/OCR 无关：只有出了对碰结果才展示一致/不一致
+  const status = kaVsSdccStatusFor(record);
   if (status === "success")
     return (
       <Badge variant="status" className="w-20 justify-center gap-1 border-0 bg-[color:var(--success)]/15 font-normal text-[color:var(--success)]">
@@ -3880,7 +3884,7 @@ function DocPanel({
               />
             ) : (
               <div className="rounded-lg border border-dashed border-border p-8 text-center text-xs text-muted-foreground">
-                未上传该类别的图片
+                暂无图片上传
               </div>
             )}
           </div>
