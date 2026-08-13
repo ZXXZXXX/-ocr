@@ -3758,40 +3758,47 @@ function DetailStepNav({
                 <ChevronRight className="size-5" />
               </span>
             )}
-          <button
-
-            key={it.n}
-            type="button"
-            onClick={() => onChange(it.n)}
-            className={cn(
-              "flex flex-1 items-center gap-2 rounded-xl border px-4 py-2.5 text-left transition-colors",
-              active
-                ? "border-primary/40 bg-primary/5"
-                : "border-border bg-background/60 hover:bg-muted/40",
-            )}
-          >
-            <span
+            <button
+              key={it.n}
+              type="button"
+              onClick={() => onChange(it.n)}
               className={cn(
-                "flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-medium",
+                "flex flex-1 items-center gap-2 rounded-xl border px-4 py-2.5 text-left transition-colors",
                 active
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground",
+                  ? "border-primary/40 bg-primary/5"
+                  : "border-border bg-background/60 hover:bg-muted/40",
+                it.n === 2 && stale && "border-dashed border-[color:var(--warning)]/60",
               )}
             >
-              {it.n}
-            </span>
-            <span className="min-w-0">
-              <span className="block text-xs font-medium text-foreground">{it.title}</span>
-              <span className="block truncate text-[11px] text-muted-foreground">{it.desc}</span>
-            </span>
-            {it.n === 2 && badCount > 0 && (
-              <span className="ml-auto shrink-0 rounded bg-destructive/15 px-1.5 py-0.5 text-[11px] text-destructive">
-                {badCount} 项差异
+              <span
+                className={cn(
+                  "flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-medium",
+                  active
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground",
+                )}
+              >
+                {it.n}
               </span>
-            )}
-          </button>
+              <span className="min-w-0">
+                <span className="block text-xs font-medium text-foreground">{it.title}</span>
+                <span className="block truncate text-[11px] text-muted-foreground">{it.desc}</span>
+              </span>
+              {it.n === 2 &&
+                (stale ? (
+                  <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded bg-[color:var(--warning)]/20 px-1.5 py-0.5 text-[11px] text-[color:var(--warning-foreground)]">
+                    <RefreshCw className="size-3" /> 待重新核对
+                  </span>
+                ) : badCount > 0 ? (
+                  <span className="ml-auto shrink-0 rounded bg-destructive/15 px-1.5 py-0.5 text-[11px] text-destructive">
+                    {badCount} 项差异
+                  </span>
+                ) : null)}
+            </button>
+          </Fragment>
         );
       })}
+
     </div>
   );
 }
