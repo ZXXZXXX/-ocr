@@ -3568,40 +3568,111 @@ function extractOcrProductRows(record: OcrRecord) {
   return out;
 }
 
+// 同一货品可能存在 KA货号 ~ 69码 ~ 统一产品代码 的多对多对多关系。
+// 将通过任一编号可连通的记录合并为一个“组”，以组为维度汇总各来源数量后比对。
+type MergedGroup = {
+  barcodes: string[];
+  kaCodes: string[];
+  sdCodes: string[];
+  ka: CompareItem[];
+  sd: CompareItem[];
+};
+
+function mergeGroupsByCode(groups: CompareGroup[]): MergedGroup[] {
+  const parent = new Map<string, string>();
+  const find = (x: string): string => {
+    const p = parent.get(x);
+    if (p === undefined || p === x) {
+      parent.set(x, x);
+      return x;
+    }
+    const r = find(p);
+    parent.set(x, r);
+    return r;
+  };
+  const union = (a: string, b: string) => {
+    const ra = find(a);
+    const rb = find(b);
+    if (ra !== rb) parent.set(ra, rb);
+  };
+  const nodesOf = (g: CompareGroup, gi: number) => {
+    const nodes = [`g:${gi}`];
+    if (g.barcode && g.barcode !== "未映射") nodes.push(`bc:${g.barcode}`);
+    g.ka.forEach((i) => i.code && nodes.push(`ka:${i.code}`));
+    g.sd.forEach((i) => i.code && nodes.push(`sd:${i.code}`));
+    return nodes;
+  };
+  groups.forEach((g, gi) => {
+    const nodes = nodesOf(g, gi);
+    nodes.forEach((n) => find(n));
+    nodes.slice(1).forEach((n) => union(nodes[0], n));
+  });
+
+  const byRoot = new Map<string, MergedGroup>();
+  groups.forEach((g, gi) => {
+    const root = find(`g:${gi}`);
+    let m = byRoot.get(root);
+    if (!m) {
+      m = { barcodes: [], kaCodes: [], sdCodes: [], ka: [], sd: [] };
+      byRoot.set(root, m);
+    }
+    if (g.barcode && !m.barcodes.includes(g.barcode)) m.barcodes.push(g.barcode);
+    g.ka.forEach((i) => {
+      m!.ka.push(i);
+      if (i.code && !m!.kaCodes.includes(i.code)) m!.kaCodes.push(i.code);
+    });
+    g.sd.forEach((i) => {
+      m!.sd.push(i);
+      if (i.code && !m!.sdCodes.includes(i.code)) m!.sdCodes.push(i.code);
+    });
+  });
+  return [...byRoot.values()];
+}
+
 function buildCrossRows(record: OcrRecord): CrossRow[] {
-  const groups =
+  const baseGroups =
     COMPARE_REAL_GROUPS[record.id] ?? fallbackGroups(record.id, compareCountFor(record));
+  const groups = mergeGroupsByCode(baseGroups);
   const ocrRows = extractOcrProductRows(record);
   const usedOcr = new Set<number>();
-  const findOcr = (codes: string[], names: string[]) => {
-    let idx = ocrRows.findIndex(
-      (r, i) => !usedOcr.has(i) && r.code && codes.some((c) => c && c === r.code),
-    );
-    if (idx < 0) {
-      idx = ocrRows.findIndex(
-        (r, i) =>
-          !usedOcr.has(i) &&
-          r.name &&
-          names.some((n) => n && (n.includes(r.name) || r.name.includes(n))),
-      );
+  // 组内可能对应多条 OCR 明细行，全部汇总
+  const collectOcr = (codes: string[], names: string[]) => {
+    const picked: number[] = [];
+    ocrRows.forEach((r, i) => {
+      if (usedOcr.has(i)) return;
+      if (r.code && codes.some((c) => c && c === r.code)) picked.push(i);
+    });
+    if (picked.length === 0) {
+      ocrRows.forEach((r, i) => {
+        if (usedOcr.has(i)) return;
+        if (r.name && names.some((n) => n && (n.includes(r.name) || r.name.includes(n))))
+          picked.push(i);
+      });
     }
-    if (idx < 0) return null;
-    usedOcr.add(idx);
-    return ocrRows[idx];
+    if (picked.length === 0) return null;
+    picked.forEach((i) => usedOcr.add(i));
+    const sum = (key: keyof SourceMetrics) => {
+      const vals = picked
+        .map((i) => ocrRows[i].metrics[key])
+        .filter((v): v is number => v !== null && v !== undefined);
+      return vals.length ? vals.reduce((a, b) => a + b, 0) : null;
+    };
+    return {
+      name: ocrRows[picked[0]].name,
+      metrics: { order: sum("order"), ship: sum("ship"), recv: sum("recv") } as SourceMetrics,
+    };
   };
 
   const rows: CrossRow[] = groups.map((g, gi) => {
-    const kaCodes = g.ka.map((i) => i.code);
-    const sdCodes = g.sd.map((i) => i.code);
     const names = [...g.ka.map((i) => i.name), ...g.sd.map((i) => i.name)];
-    const matched = findOcr([...kaCodes, ...sdCodes], names);
+    const matched = collectOcr([...g.kaCodes, ...g.sdCodes], names);
     const kaOrder = g.ka.length ? sumField(g.ka, "order") : null;
     const kaRecv = g.ka.length ? sumField(g.ka, "recv") : null;
     const sdOrder = g.sd.length ? sumField(g.sd, "order") : null;
     const sdRecv = g.sd.length ? sumField(g.sd, "recv") : null;
     return {
-      key: `${g.barcode}-${gi}`,
-      code: kaCodes[0] ?? sdCodes[0] ?? "-",
+      key: `${g.barcodes.join("_") || "g"}-${gi}`,
+      code: (g.kaCodes.length ? g.kaCodes : g.sdCodes).join("、") || "-",
       name: g.ka[0]?.name ?? g.sd[0]?.name ?? matched?.name ?? "-",
       ka: { order: kaOrder, ship: null, recv: kaRecv },
       sdcc: { order: sdOrder, ship: sdOrder, recv: sdRecv },
@@ -3624,6 +3695,7 @@ function buildCrossRows(record: OcrRecord): CrossRow[] {
 
   return rows;
 }
+
 
 function metricConsistent(row: CrossRow, key: keyof SourceMetrics) {
   const vals = [row.ka[key], row.sdcc[key], row.ocr[key]].filter(
