@@ -3015,6 +3015,11 @@ function DetailView({
   const deliveryImages = record.images.filter((i) => i.docType === "delivery_note");
   const shippingImages = record.images.filter((i) => i.docType === "shipping_slip");
   const [autoFocus, setAutoFocus] = useState(true);
+  const [step, setStep] = useState<1 | 2>(1);
+  const crossBadCount = useMemo(
+    () => buildCrossRows(record).filter((r) => !crossRowConsistent(r)).length,
+    [record],
+  );
   const [compareOpen, setCompareOpen] = useState(false);
   const [compareLoading, setCompareLoading] = useState(false);
   const openCompare = () => {
