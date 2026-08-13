@@ -3581,6 +3581,18 @@ type MergedGroup = {
   sd: CompareItem[];
 };
 
+// 同一货品的多个 69 码（新旧包装/箱码规格差异）在主数据中互为别名，
+// 通过这些别名连通后，组内会同时出现多个 KA码 / 69码 / 统一产品代码。
+const BARCODE_ALIAS_SETS: string[][] = [
+  ["6925303710903", "6925303711153"],
+  ["6925303793050", "6925303793067"],
+  ["6925303795214", "6925303795535"],
+  ["6925303770556", "6925303770563"],
+  ["6925303797775", "6925303797782"],
+  ["6925303713003", "6925303740351"],
+  ["6901028180001", "6901028180018"],
+];
+
 function mergeGroupsByCode(groups: CompareGroup[]): MergedGroup[] {
   const parent = new Map<string, string>();
   const find = (x: string): string => {
@@ -3609,6 +3621,14 @@ function mergeGroupsByCode(groups: CompareGroup[]): MergedGroup[] {
     const nodes = nodesOf(g, gi);
     nodes.forEach((n) => find(n));
     nodes.slice(1).forEach((n) => union(nodes[0], n));
+  });
+  // 主数据中互为别名的 69 码合并为同一货品组
+  const presentBarcodes = new Set(
+    groups.map((g) => g.barcode).filter((b) => b && b !== "未映射"),
+  );
+  BARCODE_ALIAS_SETS.forEach((set) => {
+    const hit = set.filter((b) => presentBarcodes.has(b));
+    hit.slice(1).forEach((b) => union(`bc:${hit[0]}`, `bc:${b}`));
   });
 
   const byRoot = new Map<string, MergedGroup>();
