@@ -3015,6 +3015,11 @@ function DetailView({
   const deliveryImages = record.images.filter((i) => i.docType === "delivery_note");
   const shippingImages = record.images.filter((i) => i.docType === "shipping_slip");
   const [autoFocus, setAutoFocus] = useState(true);
+  const [step, setStep] = useState<1 | 2>(1);
+  const crossBadCount = useMemo(
+    () => buildCrossRows(record).filter((r) => !crossRowConsistent(r)).length,
+    [record],
+  );
   const [compareOpen, setCompareOpen] = useState(false);
   const [compareLoading, setCompareLoading] = useState(false);
   const openCompare = () => {
@@ -3183,22 +3188,26 @@ function DetailView({
           </div>
         </div>
       )}
-      <AiReviewSteps record={record} onViewDetail={openCompare} />
+      <DetailStepNav step={step} onChange={setStep} badCount={crossBadCount} />
       </SheetHeader>
 
       <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
-        <DocPanel
-          deliveryPages={deliveryPages}
-          deliveryImages={deliveryImages}
-          shippingImages={shippingImages}
-          editing={editing}
-          autoFocus={autoFocus}
-          setAutoFocus={setAutoFocus}
-          failureReason={record.failedReason}
-          onChange={(pageIdx, chunkId, v) =>
-            handleEditChange("delivery_note", pageIdx, chunkId, v)
-          }
-        />
+        {step === 1 ? (
+          <DocPanel
+            deliveryPages={deliveryPages}
+            deliveryImages={deliveryImages}
+            shippingImages={shippingImages}
+            editing={editing}
+            autoFocus={autoFocus}
+            setAutoFocus={setAutoFocus}
+            failureReason={record.failedReason}
+            onChange={(pageIdx, chunkId, v) =>
+              handleEditChange("delivery_note", pageIdx, chunkId, v)
+            }
+          />
+        ) : (
+          <CrossCheckView record={record} />
+        )}
 
         {compareOpen && (
           <div className="absolute inset-0 z-50 flex flex-col overflow-hidden bg-[color:var(--background)] animate-in slide-in-from-right duration-200">
@@ -3211,6 +3220,7 @@ function DetailView({
           </div>
         )}
       </div>
+
 
 
 
@@ -3514,6 +3524,297 @@ function CompareTable({
     </div>
   );
 }
+
+// ---------- 第二步：多来源关键数据核对（KA订单 / SDCC / OCR识别） ----------
+type SourceMetrics = { order: number | null; ship: number | null; recv: number | null };
+type CrossRow = {
+  key: string;
+  code: string;
+  name: string;
+  ka: SourceMetrics;
+  sdcc: SourceMetrics;
+  ocr: SourceMetrics;
+};
+
+const CROSS_METRICS = [
+  { key: "order" as const, label: "订单数量" },
+  { key: "ship" as const, label: "实际发货数量" },
+  { key: "recv" as const, label: "签收数量" },
+];
+
+// 从（可能已被人工修改的）OCR 识别结果中提取货品明细数量
+function extractOcrProductRows(record: OcrRecord) {
+  const out: { code: string; name: string; metrics: SourceMetrics }[] = [];
+  const pages = record.results?.delivery_note ?? [];
+  pages.forEach((page) => {
+    page.chunks.forEach((chunk) => {
+      if (chunk.label !== "Table") return;
+      const parsed = parseTableStructure(chunk.content);
+      if (!parsed) return;
+      const mapping = computeAutoTableMapping(parsed.headerCells);
+      const pick = (row: string[], key: string) => {
+        const idx = mapping.get(key);
+        if (idx === undefined) return null;
+        return parseQuantityText(row[idx] ?? "");
+      };
+      const text = (row: string[], key: string) => {
+        const idx = mapping.get(key);
+        if (idx === undefined) return "";
+        return (row[idx] ?? "").replace(/（[^）]*）/g, "").trim();
+      };
+      parsed.rows.forEach((row) => {
+        const code = text(row, "物料编码");
+        const name = text(row, "物料名称");
+        if (!code && !name) return;
+        out.push({
+          code,
+          name,
+          metrics: {
+            order: pick(row, "订单数量"),
+            ship: pick(row, "发货数量"),
+            recv: pick(row, "签收数量"),
+          },
+        });
+      });
+    });
+  });
+  return out;
+}
+
+function buildCrossRows(record: OcrRecord): CrossRow[] {
+  const groups =
+    COMPARE_REAL_GROUPS[record.id] ?? fallbackGroups(record.id, compareCountFor(record));
+  const ocrRows = extractOcrProductRows(record);
+  const usedOcr = new Set<number>();
+  const findOcr = (codes: string[], names: string[]) => {
+    let idx = ocrRows.findIndex(
+      (r, i) => !usedOcr.has(i) && r.code && codes.some((c) => c && c === r.code),
+    );
+    if (idx < 0) {
+      idx = ocrRows.findIndex(
+        (r, i) =>
+          !usedOcr.has(i) &&
+          r.name &&
+          names.some((n) => n && (n.includes(r.name) || r.name.includes(n))),
+      );
+    }
+    if (idx < 0) return null;
+    usedOcr.add(idx);
+    return ocrRows[idx];
+  };
+
+  const rows: CrossRow[] = groups.map((g, gi) => {
+    const kaCodes = g.ka.map((i) => i.code);
+    const sdCodes = g.sd.map((i) => i.code);
+    const names = [...g.ka.map((i) => i.name), ...g.sd.map((i) => i.name)];
+    const matched = findOcr([...kaCodes, ...sdCodes], names);
+    const kaOrder = g.ka.length ? sumField(g.ka, "order") : null;
+    const kaRecv = g.ka.length ? sumField(g.ka, "recv") : null;
+    const sdOrder = g.sd.length ? sumField(g.sd, "order") : null;
+    const sdRecv = g.sd.length ? sumField(g.sd, "recv") : null;
+    return {
+      key: `${g.barcode}-${gi}`,
+      code: kaCodes[0] ?? sdCodes[0] ?? "-",
+      name: g.ka[0]?.name ?? g.sd[0]?.name ?? matched?.name ?? "-",
+      ka: { order: kaOrder, ship: null, recv: kaRecv },
+      sdcc: { order: sdOrder, ship: sdOrder, recv: sdRecv },
+      ocr: matched?.metrics ?? { order: null, ship: null, recv: null },
+    };
+  });
+
+  // OCR 中识别到、但 KA/SDCC 均未出现的商品
+  ocrRows.forEach((r, i) => {
+    if (usedOcr.has(i)) return;
+    rows.push({
+      key: `ocr-${i}-${r.code || r.name}`,
+      code: r.code || "-",
+      name: r.name || "-",
+      ka: { order: null, ship: null, recv: null },
+      sdcc: { order: null, ship: null, recv: null },
+      ocr: r.metrics,
+    });
+  });
+
+  return rows;
+}
+
+function metricConsistent(row: CrossRow, key: keyof SourceMetrics) {
+  const vals = [row.ka[key], row.sdcc[key], row.ocr[key]].filter(
+    (v): v is number => v !== null && v !== undefined,
+  );
+  if (vals.length < 2) return true;
+  return vals.every((v) => v === vals[0]);
+}
+
+function crossRowConsistent(row: CrossRow) {
+  return CROSS_METRICS.every((m) => metricConsistent(row, m.key));
+}
+
+function CrossCheckView({ record }: { record: OcrRecord }) {
+  const rows = useMemo(() => buildCrossRows(record), [record]);
+  const badRows = rows.filter((r) => !crossRowConsistent(r));
+
+  if (rows.length === 0) {
+    return (
+      <div className="flex flex-1 items-center justify-center p-10 text-xs text-muted-foreground">
+        暂无可核对的数据
+      </div>
+    );
+  }
+
+  const cell = (row: CrossRow, source: "ka" | "sdcc" | "ocr", key: keyof SourceMetrics) => {
+    const v = row[source][key];
+    const bad = !metricConsistent(row, key);
+    return (
+      <td
+        className={cn(
+          "whitespace-nowrap px-3 py-2 text-right text-sm tabular-nums",
+          bad ? "font-medium text-[color:var(--destructive)]" : "text-foreground",
+          v === null && "text-muted-foreground",
+        )}
+      >
+        {v === null ? "-" : v}
+      </td>
+    );
+  };
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div className="flex shrink-0 items-center gap-3 border-b border-border px-6 py-3">
+        <div className="text-sm font-medium text-foreground">关键数据一致性核对</div>
+        <div className="text-xs text-muted-foreground">
+          以当前识别结果（含人工修改）与 KA 订单数据、SDCC 数据自动比对
+        </div>
+        <div className="ml-auto">
+          {badRows.length === 0 ? (
+            <span className="inline-flex items-center gap-1 rounded-md bg-[color:var(--success)]/15 px-2 py-1 text-xs text-[color:var(--success)]">
+              <CheckCircle2 className="size-3.5" /> 全部一致（共 {rows.length} 项商品）
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 rounded-md bg-destructive/15 px-2 py-1 text-xs text-destructive">
+              <XCircle className="size-3.5" /> 共 {badRows.length} 项商品数据不一致
+            </span>
+          )}
+        </div>
+      </div>
+      <div className="min-h-0 flex-1 overflow-auto px-6 py-4">
+        <table className="w-full border-collapse text-sm">
+          <thead>
+            <tr className="bg-muted/50 text-xs text-muted-foreground">
+              <th rowSpan={2} className="border border-border px-3 py-2 text-left font-medium">
+                物料名称
+              </th>
+              <th rowSpan={2} className="border border-border px-3 py-2 text-left font-medium">
+                物料编码
+              </th>
+              {CROSS_METRICS.map((m) => (
+                <th
+                  key={m.key}
+                  colSpan={3}
+                  className="border border-border px-3 py-2 text-center font-medium"
+                >
+                  {m.label}
+                </th>
+              ))}
+            </tr>
+            <tr className="bg-muted/30 text-[11px] text-muted-foreground">
+              {CROSS_METRICS.map((m) => (
+                <Fragment key={m.key}>
+                  <th className="border border-border px-3 py-1.5 text-right font-normal">KA订单</th>
+                  <th className="border border-border px-3 py-1.5 text-right font-normal">SDCC</th>
+                  <th className="border border-border px-3 py-1.5 text-right font-normal">OCR识别</th>
+                </Fragment>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => {
+              const bad = !crossRowConsistent(row);
+              return (
+                <tr
+                  key={row.key}
+                  className="border-border"
+                  style={bad ? { backgroundColor: ROW_MISMATCH_BG } : undefined}
+                >
+                  <td className="max-w-[260px] truncate border border-border px-3 py-2 text-sm text-foreground">
+                    {row.name}
+                  </td>
+                  <td className="whitespace-nowrap border border-border px-3 py-2 font-mono text-xs text-muted-foreground">
+                    {row.code}
+                  </td>
+                  {CROSS_METRICS.map((m) => (
+                    <Fragment key={m.key}>
+                      {cell(row, "ka", m.key)}
+                      {cell(row, "sdcc", m.key)}
+                      {cell(row, "ocr", m.key)}
+                    </Fragment>
+                  ))}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ---------- 详情页两步导航 ----------
+function DetailStepNav({
+  step,
+  onChange,
+  badCount,
+}: {
+  step: 1 | 2;
+  onChange: (s: 1 | 2) => void;
+  badCount: number;
+}) {
+  const items = [
+    { n: 1 as const, title: "识别结果核对", desc: "核对图片与 OCR 识别结果并人工修改" },
+    { n: 2 as const, title: "关键数据核对", desc: "KA订单 / SDCC / OCR 三方关键数据一致性" },
+  ];
+  return (
+    <div className="mt-4 flex items-center gap-2">
+      {items.map((it) => {
+        const active = step === it.n;
+        return (
+          <button
+            key={it.n}
+            type="button"
+            onClick={() => onChange(it.n)}
+            className={cn(
+              "flex flex-1 items-center gap-2 rounded-xl border px-4 py-2.5 text-left transition-colors",
+              active
+                ? "border-primary/40 bg-primary/5"
+                : "border-border bg-background/60 hover:bg-muted/40",
+            )}
+          >
+            <span
+              className={cn(
+                "flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-medium",
+                active
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground",
+              )}
+            >
+              {it.n}
+            </span>
+            <span className="min-w-0">
+              <span className="block text-xs font-medium text-foreground">{it.title}</span>
+              <span className="block truncate text-[11px] text-muted-foreground">{it.desc}</span>
+            </span>
+            {it.n === 2 && badCount > 0 && (
+              <span className="ml-auto shrink-0 rounded bg-destructive/15 px-1.5 py-0.5 text-[11px] text-destructive">
+                {badCount} 项差异
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 
 function CompareView({
   recordId,
