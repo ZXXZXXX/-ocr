@@ -3518,6 +3518,9 @@ type CrossRow = {
   key: string;
   code: string;
   name: string;
+  kaCodes: string[];
+  barcodes: string[];
+  sdCodes: string[];
   ka: SourceMetrics;
   sdcc: SourceMetrics;
   ocr: SourceMetrics;
