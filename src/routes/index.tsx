@@ -3730,10 +3730,12 @@ function DetailStepNav({
   step,
   onChange,
   badCount,
+  stale,
 }: {
   step: 1 | 2;
   onChange: (s: 1 | 2) => void;
   badCount: number;
+  stale: boolean;
 }) {
   const items = [
     { n: 1 as const, title: "识别结果核对", desc: "核对图片与 OCR 识别结果并人工修改" },
@@ -3741,10 +3743,23 @@ function DetailStepNav({
   ];
   return (
     <div className="mt-4 flex items-center gap-2">
-      {items.map((it) => {
+      {items.map((it, idx) => {
         const active = step === it.n;
         return (
+          <Fragment key={it.n}>
+            {idx > 0 && (
+              <span
+                aria-hidden
+                className={cn(
+                  "flex shrink-0 items-center",
+                  stale ? "text-[color:var(--warning)]" : "text-muted-foreground/50",
+                )}
+              >
+                <ChevronRight className="size-5" />
+              </span>
+            )}
           <button
+
             key={it.n}
             type="button"
             onClick={() => onChange(it.n)}
