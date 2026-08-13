@@ -3518,6 +3518,9 @@ type CrossRow = {
   key: string;
   code: string;
   name: string;
+  kaCodes: string[];
+  barcodes: string[];
+  sdCodes: string[];
   ka: SourceMetrics;
   sdcc: SourceMetrics;
   ocr: SourceMetrics;
@@ -3674,6 +3677,9 @@ function buildCrossRows(record: OcrRecord): CrossRow[] {
       key: `${g.barcodes.join("_") || "g"}-${gi}`,
       code: (g.kaCodes.length ? g.kaCodes : g.sdCodes).join("、") || "-",
       name: g.ka[0]?.name ?? g.sd[0]?.name ?? matched?.name ?? "-",
+      kaCodes: g.kaCodes,
+      barcodes: g.barcodes.filter((b) => b && b !== "未映射"),
+      sdCodes: g.sdCodes,
       ka: { order: kaOrder, ship: null, recv: kaRecv },
       sdcc: { order: sdOrder, ship: sdOrder, recv: sdRecv },
       ocr: matched?.metrics ?? { order: null, ship: null, recv: null },
@@ -3687,6 +3693,9 @@ function buildCrossRows(record: OcrRecord): CrossRow[] {
       key: `ocr-${i}-${r.code || r.name}`,
       code: r.code || "-",
       name: r.name || "-",
+      kaCodes: r.code ? [r.code] : [],
+      barcodes: [],
+      sdCodes: [],
       ka: { order: null, ship: null, recv: null },
       sdcc: { order: null, ship: null, recv: null },
       ocr: r.metrics,
@@ -3802,7 +3811,13 @@ function CrossCheckView({
                 物料名称
               </th>
               <th rowSpan={2} className="border border-border px-3 py-2 text-left font-medium">
-                物料编码
+                KA货号（KA码）
+              </th>
+              <th rowSpan={2} className="border border-border px-3 py-2 text-left font-medium">
+                69码
+              </th>
+              <th rowSpan={2} className="border border-border px-3 py-2 text-left font-medium">
+                统一产品代码
               </th>
               {CROSS_METRICS.map((m) => (
                 <th
@@ -3836,9 +3851,22 @@ function CrossCheckView({
                   <td className="max-w-[260px] truncate border border-border px-3 py-2 text-sm text-foreground">
                     {row.name}
                   </td>
-                  <td className="whitespace-nowrap border border-border px-3 py-2 font-mono text-xs text-muted-foreground">
-                    {row.code}
-                  </td>
+                  {[row.kaCodes, row.barcodes, row.sdCodes].map((codes, ci) => (
+                    <td
+                      key={ci}
+                      className="border border-border px-3 py-2 align-top font-mono text-xs text-muted-foreground"
+                    >
+                      {codes.length ? (
+                        <div className="flex max-w-[180px] flex-wrap gap-x-1.5 gap-y-0.5">
+                          {codes.map((c) => (
+                            <span key={c}>{c}</span>
+                          ))}
+                        </div>
+                      ) : (
+                        "-"
+                      )}
+                    </td>
+                  ))}
                   {CROSS_METRICS.map((m) => (
                     <Fragment key={m.key}>
                       {cell(row, "ka", m.key)}
