@@ -3737,7 +3737,7 @@ function DetailStepNav({
 }) {
   const items = [
     { n: 1 as const, title: "识别结果核对", desc: "核对图片与 OCR 识别结果并人工修改" },
-    { n: 2 as const, title: "关键数据核对", desc: "KA订单 / SDCC / OCR 三方关键数据一致性" },
+    { n: 2 as const, title: "关键数据核对", desc: "核对多方关键数据的一致性" },
   ];
   return (
     <div className="mt-4 flex items-center gap-2">
