@@ -3851,9 +3851,22 @@ function CrossCheckView({
                   <td className="max-w-[260px] truncate border border-border px-3 py-2 text-sm text-foreground">
                     {row.name}
                   </td>
-                  <td className="whitespace-nowrap border border-border px-3 py-2 font-mono text-xs text-muted-foreground">
-                    {row.code}
-                  </td>
+                  {[row.kaCodes, row.barcodes, row.sdCodes].map((codes, ci) => (
+                    <td
+                      key={ci}
+                      className="border border-border px-3 py-2 align-top font-mono text-xs text-muted-foreground"
+                    >
+                      {codes.length ? (
+                        <div className="flex max-w-[180px] flex-wrap gap-x-1.5 gap-y-0.5">
+                          {codes.map((c) => (
+                            <span key={c}>{c}</span>
+                          ))}
+                        </div>
+                      ) : (
+                        "-"
+                      )}
+                    </td>
+                  ))}
                   {CROSS_METRICS.map((m) => (
                     <Fragment key={m.key}>
                       {cell(row, "ka", m.key)}
