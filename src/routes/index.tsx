@@ -3834,7 +3834,7 @@ function CrossCheckView({
                 物料编号（KA码）
               </th>
               <th rowSpan={2} className="border border-border px-3 py-2 text-left font-medium">
-                69码
+                产品单元条码
               </th>
               <th rowSpan={2} className="border border-border px-3 py-2 text-left font-medium">
                 统一产品代码
