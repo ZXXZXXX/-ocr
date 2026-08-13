@@ -43,8 +43,8 @@ import {
   ArrowRight,
   Link,
   Link2Off,
-  Info,
   Rows2,
+
 } from "lucide-react";
 
 import receiptRtmartAsset from "@/assets/receipt_rtmart.jpg.asset.json";
@@ -182,13 +182,6 @@ const VERDICT_LABEL: Record<AiVerdict, string> = {
   fail: "不通过",
   exception: "异常",
 };
-// AI 预审结论为「审核异常」时，视为「物料数据列无法匹配」——固定这些数量列在过滤展示时无法自动匹配
-const EXCEPTION_UNMATCHED_COLS = new Set<string>(["订单数量", "拒收数量"]);
-// 生成「审核异常」下未匹配列的 KA 验收单期望值（稳定伪随机，仅用于演示校验）
-function kaExpectedForCell(recordId: string | undefined, rowIdx: number, key: string): number {
-  const h = stableStrHash(`ka-${recordId ?? ""}-${rowIdx}-${key}`);
-  return (h % 30) + 1;
-}
 const STATUS_LABEL: Record<Status, string> = {
   queued: "排队中",
   recognizing: "AI 识别中",
@@ -1290,32 +1283,6 @@ function annotateMismatchesInDOM(
   });
 }
 
-// 将过滤视图中的单元格文本改动回写到原始 HTML
-function updateHtmlTableCell(
-  html: string,
-  rowIdx: number,
-  colIdx: number,
-  newText: string,
-): string {
-  if (typeof document === "undefined") return html;
-  const div = document.createElement("div");
-  div.innerHTML = html;
-  const table = div.querySelector("table");
-  if (!table) return html;
-  const bodyRows = Array.from(
-    table.querySelectorAll("tbody > tr"),
-  ) as HTMLTableRowElement[];
-  const dataRows = bodyRows.filter((r) => {
-    const inner = r.innerHTML;
-    return !/colspan\s*=/i.test(inner) && !/总计|合计/.test(inner);
-  });
-  const row = dataRows[rowIdx];
-  if (!row) return html;
-  const cell = row.children[colIdx] as HTMLElement | undefined;
-  if (!cell) return html;
-  cell.textContent = newText;
-  return div.innerHTML;
-}
 
 // 兼容旧调用：现在保留原始 OCR HTML，不再在数据阶段裁剪表格。
 function enrichTableChunks(chunks: Chunk[]): Chunk[] {
@@ -5406,8 +5373,6 @@ function TableChunkView({
 }) {
   const { recordId, recordStatus } = useContext(DetailRecordContext);
   const storeKey = editedCellsKey(recordId, chunk.id);
-  const [filterOn, setFilterOn] = useState(true);
-  const [overrides, setOverrides] = useState<Record<string, number | null>>({});
   const [editedCells, setEditedCells] = useState<Set<string>>(
     () => new Set(editedCellsStore.get(storeKey) ?? []),
   );
@@ -5423,323 +5388,17 @@ function TableChunkView({
   };
   const locked = recordStatus === "verified";
   const lockedCells = locked ? editedCells : undefined;
-  const handleOverride = (key: string, idx: number | null | undefined) => {
-    setOverrides((prev) => {
-      const next = { ...prev };
-      if (idx === undefined) delete next[key];
-      else next[key] = idx;
-      return next;
-    });
-  };
   return (
     <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
-      <div className="flex items-center justify-end gap-2 text-xs text-muted-foreground">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Info className="size-3.5 cursor-help text-muted-foreground" />
-          </TooltipTrigger>
-          <TooltipContent side="top" sideOffset={4}>
-            <p className="max-w-[16rem] text-xs">仅显示核心 6 列</p>
-          </TooltipContent>
-        </Tooltip>
-        <Label htmlFor="filter-toggle" className="cursor-pointer">
-          过滤展示
-        </Label>
-        <button
-          type="button"
-          id="filter-toggle"
-          role="switch"
-          aria-checked={filterOn}
-          aria-label="过滤展示"
-          onClick={() => setFilterOn((v) => !v)}
-          className={cn(
-            "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors",
-            filterOn ? "bg-primary" : "bg-input",
-          )}
-        >
-          <span
-            className={cn(
-              "pointer-events-none block size-4 rounded-full bg-background shadow transition-transform",
-              filterOn ? "translate-x-4" : "translate-x-0",
-            )}
-          />
-        </button>
-      </div>
-      {filterOn ? (
-        <FilteredTableView
-          html={chunk.content}
-          overrides={overrides}
-          onOverrideChange={handleOverride}
-          readOnly={readOnly}
-          onChange={onChange}
-          editedCells={editedCells}
-          lockedCells={lockedCells}
-          markEdited={markEdited}
-        />
-      ) : (
-        <EditableTableHtml
-          html={chunk.content}
-          readOnly={readOnly}
-          mustEdit={mustEdit}
-          onChange={onChange}
-          editedCells={editedCells}
-          lockedCells={lockedCells}
-          markEdited={markEdited}
-        />
-      )}
-    </div>
-  );
-}
-
-function FilteredTableView({
-  html,
-  overrides,
-  onOverrideChange,
-  readOnly,
-  onChange,
-  editedCells,
-  lockedCells,
-  markEdited,
-}: {
-  html: string;
-  overrides: Record<string, number | null>;
-  onOverrideChange: (key: string, sourceIdx: number | null | undefined) => void;
-  readOnly?: boolean;
-  onChange?: (v: string) => void;
-  editedCells?: Set<string>;
-  lockedCells?: Set<string>;
-  markEdited?: (rowIdx: number, colIdx: number) => void;
-}) {
-  const { recordId, aiRejectionReason, aiExceptionReason, aiVerdict } = useContext(DetailRecordContext);
-  const isException = aiVerdict === "exception";
-  const isColumnMismatchException = isException && (!aiExceptionReason || aiExceptionReason === "物料数据列无法匹配");
-  const mismatchOpts = { hasRejection: !!aiRejectionReason, recordId, aiRejectionReason };
-  const mismatchSourceLabel = aiRejectionReason
-    ? REJECTION_SOURCE_LABEL[aiRejectionReason]
-    : "物流签收单";
-  const parsed = useMemo(() => parseTableStructure(html), [html]);
-  const autoMap = useMemo(
-    () => (parsed ? computeAutoTableMapping(parsed.headerCells) : new Map<string, number>()),
-    [parsed],
-  );
-  if (!parsed) {
-    return (
-      <div className="rounded border border-dashed border-border p-4 text-xs text-muted-foreground">
-        无法解析表格结构，请关闭过滤展示查看原始识别结果
-      </div>
-    );
-  }
-  const { headerCells, rows } = parsed;
-
-  const columns = PRODUCT_TABLE_COLUMNS.map((key) => {
-    const overrideIdx = overrides[key];
-    // 「审核异常」记录：固定的几列物料数量列视为未匹配（除非用户手动指定）
-    const autoIdx = isColumnMismatchException && EXCEPTION_UNMATCHED_COLS.has(key)
-      ? undefined
-      : autoMap.get(key);
-    // null 表示用户明确选择「无匹配列」
-    const sourceIdx = overrideIdx !== undefined ? (overrideIdx ?? undefined) : autoIdx;
-    const originalHeader = sourceIdx !== undefined ? headerCells[sourceIdx] : undefined;
-    const isExceptionCol = isColumnMismatchException && EXCEPTION_UNMATCHED_COLS.has(key);
-    return {
-      key,
-      sourceIdx,
-      originalHeader,
-      isOverridden: overrideIdx !== undefined,
-      isExceptionCol,
-    };
-  });
-
-  // 计算异常列的 KA 期望值 & 当前是否与 OCR 单元格匹配
-  const kaValueFor = (rowIdx: number, key: string) => kaExpectedForCell(recordId, rowIdx, key);
-  const isExceptionCellMismatch = (rowIdx: number, key: string, val: string) => {
-    const expected = kaValueFor(rowIdx, key);
-    const num = parseQuantityText(val);
-    return num === null || num !== expected;
-  };
-
-
-  return (
-    <div className="overflow-x-auto text-xs">
-      <table className="w-full border-collapse">
-        <thead>
-          <tr>
-            {columns.map((col) => {
-              const currentIdx = col.sourceIdx;
-              const overrideIdx = overrides[col.key];
-              const selectValue =
-                overrideIdx === null
-                  ? "__none__"
-                  : currentIdx !== undefined
-                    ? String(currentIdx)
-                    : "";
-              return (
-                <th
-                  key={col.key}
-                  className="border border-border bg-muted px-4 py-2 text-left align-top font-medium"
-                >
-                  <div className="flex flex-col gap-0.5">
-                    <span className="flex items-center gap-1 whitespace-nowrap text-sm">
-                      {col.sourceIdx === undefined && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <AlertTriangle className="size-3.5 shrink-0 cursor-help text-amber-500" />
-                          </TooltipTrigger>
-                          <TooltipContent side="top" className="text-xs">
-                            未找到匹配列，可手动选择列
-                          </TooltipContent>
-                        </Tooltip>
-                      )}
-                      {col.key}
-                    </span>
-                    <Select
-                      value={selectValue}
-                      onValueChange={(v) => {
-                        if (v === "__none__") {
-                          onOverrideChange(col.key, null);
-                          return;
-                        }
-                        const idx = parseInt(v, 10);
-                        if (Number.isFinite(idx)) onOverrideChange(col.key, idx);
-                      }}
-                    >
-                      <SelectTrigger
-                        className="h-5 w-auto max-w-[8rem] gap-1 border-0 bg-transparent px-0 py-0 text-[11px] font-normal text-muted-foreground shadow-none hover:text-foreground focus:ring-0 focus:ring-offset-0 [&>span]:block [&>span]:truncate [&>svg]:size-3 [&>svg]:opacity-50"
-                        title={overrideIdx === null ? "无匹配列" : (col.originalHeader || undefined)}
-                      >
-                        <SelectValue placeholder="选择列">
-                          {overrideIdx === null ? "无匹配列" : (col.originalHeader || "选择列")}
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="__none__" className="text-xs">
-                          无匹配列
-                        </SelectItem>
-                        {headerCells.map((h, i) => (
-                          <SelectItem key={i} value={String(i)} className="text-xs">
-                            {h || `第 ${i + 1} 列`}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </th>
-              );
-            })}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row, rowIdx) => {
-            const rowMismatch = columns.some((col) => {
-              if (col.sourceIdx === undefined) return false;
-              if (!PRODUCT_QUANTITY_KEYS.has(col.key)) return false;
-              const edited = editedCells?.has(`${rowIdx}-${col.sourceIdx}`) ?? false;
-              if (edited) return false;
-              const val = row[col.sourceIdx] ?? "";
-              if (col.isExceptionCol) {
-                return isExceptionCellMismatch(rowIdx, col.key, val);
-              }
-              return !!computeMismatch(rowIdx, col.key, val, mismatchOpts);
-            });
-            return (
-            <tr key={rowIdx} style={rowMismatch ? { backgroundColor: ROW_MISMATCH_BG } : undefined}>
-              {columns.map((col) => {
-                if (col.sourceIdx === undefined) {
-                  // 「审核异常」的未匹配列：浅灰色展示 KA 验收单的对应数据
-                  if (col.isExceptionCol) {
-                    const kaVal = kaValueFor(rowIdx, col.key);
-                    return (
-                      <td
-                        key={col.key}
-                        className="border border-border px-4 py-2 text-sm leading-loose"
-                        style={{ color: "#9ca3af" }}
-                        title="AI 未识别到对应列，显示 KA 验收单数据；请手动选择列进行校验"
-                      >
-                        KA验收单：{kaVal}
-                      </td>
-                    );
-                  }
-                  return (
-                    <td
-                      key={col.key}
-                      className="border border-border px-4 py-2 text-sm italic leading-loose text-muted-foreground"
-                    >
-                      —
-                    </td>
-                  );
-                }
-                const sourceIdx = col.sourceIdx;
-                const val = row[sourceIdx] ?? "";
-                const edited = editedCells?.has(`${rowIdx}-${sourceIdx}`) ?? false;
-                const exceptionMismatch =
-                  !edited && col.isExceptionCol
-                    ? isExceptionCellMismatch(rowIdx, col.key, val)
-                    : false;
-                const kaExpected = col.isExceptionCol ? kaValueFor(rowIdx, col.key) : null;
-                const mismatch =
-                  !edited && !col.isExceptionCol && PRODUCT_QUANTITY_KEYS.has(col.key)
-                    ? computeMismatch(rowIdx, col.key, val, mismatchOpts)
-                    : null;
-                const isLocked = lockedCells?.has(`${rowIdx}-${sourceIdx}`) ?? false;
-                const editable = !readOnly && !!onChange && !isLocked;
-                const handleBlur = (e: React.FocusEvent<HTMLSpanElement>) => {
-                  if (!onChange) return;
-                  const next = (e.currentTarget.textContent ?? "").trim();
-                  if (next === val) return;
-                  markEdited?.(rowIdx, sourceIdx);
-                  onChange(updateHtmlTableCell(html, rowIdx, sourceIdx, next));
-                };
-                const isRed = !!mismatch || exceptionMismatch;
-                return (
-                  <td
-                    key={col.key}
-                    className="whitespace-nowrap border border-border px-4 py-2 text-sm leading-loose"
-                  >
-                    <span
-                      contentEditable={editable}
-                      suppressContentEditableWarning
-                      spellCheck={false}
-                      onBlur={handleBlur}
-                      className={cn(
-                        "inline-block min-w-[1ch] outline-none",
-                        editable &&
-                          "cursor-text rounded px-0.5 hover:bg-muted/50 focus:bg-muted/70",
-                      )}
-                      style={isRed ? { color: "#dc2626" } : undefined}
-                    >
-                      {val}
-                    </span>
-                    {mismatch && (
-                      <span
-                        contentEditable={false}
-                        className="ml-0.5 text-xs"
-                        style={{ color: "#dc2626" }}
-                      >
-                        （{mismatchSourceLabel}：{mismatch.safeThird}）
-                      </span>
-                    )}
-                    {exceptionMismatch && kaExpected != null && (
-                      <span
-                        contentEditable={false}
-                        className="ml-0.5 text-xs"
-                        style={{ color: "#dc2626" }}
-                      >
-                        （KA验收单：{kaExpected}）
-                      </span>
-                    )}
-                    {edited && (
-                      <span contentEditable={false} className="ml-0.5 text-xs italic">
-                        （已编辑）
-                      </span>
-                    )}
-                  </td>
-                );
-              })}
-            </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      <EditableTableHtml
+        html={chunk.content}
+        readOnly={readOnly}
+        mustEdit={mustEdit}
+        onChange={onChange}
+        editedCells={editedCells}
+        lockedCells={lockedCells}
+        markEdited={markEdited}
+      />
     </div>
   );
 }
