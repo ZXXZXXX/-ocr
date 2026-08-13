@@ -3684,8 +3684,15 @@ function CrossCheckView({
         <div className="text-xs text-muted-foreground">
           以当前识别结果（含人工修改）与 KA 订单数据、SDCC 数据自动比对
         </div>
-        <div className="ml-auto">
-          {badRows.length === 0 ? (
+        <div className="ml-auto flex items-center gap-2">
+          {checkedAt && !stale && (
+            <span className="text-[11px] text-muted-foreground">核对于 {fmtTime(checkedAt)}</span>
+          )}
+          {stale ? (
+            <span className="inline-flex items-center gap-1 rounded-md bg-[color:var(--warning)]/20 px-2 py-1 text-xs text-[color:var(--warning-foreground)]">
+              <AlertTriangle className="size-3.5" /> 结果已失效
+            </span>
+          ) : badRows.length === 0 ? (
             <span className="inline-flex items-center gap-1 rounded-md bg-[color:var(--success)]/15 px-2 py-1 text-xs text-[color:var(--success)]">
               <CheckCircle2 className="size-3.5" /> 全部一致（共 {rows.length} 项商品）
             </span>
@@ -3694,9 +3701,28 @@ function CrossCheckView({
               <XCircle className="size-3.5" /> 共 {badRows.length} 项商品数据不一致
             </span>
           )}
+          <Button
+            size="sm"
+            variant={stale ? "default" : "outline"}
+            className="h-7 gap-1.5 text-xs"
+            disabled={running || !onRun}
+            onClick={() => onRun?.()}
+          >
+            <RefreshCw className={cn("size-3.5", running && "animate-spin")} />
+            {running ? "核对中…" : stale ? "重新核对" : "重新核对"}
+          </Button>
         </div>
       </div>
-      <div className="min-h-0 flex-1 overflow-auto px-6 py-4">
+      {stale && (
+        <div className="flex shrink-0 items-start gap-2 border-b border-[color:var(--warning)]/30 bg-[color:var(--warning)]/10 px-6 py-2.5 text-xs text-[color:var(--warning-foreground)]">
+          <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
+          <span className="leading-relaxed">
+            识别结果已被人工修改，以下核对结果基于修改前的数据，请点击「重新核对」后再确认。
+          </span>
+        </div>
+      )}
+      <div className="relative min-h-0 flex-1 overflow-auto px-6 py-4">
+        <div className={cn(stale && "pointer-events-none opacity-45 grayscale")}>
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr className="bg-muted/50 text-xs text-muted-foreground">
@@ -3753,10 +3779,12 @@ function CrossCheckView({
             })}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );
 }
+
 
 // ---------- 详情页两步导航 ----------
 function DetailStepNav({
