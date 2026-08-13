@@ -3183,22 +3183,26 @@ function DetailView({
           </div>
         </div>
       )}
-      <AiReviewSteps record={record} onViewDetail={openCompare} />
+      <DetailStepNav step={step} onChange={setStep} badCount={crossBadCount} />
       </SheetHeader>
 
       <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
-        <DocPanel
-          deliveryPages={deliveryPages}
-          deliveryImages={deliveryImages}
-          shippingImages={shippingImages}
-          editing={editing}
-          autoFocus={autoFocus}
-          setAutoFocus={setAutoFocus}
-          failureReason={record.failedReason}
-          onChange={(pageIdx, chunkId, v) =>
-            handleEditChange("delivery_note", pageIdx, chunkId, v)
-          }
-        />
+        {step === 1 ? (
+          <DocPanel
+            deliveryPages={deliveryPages}
+            deliveryImages={deliveryImages}
+            shippingImages={shippingImages}
+            editing={editing}
+            autoFocus={autoFocus}
+            setAutoFocus={setAutoFocus}
+            failureReason={record.failedReason}
+            onChange={(pageIdx, chunkId, v) =>
+              handleEditChange("delivery_note", pageIdx, chunkId, v)
+            }
+          />
+        ) : (
+          <CrossCheckView record={record} />
+        )}
 
         {compareOpen && (
           <div className="absolute inset-0 z-50 flex flex-col overflow-hidden bg-[color:var(--background)] animate-in slide-in-from-right duration-200">
@@ -3211,6 +3215,7 @@ function DetailView({
           </div>
         )}
       </div>
+
 
 
 
