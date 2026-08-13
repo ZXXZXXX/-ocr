@@ -3169,7 +3169,7 @@ function DetailView({
           </div>
         </div>
       )}
-      <DetailStepNav step={step} onChange={setStep} badCount={crossBadCount} />
+      <DetailStepNav step={step} onChange={setStep} badCount={crossBadCount} stale={crossStale} />
       </SheetHeader>
 
       <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -3187,7 +3187,13 @@ function DetailView({
             }
           />
         ) : (
-          <CrossCheckView record={record} />
+          <CrossCheckView
+            record={record}
+            stale={crossStale}
+            running={crossRunning}
+            checkedAt={crossCheckedAt}
+            onRun={runCrossCheck}
+          />
         )}
 
         {compareOpen && (
