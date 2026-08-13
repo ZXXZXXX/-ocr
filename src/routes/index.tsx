@@ -3622,6 +3622,14 @@ function mergeGroupsByCode(groups: CompareGroup[]): MergedGroup[] {
     nodes.forEach((n) => find(n));
     nodes.slice(1).forEach((n) => union(nodes[0], n));
   });
+  // 主数据中互为别名的 69 码合并为同一货品组
+  const presentBarcodes = new Set(
+    groups.map((g) => g.barcode).filter((b) => b && b !== "未映射"),
+  );
+  BARCODE_ALIAS_SETS.forEach((set) => {
+    const hit = set.filter((b) => presentBarcodes.has(b));
+    hit.slice(1).forEach((b) => union(`bc:${hit[0]}`, `bc:${b}`));
+  });
 
   const byRoot = new Map<string, MergedGroup>();
   groups.forEach((g, gi) => {
