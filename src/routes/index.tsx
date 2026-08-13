@@ -3057,6 +3057,7 @@ function DetailView({
     value: string,
   ) {
     onChange(docType, pageIdx, chunkId, value);
+    setCrossStale(true);
     if (editing) setLastEditedAt(Date.now());
   }
   function submitVerdict(verdict: AiVerdict) {
