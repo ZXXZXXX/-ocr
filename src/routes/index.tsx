@@ -3959,6 +3959,8 @@ function DetailStepNav({
             <button
               key={it.n}
               type="button"
+              disabled={it.n === 3 && step3Disabled}
+              title={it.n === 3 && step3Disabled ? "OCR识别失败，无法进入关键数据对碰" : undefined}
               onClick={() => onChange(it.n)}
               className={cn(
                 "flex flex-1 items-center gap-2 rounded-xl border px-4 py-2.5 text-left transition-colors",
@@ -3966,6 +3968,7 @@ function DetailStepNav({
                   ? "border-primary/40 bg-primary/5"
                   : "border-border bg-background/60 hover:bg-muted/40",
                 it.n === 3 && stale && "border-dashed border-[color:var(--warning)]/60",
+                it.n === 3 && step3Disabled && "cursor-not-allowed opacity-50 hover:bg-background/60",
               )}
             >
               <span
@@ -3982,16 +3985,27 @@ function DetailStepNav({
                 <span className="block text-xs font-medium text-foreground">{it.title}</span>
                 <span className="block truncate text-[11px] text-muted-foreground">{it.desc}</span>
               </span>
-              {it.n === 3 &&
-                (stale ? (
-                  <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded bg-[color:var(--warning)]/20 px-1.5 py-0.5 text-[11px] text-[color:var(--warning-foreground)]">
-                    <RefreshCw className="size-3" /> 待重新核对
-                  </span>
-                ) : badCount > 0 ? (
-                  <span className="ml-auto shrink-0 rounded bg-destructive/15 px-1.5 py-0.5 text-[11px] text-destructive">
-                    {badCount} 项差异
-                  </span>
-                ) : null)}
+              {it.n === 3 && stale ? (
+                <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded bg-[color:var(--warning)]/20 px-1.5 py-0.5 text-[11px] text-[color:var(--warning-foreground)]">
+                  <RefreshCw className="size-3" /> 待重新核对
+                </span>
+              ) : (
+                <span
+                  className={cn(
+                    "ml-auto shrink-0 rounded px-1.5 py-0.5 text-[11px]",
+                    statuses[it.n] === "success"
+                      ? "bg-[color:var(--success)]/15 text-[color:var(--success)]"
+                      : statuses[it.n] === "fail"
+                        ? "bg-destructive/15 text-destructive"
+                        : "bg-muted text-muted-foreground",
+                  )}
+                >
+                  {STEP_STATUS_LABEL[it.n][statuses[it.n]]}
+                  {it.n === 3 && statuses[3] === "fail" && badCount > 0 ? `（${badCount} 项差异）` : ""}
+                </span>
+              )}
+            </button>
+
             </button>
           </Fragment>
         );
