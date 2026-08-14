@@ -4027,6 +4027,7 @@ function DocPanel({
   setAutoFocus,
   failureReason,
   onChange,
+  rightSlot,
 }: {
   deliveryPages: DocPage[];
   deliveryImages: UploadedImage[];
@@ -4036,6 +4037,7 @@ function DocPanel({
   setAutoFocus: (v: boolean) => void;
   failureReason?: string;
   onChange: (pageIdx: number, chunkId: string, value: string) => void;
+  rightSlot?: React.ReactNode;
 }) {
 
 
