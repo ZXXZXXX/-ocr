@@ -3061,6 +3061,33 @@ function DetailView({
       
       </SheetHeader>
 
+      {record.status !== "failed" && record.status !== "queued" && record.status !== "recognizing" && record.images && record.images.length > 0 && (
+        <div className="shrink-0 border-b border-border bg-background px-6 py-3">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-foreground">签收状态</span>
+              <span className="text-xs text-muted-foreground">人工确认实际签收情况</span>
+            </div>
+            <Select
+              value={record.signatureStatus ?? ""}
+              onValueChange={(v) => onSignatureStatusChange(v as SignatureStatus)}
+              disabled={record.status === "verified"}
+            >
+              <SelectTrigger className="h-8 w-[140px] text-sm">
+                <SelectValue placeholder="待识别" />
+              </SelectTrigger>
+              <SelectContent>
+                {(Object.keys(SIGNATURE_LABEL) as SignatureStatus[]).map((k) => (
+                  <SelectItem key={k} value={k} className="text-sm">
+                    {SIGNATURE_LABEL[k]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      )}
+
       <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
         <DocPanel
           deliveryPages={deliveryPages}
