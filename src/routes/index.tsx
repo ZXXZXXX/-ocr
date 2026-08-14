@@ -1905,7 +1905,7 @@ function Workbench() {
   const [progressMinimized, setProgressMinimized] = useState(false);
   const [progressDismissed, setProgressDismissed] = useState(true);
   const [detailId, setDetailId] = useState<string | null>(null);
-  const [detailEditing, setDetailEditing] = useState(false);
+  
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   // Filters
@@ -2103,57 +2103,6 @@ function Workbench() {
     );
   }
 
-  function mutateChunk(
-    recordId: string,
-    docType: DocType,
-    pageIdx: number,
-    chunkId: string,
-    mut: (c: Chunk) => Chunk | null,
-  ) {
-    setRecords((prev) =>
-      prev.map((r) => {
-        if (r.id !== recordId || !r.results) return r;
-        const pages = r.results[docType];
-        if (!pages) return r;
-        const newPages = pages.map((p, i) => {
-          if (i !== pageIdx) return p;
-          return {
-            ...p,
-            chunks: p.chunks.map((c) => {
-              if (c.id !== chunkId) return c;
-              return mut(c) ?? c;
-            }),
-          };
-        });
-        return { ...r, results: { ...r.results, [docType]: newPages } };
-      }),
-    );
-  }
-
-  function updateChunk(
-    recordId: string,
-    docType: DocType,
-    pageIdx: number,
-    chunkId: string,
-    newContent: string,
-  ) {
-    mutateChunk(recordId, docType, pageIdx, chunkId, (c) => {
-      if (c.content === newContent) return null;
-      return {
-        ...c,
-        content: newContent,
-        edited: true,
-        confirmed: false,
-        original: c.original ?? c.content,
-        lastEdit: { by: CURRENT_USER, at: new Date().toISOString() },
-      };
-    });
-  }
-
-
-  function replaceResults(recordId: string, results: NonNullable<OcrRecord["results"]>) {
-    setRecords((prev) => prev.map((r) => (r.id === recordId ? { ...r, results } : r)));
-  }
 
   function updateSignatureStatus(recordId: string, signatureStatus: SignatureStatus) {
     setRecords((prev) =>
@@ -2508,7 +2457,7 @@ function Workbench() {
                                 if (r.imageUpdated) {
                                   setRecords((prev) => prev.map((x) => x.id === r.id ? { ...x, imageUpdated: false } : x));
                                 }
-                                setDetailEditing(true);
+                                
                               }}
                             >
                               审核
@@ -2525,7 +2474,7 @@ function Workbench() {
                               if (r.imageUpdated) {
                                 setRecords((prev) => prev.map((x) => x.id === r.id ? { ...x, imageUpdated: false } : x));
                               }
-                              setDetailEditing(false);
+                              
                             }}
                           >
                             查看
@@ -2681,7 +2630,7 @@ function Workbench() {
           </div>
         )}
 
-        <Sheet open={!!detailRecord} onOpenChange={(o) => { if (!o) { setDetailId(null); setDetailEditing(false); }}}>
+        <Sheet open={!!detailRecord} onOpenChange={(o) => { if (!o) setDetailId(null); }}>
           <SheetContent
             side="right"
             className="flex w-[80vw] flex-col gap-0 p-0 sm:max-w-[80vw] [&>button]:hidden"
@@ -2689,11 +2638,6 @@ function Workbench() {
             {detailRecord && (
               <DetailView
                 record={detailRecord}
-                initialEditing={detailEditing}
-                onChange={(docType, pageIdx, chunkId, val) =>
-                  updateChunk(detailRecord.id, docType, pageIdx, chunkId, val)
-                }
-                onReplaceResults={(results) => replaceResults(detailRecord.id, results)}
                 onSignatureStatusChange={(value) => updateSignatureStatus(detailRecord.id, value)}
                 onSubmit={(verdict) => {
                   submitVerification(detailRecord.id, verdict);
@@ -2949,22 +2893,13 @@ function AiReviewSteps({
 // ---------- Detail view ----------
 function DetailView({
   record,
-  initialEditing = false,
-  onChange,
-  onReplaceResults,
   onSignatureStatusChange,
   onSubmit,
 }: {
   record: OcrRecord;
-  initialEditing?: boolean;
-  onChange: (docType: DocType, pageIdx: number, chunkId: string, value: string) => void;
-  onReplaceResults: (results: NonNullable<OcrRecord["results"]>) => void;
   onSignatureStatusChange: (value: SignatureStatus) => void;
   onSubmit: (verdict?: AiVerdict) => void;
 }) {
-
-
-  const pending = pendingLowConf(record);
   const deliveryPages = record.results?.delivery_note ?? [];
   const deliveryImages = record.images.filter((i) => i.docType === "delivery_note");
   const shippingImages = record.images.filter((i) => i.docType === "shipping_slip");
@@ -2979,7 +2914,6 @@ function DetailView({
     () => buildCrossRows(record).filter((r) => !crossRowConsistent(r)).length,
     [record],
   );
-  // 识别结果被修改后，关键数据核对结果失效，需人工重新触发
   const [crossStale, setCrossStale] = useState(false);
   const [crossRunning, setCrossRunning] = useState(false);
   const [crossCheckedAt, setCrossCheckedAt] = useState<number | null>(null);
@@ -3000,64 +2934,10 @@ function DetailView({
     window.setTimeout(() => setCompareLoading(false), 600);
   };
 
-
-
-
-  const [editing, setEditing] = useState(initialEditing);
-  const [lastEditedAt, setLastEditedAt] = useState<number | null>(null);
-  const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
-  // snapshot taken on entering edit mode — used to cancel
-  const snapshotRef = useRef<NonNullable<OcrRecord["results"]> | null>(null);
-  const hasChanges = lastEditedAt !== null;
-
-  function startEdit() {
-    // deep-clone current results so cancel can restore
-    snapshotRef.current = JSON.parse(JSON.stringify(record.results ?? {})) as NonNullable<
-      OcrRecord["results"]
-    >;
-    setLastEditedAt(null);
-    setEditing(true);
-  }
-  useEffect(() => {
-    if (initialEditing) startEdit();
-  }, [initialEditing]);
-  function discardAndClose() {
-    if (snapshotRef.current) onReplaceResults(snapshotRef.current);
-    snapshotRef.current = null;
-    setLastEditedAt(null);
-    setEditing(false);
-    toast.info("已放弃本次修改");
-  }
-  function keepEditsAndClose() {
-    snapshotRef.current = null;
-    setLastEditedAt(null);
-    setEditing(false);
-    toast.success("修改已保存");
-  }
-  function requestCancel() {
-    if (hasChanges) {
-      setCancelConfirmOpen(true);
-    } else {
-      snapshotRef.current = null;
-      setEditing(false);
-    }
-  }
-  function handleEditChange(
-    docType: DocType,
-    pageIdx: number,
-    chunkId: string,
-    value: string,
-  ) {
-    onChange(docType, pageIdx, chunkId, value);
-    setCrossStale(true);
-    if (editing) setLastEditedAt(Date.now());
-  }
   function submitVerdict(verdict: AiVerdict) {
-    snapshotRef.current = null;
-    setLastEditedAt(null);
-    setEditing(false);
     onSubmit(verdict);
   }
+
 
   return (
     <DetailRecordContext.Provider value={{ recordId: record.id, aiRejectionReason: record.aiRejectionReason, aiExceptionReason: record.aiExceptionReason, recordStatus: record.status, aiVerdict: record.aiVerdict }}>
@@ -3070,11 +2950,6 @@ function DetailView({
                 <NeutralTag>
                   {record.status === "verified" ? "已完成审核" : "待审核"}
                 </NeutralTag>
-              {editing && (
-                <span className="inline-flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-xs text-primary">
-                  <Pencil className="size-3" /> 编辑中
-                </span>
-              )}
             </SheetTitle>
             {(record.aiVerdict || record.signatureStatus) && (
               <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
@@ -3130,19 +3005,6 @@ function DetailView({
             </SheetDescription>
           </div>
           <div className="flex items-center gap-2">
-            {!editing && (
-              <>
-                {record.status === "pending_review" ? (
-                  <Button onClick={startEdit} className="gap-2">
-                    <Pencil className="size-4" /> 开始审核
-                  </Button>
-                ) : record.status === "verified" ? (
-                  <span className="inline-flex items-center gap-1 rounded-md bg-[color:var(--success)]/15 px-2 py-1 text-xs text-[color:var(--success)]">
-                    <CheckCircle2 className="size-3.5" /> 已验收并回传
-                  </span>
-                ) : null}
-              </>
-            )}
             <SheetClose asChild>
               <Button variant="outline" size="icon" className="shrink-0" aria-label="关闭">
                 <X className="size-4" />
@@ -3169,13 +3031,12 @@ function DetailView({
           deliveryPages={deliveryPages}
           deliveryImages={deliveryImages}
           shippingImages={shippingImages}
-          editing={editing}
+          editing={false}
           autoFocus={autoFocus}
           setAutoFocus={setAutoFocus}
           failureReason={record.failedReason}
-          onChange={(pageIdx, chunkId, v) =>
-            handleEditChange("delivery_note", pageIdx, chunkId, v)
-          }
+          onChange={() => {}}
+
           topSlot={
             <DetailStepNav step={step} onChange={setStep} badCount={crossBadCount} stale={crossStale} record={record} />
           }
@@ -3217,35 +3078,13 @@ function DetailView({
 
 
 
-      {(editing || record.status === "failed") && (
+      {record.status === "pending_review" && (
         <div className="shrink-0 border-t border-border bg-background px-6 py-3 shadow-[0_-4px_12px_-8px_rgba(0,0,0,0.15)]">
           <div className="flex items-center justify-between gap-4">
             <div className="text-xs text-muted-foreground">
-              {record.status === "failed" ? (
-                <span className="text-[color:var(--destructive)]">
-                  AI 识别失败，请进行人工验收
-                </span>
-              ) : lastEditedAt ? (
-                <span className="inline-flex items-center gap-1">
-                  <Pencil className="size-3" />
-                  最后修改：{fmtTime(lastEditedAt)}
-                </span>
-              ) : (
-                <span className="text-muted-foreground/70">尚未修改</span>
-              )}
+              请确认 OCR 识别结果与签收状态，选择审核结论
             </div>
             <div className="flex items-center gap-2">
-              {record.status === "failed" ? (
-                <SheetClose asChild>
-                  <Button variant="outline" className="gap-2">
-                    <X className="size-4" /> 取消
-                  </Button>
-                </SheetClose>
-              ) : (
-                <Button variant="outline" onClick={requestCancel} className="gap-2">
-                  <X className="size-4" /> 取消
-                </Button>
-              )}
               <Button
                 variant="outline"
                 onClick={() => submitVerdict("fail")}
@@ -3263,39 +3102,8 @@ function DetailView({
           </div>
         </div>
       )}
-
-
-      <AlertDialog open={cancelConfirmOpen} onOpenChange={setCancelConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>是否保存刚刚编辑的信息？</AlertDialogTitle>
-            <AlertDialogDescription>
-              你已经修改了识别结果但未提交验收结论。选择「保存修改」将保留修改内容并退出编辑；选择「放弃修改」将恢复到进入编辑前的状态。
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>继续编辑</AlertDialogCancel>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setCancelConfirmOpen(false);
-                discardAndClose();
-              }}
-            >
-              放弃修改
-            </Button>
-            <AlertDialogAction
-              onClick={() => {
-                setCancelConfirmOpen(false);
-                keepEditsAndClose();
-              }}
-            >
-              保存修改
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
+
     </DetailRecordContext.Provider>
   );
 }
