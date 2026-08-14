@@ -4002,6 +4002,7 @@ function DocPanel({
   failureReason,
   onChange,
   rightSlot,
+  topSlot,
 }: {
   deliveryPages: DocPage[];
   deliveryImages: UploadedImage[];
@@ -4012,6 +4013,7 @@ function DocPanel({
   failureReason?: string;
   onChange: (pageIdx: number, chunkId: string, value: string) => void;
   rightSlot?: React.ReactNode;
+  topSlot?: React.ReactNode;
 }) {
 
 
@@ -4370,6 +4372,9 @@ function DocPanel({
 
       {/* RIGHT: step content (step 2 = recognition results) */}
       <div className="flex flex-1 flex-col overflow-hidden" style={{ minWidth: 0 }}>
+        {topSlot && (
+          <div className="shrink-0 border-b border-border bg-background/60 px-3 py-2">{topSlot}</div>
+        )}
         {rightSlot ? rightSlot : (<>
         <div className="flex h-10 items-center justify-between gap-3 border-b border-border bg-background/60 px-3 py-1.5">
           <div className="text-xs font-medium text-foreground">识别结果</div>
