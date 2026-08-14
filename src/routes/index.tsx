@@ -3926,19 +3926,19 @@ function DetailStepNav({
                 <span className="block truncate text-[13px] font-medium text-foreground">{it.title}</span>
               </span>
               {it.n === 3 && stale ? (
-                <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded bg-[color:var(--warning)]/20 px-1.5 py-0.5 text-[11px] text-[color:var(--warning-foreground)]">
-                  <RefreshCw className="size-3" /> 待重新核对
+                <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded bg-[color:var(--warning)]/20 px-2 py-0.5 text-xs text-[color:var(--warning-foreground)]">
+                  <RefreshCw className="size-3.5" /> 待重新核对
                 </span>
               ) : (
                 <span className="ml-auto shrink-0">
                   {statuses[it.n] === "success" ? (
-                    <CheckCircle2 className="size-5 text-[color:var(--success)]" />
+                    <CheckCircle2 className="size-6 text-[color:var(--success)]" />
                   ) : statuses[it.n] === "fail" ? (
                     <div className="flex items-center gap-1">
-                      <XCircle className="size-5 text-destructive" />
+                      <XCircle className="size-6 text-destructive" />
                     </div>
                   ) : (
-                    <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
+                    <span className="rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground">
                       {STEP_STATUS_LABEL[it.n][statuses[it.n]]}
                     </span>
                   )}
