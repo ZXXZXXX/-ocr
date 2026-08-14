@@ -3970,20 +3970,24 @@ function CompareView({
   recordId: string;
   count: number;
   loading: boolean;
-  onBack: () => void;
+  onBack?: () => void;
 }) {
   return (
     <div className="flex flex-1 flex-col overflow-hidden bg-background">
       <div className="flex h-11 items-center gap-2 border-b border-border bg-background/60 px-4">
-        <button
-          type="button"
-          onClick={onBack}
-          className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="size-4" />
-          返回
-        </button>
-        <span className="text-xs text-muted-foreground">/</span>
+        {onBack && (
+          <>
+            <button
+              type="button"
+              onClick={onBack}
+              className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft className="size-4" />
+              返回
+            </button>
+            <span className="text-xs text-muted-foreground">/</span>
+          </>
+        )}
         <span className="text-sm font-medium text-foreground">KA验收单与SDCC订单明细对碰</span>
       </div>
       <div className="flex-1 overflow-y-auto p-4">
@@ -3992,6 +3996,7 @@ function CompareView({
     </div>
   );
 }
+
 
 function DocPanel({
   deliveryPages,
