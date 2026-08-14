@@ -3410,9 +3410,7 @@ function CompareTable({
   count: number;
   loading: boolean;
 }) {
-  const groups = useMemo<CompareGroup[]>(() => {
-    return COMPARE_REAL_GROUPS[recordId] ?? fallbackGroups(recordId, count);
-  }, [recordId, count]);
+  const rows = useMemo(() => buildCompareRows(recordId, count), [recordId, count]);
 
   if (loading) {
     return (
@@ -3423,97 +3421,15 @@ function CompareTable({
     );
   }
 
-  const fmt = (v: number | null | undefined) => (v === null || v === undefined ? "-" : v);
+  if (rows.length === 0) {
+    return (
+      <div className="rounded-lg border border-dashed border-border p-10 text-center text-xs text-muted-foreground">
+        暂无可对碰的数据
+      </div>
+    );
+  }
 
-  return (
-    <div className="overflow-hidden rounded-lg border border-border">
-      <table className="w-full text-sm">
-        <thead className="bg-muted/50 text-xs text-muted-foreground">
-          <tr>
-            <th className="px-3 py-2 text-left font-medium">序号</th>
-            <th className="px-3 py-2 text-left font-medium">产品单元条码（69码）</th>
-            <th className="px-3 py-2 text-left font-medium">来源</th>
-            <th className="px-3 py-2 text-left font-medium">编码</th>
-            <th className="px-3 py-2 text-left font-medium">品名</th>
-            <th className="px-3 py-2 text-right font-medium">订单数量</th>
-            <th className="px-3 py-2 text-right font-medium">发货/签收数量</th>
-            <th className="px-3 py-2 text-center font-medium">对碰状态</th>
-          </tr>
-        </thead>
-        <tbody>
-          {groups.map((g, gi) => {
-            const status = groupStatus(g);
-            const bg = status.pass ? undefined : "#fde7ec";
-            const kaRows = g.ka.length > 0 ? g.ka : [null];
-            const sdRows = g.sd.length > 0 ? g.sd : [null];
-            const totalRows = kaRows.length + sdRows.length + 1; // + 合计
-            const kaSumO = sumField(g.ka, "order");
-            const kaSumR = sumField(g.ka, "recv");
-            const sdSumO = sumField(g.sd, "order");
-            const sdSumR = sumField(g.sd, "recv");
-            return (
-              <Fragment key={`${g.barcode}-${gi}`}>
-                {kaRows.map((it, i) => (
-                  <tr key={`ka-${gi}-${i}`} className="border-t border-border" style={bg ? { backgroundColor: bg } : undefined}>
-                    {i === 0 && (
-                      <>
-                        <td className="px-3 py-2 align-top text-muted-foreground" rowSpan={totalRows}>{gi + 1}</td>
-                        <td className="px-3 py-2 align-top font-mono text-xs" rowSpan={totalRows}>{g.barcode}</td>
-                      </>
-                    )}
-                    {i === 0 && (
-                      <td className="px-3 py-2 align-top text-xs font-medium text-foreground/80" rowSpan={kaRows.length}>
-                        KA验收单
-                      </td>
-                    )}
-                    <td className="px-3 py-2 font-mono text-xs">{it ? it.code : "-"}</td>
-                    <td className="px-3 py-2">{it ? it.name : <span className="text-muted-foreground">未映射</span>}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{it ? fmt(it.order) : "-"}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{it ? fmt(it.recv) : "-"}</td>
-                    {i === 0 && (
-                      <td className="px-3 py-2 text-center align-top" rowSpan={totalRows}>
-                        <span
-                          className={
-                            status.pass
-                              ? "inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-600"
-                              : "inline-flex items-center rounded-full bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-600"
-                          }
-                        >
-                          {status.reason}
-                        </span>
-                      </td>
-                    )}
-                  </tr>
-                ))}
-                {sdRows.map((it, i) => (
-                  <tr key={`sd-${gi}-${i}`} className="border-t border-border" style={bg ? { backgroundColor: bg } : undefined}>
-                    {i === 0 && (
-                      <td className="px-3 py-2 align-top text-xs font-medium text-foreground/80" rowSpan={sdRows.length}>
-                        SDCC订单明细
-                      </td>
-                    )}
-                    <td className="px-3 py-2 font-mono text-xs">{it ? it.code : "-"}</td>
-                    <td className="px-3 py-2">{it ? it.name : <span className="text-muted-foreground">未映射</span>}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{it ? fmt(it.order) : "-"}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{it ? fmt(it.recv) : "-"}</td>
-                  </tr>
-                ))}
-                <tr className="border-t border-border" style={bg ? { backgroundColor: bg } : undefined}>
-                  <td className="px-3 py-2 text-xs font-medium text-muted-foreground" colSpan={3}>合计</td>
-                  <td className="px-3 py-2 text-right text-xs tabular-nums text-muted-foreground">
-                    KA {kaSumO} / SDCC {sdSumO}
-                  </td>
-                  <td className="px-3 py-2 text-right text-xs tabular-nums text-muted-foreground">
-                    KA {kaSumR} / SDCC {sdSumR}
-                  </td>
-                </tr>
-              </Fragment>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  );
+  return <KeyDataTable rows={rows} sources={COMPARE_SOURCES} />;
 }
 
 // ---------- 第二步：多来源关键数据核对（KA订单 / SDCC / OCR识别） ----------
@@ -3729,17 +3645,155 @@ function buildCrossRows(record: OcrRecord): CrossRow[] {
   return rows;
 }
 
+type CrossSource = { key: "ka" | "sdcc" | "ocr"; label: string };
+const CROSS_SOURCES: CrossSource[] = [
+  { key: "ka", label: "KA订单" },
+  { key: "sdcc", label: "SDCC" },
+  { key: "ocr", label: "OCR识别" },
+];
+const COMPARE_SOURCES: CrossSource[] = [
+  { key: "ka", label: "KA验收单" },
+  { key: "sdcc", label: "SDCC订单明细" },
+];
 
-function metricConsistent(row: CrossRow, key: keyof SourceMetrics) {
-  const vals = [row.ka[key], row.sdcc[key], row.ocr[key]].filter(
-    (v): v is number => v !== null && v !== undefined,
+// 第一步：仅 KA 与 SDCC 两方，表格格式与第三步一致
+function buildCompareRows(recordId: string, count: number): CrossRow[] {
+  const baseGroups = COMPARE_REAL_GROUPS[recordId] ?? fallbackGroups(recordId, count);
+  const groups = mergeGroupsByCode(baseGroups);
+  return groups.map((g, gi) => {
+    const kaOrder = g.ka.length ? sumField(g.ka, "order") : null;
+    const kaRecv = g.ka.length ? sumField(g.ka, "recv") : null;
+    const sdOrder = g.sd.length ? sumField(g.sd, "order") : null;
+    const sdRecv = g.sd.length ? sumField(g.sd, "recv") : null;
+    return {
+      key: `${g.barcodes.join("_") || "g"}-${gi}`,
+      code: (g.kaCodes.length ? g.kaCodes : g.sdCodes).join("、") || "-",
+      name: g.ka[0]?.name ?? g.sd[0]?.name ?? "-",
+      kaCodes: g.kaCodes,
+      barcodes: g.barcodes.filter((b) => b && b !== "未映射"),
+      sdCodes: g.sdCodes,
+      ka: { order: kaOrder, ship: null, recv: kaRecv },
+      sdcc: { order: sdOrder, ship: sdOrder, recv: sdRecv },
+      ocr: { order: null, ship: null, recv: null },
+    };
+  });
+}
+
+// 统一的关键数据表格（第一步两方 / 第三步三方）
+function KeyDataTable({ rows, sources }: { rows: CrossRow[]; sources: CrossSource[] }) {
+  const cell = (row: CrossRow, source: CrossSource["key"], key: keyof SourceMetrics) => {
+    const v = row[source][key];
+    const bad = !metricConsistent(row, key, sources);
+    return (
+      <td
+        key={`${source}-${key}`}
+        className={cn(
+          "whitespace-nowrap border border-border px-3 py-2 text-right text-sm tabular-nums",
+          bad ? "font-medium text-[color:var(--destructive)]" : "text-foreground",
+          v === null && "text-muted-foreground",
+        )}
+      >
+        {v === null ? "-" : v}
+      </td>
+    );
+  };
+
+  return (
+    <table className="w-full border-collapse text-sm">
+      <thead>
+        <tr className="bg-muted/50 text-xs text-muted-foreground">
+          <th rowSpan={2} className="border border-border px-3 py-2 text-left font-medium">
+            物料名称
+          </th>
+          <th rowSpan={2} className="border border-border px-3 py-2 text-left font-medium">
+            物料编号（KA码）
+          </th>
+          <th rowSpan={2} className="border border-border px-3 py-2 text-left font-medium">
+            产品单元条码
+          </th>
+          <th rowSpan={2} className="border border-border px-3 py-2 text-left font-medium">
+            统一产品代码
+          </th>
+          {CROSS_METRICS.map((m) => (
+            <th
+              key={m.key}
+              colSpan={sources.length}
+              className="border border-border px-3 py-2 text-center font-medium"
+            >
+              {m.label}
+            </th>
+          ))}
+        </tr>
+        <tr className="bg-muted/30 text-[11px] text-muted-foreground">
+          {CROSS_METRICS.map((m) => (
+            <Fragment key={m.key}>
+              {sources.map((s) => (
+                <th
+                  key={s.key}
+                  className="border border-border px-3 py-1.5 text-right font-normal"
+                >
+                  {s.label}
+                </th>
+              ))}
+            </Fragment>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row) => {
+          const bad = !crossRowConsistent(row, sources);
+          return (
+            <tr
+              key={row.key}
+              className="border-border"
+              style={bad ? { backgroundColor: ROW_MISMATCH_BG } : undefined}
+            >
+              <td className="max-w-[260px] truncate border border-border px-3 py-2 text-sm text-foreground">
+                {row.name}
+              </td>
+              {[row.kaCodes, row.barcodes, row.sdCodes].map((codes, ci) => (
+                <td
+                  key={ci}
+                  className="border border-border px-3 py-2 align-top font-mono text-xs text-muted-foreground"
+                >
+                  {codes.length ? (
+                    <div className="flex max-w-[180px] flex-wrap gap-x-1.5 gap-y-0.5">
+                      {codes.map((c) => (
+                        <span key={c}>{c}</span>
+                      ))}
+                    </div>
+                  ) : (
+                    "-"
+                  )}
+                </td>
+              ))}
+              {CROSS_METRICS.map((m) => (
+                <Fragment key={m.key}>{sources.map((s) => cell(row, s.key, m.key))}</Fragment>
+              ))}
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
   );
+}
+
+
+
+function metricConsistent(
+  row: CrossRow,
+  key: keyof SourceMetrics,
+  sources: CrossSource[] = CROSS_SOURCES,
+) {
+  const vals = sources
+    .map((s) => row[s.key][key])
+    .filter((v): v is number => v !== null && v !== undefined);
   if (vals.length < 2) return true;
   return vals.every((v) => v === vals[0]);
 }
 
-function crossRowConsistent(row: CrossRow) {
-  return CROSS_METRICS.every((m) => metricConsistent(row, m.key));
+function crossRowConsistent(row: CrossRow, sources: CrossSource[] = CROSS_SOURCES) {
+  return CROSS_METRICS.every((m) => metricConsistent(row, m.key, sources));
 }
 
 function CrossCheckView({
@@ -3765,22 +3819,6 @@ function CrossCheckView({
       </div>
     );
   }
-
-  const cell = (row: CrossRow, source: "ka" | "sdcc" | "ocr", key: keyof SourceMetrics) => {
-    const v = row[source][key];
-    const bad = !metricConsistent(row, key);
-    return (
-      <td
-        className={cn(
-          "whitespace-nowrap px-3 py-2 text-right text-sm tabular-nums",
-          bad ? "font-medium text-[color:var(--destructive)]" : "text-foreground",
-          v === null && "text-muted-foreground",
-        )}
-      >
-        {v === null ? "-" : v}
-      </td>
-    );
-  };
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -3828,81 +3866,7 @@ function CrossCheckView({
       )}
       <div className="relative min-h-0 flex-1 overflow-auto px-6 py-4">
         <div className={cn(stale && "pointer-events-none opacity-45 grayscale")}>
-        <table className="w-full border-collapse text-sm">
-          <thead>
-            <tr className="bg-muted/50 text-xs text-muted-foreground">
-              <th rowSpan={2} className="border border-border px-3 py-2 text-left font-medium">
-                物料名称
-              </th>
-              <th rowSpan={2} className="border border-border px-3 py-2 text-left font-medium">
-                物料编号（KA码）
-              </th>
-              <th rowSpan={2} className="border border-border px-3 py-2 text-left font-medium">
-                产品单元条码
-              </th>
-              <th rowSpan={2} className="border border-border px-3 py-2 text-left font-medium">
-                统一产品代码
-              </th>
-              {CROSS_METRICS.map((m) => (
-                <th
-                  key={m.key}
-                  colSpan={3}
-                  className="border border-border px-3 py-2 text-center font-medium"
-                >
-                  {m.label}
-                </th>
-              ))}
-            </tr>
-            <tr className="bg-muted/30 text-[11px] text-muted-foreground">
-              {CROSS_METRICS.map((m) => (
-                <Fragment key={m.key}>
-                  <th className="border border-border px-3 py-1.5 text-right font-normal">KA订单</th>
-                  <th className="border border-border px-3 py-1.5 text-right font-normal">SDCC</th>
-                  <th className="border border-border px-3 py-1.5 text-right font-normal">OCR识别</th>
-                </Fragment>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => {
-              const bad = !crossRowConsistent(row);
-              return (
-                <tr
-                  key={row.key}
-                  className="border-border"
-                  style={bad ? { backgroundColor: ROW_MISMATCH_BG } : undefined}
-                >
-                  <td className="max-w-[260px] truncate border border-border px-3 py-2 text-sm text-foreground">
-                    {row.name}
-                  </td>
-                  {[row.kaCodes, row.barcodes, row.sdCodes].map((codes, ci) => (
-                    <td
-                      key={ci}
-                      className="border border-border px-3 py-2 align-top font-mono text-xs text-muted-foreground"
-                    >
-                      {codes.length ? (
-                        <div className="flex max-w-[180px] flex-wrap gap-x-1.5 gap-y-0.5">
-                          {codes.map((c) => (
-                            <span key={c}>{c}</span>
-                          ))}
-                        </div>
-                      ) : (
-                        "-"
-                      )}
-                    </td>
-                  ))}
-                  {CROSS_METRICS.map((m) => (
-                    <Fragment key={m.key}>
-                      {cell(row, "ka", m.key)}
-                      {cell(row, "sdcc", m.key)}
-                      {cell(row, "ocr", m.key)}
-                    </Fragment>
-                  ))}
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        <KeyDataTable rows={rows} sources={CROSS_SOURCES} />
         </div>
       </div>
     </div>
