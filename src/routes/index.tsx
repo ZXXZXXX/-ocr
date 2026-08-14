@@ -3803,17 +3803,9 @@ function CrossCheckView({
           {checkedAt && !stale && (
             <span className="text-[11px] text-muted-foreground">核对于 {fmtTime(checkedAt)}</span>
           )}
-          {stale ? (
+          {stale && (
             <span className="inline-flex items-center gap-1 rounded-md bg-[color:var(--warning)]/20 px-2 py-1 text-xs text-[color:var(--warning-foreground)]">
               <AlertTriangle className="size-3.5" /> 结果已失效
-            </span>
-          ) : badRows.length === 0 ? (
-            <span className="inline-flex items-center gap-1 rounded-md bg-[color:var(--success)]/15 px-2 py-1 text-xs text-[color:var(--success)]">
-              <CheckCircle2 className="size-3.5" /> 全部一致（共 {rows.length} 项商品）
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1 rounded-md bg-destructive/15 px-2 py-1 text-xs text-destructive">
-              <XCircle className="size-3.5" />
             </span>
           )}
           <Button
