@@ -3889,15 +3889,17 @@ function DetailStepNav({
   badCount,
   stale,
 }: {
-  step: 1 | 2;
-  onChange: (s: 1 | 2) => void;
+  step: 1 | 2 | 3;
+  onChange: (s: 1 | 2 | 3) => void;
   badCount: number;
   stale: boolean;
 }) {
   const items = [
-    { n: 1 as const, title: "识别结果核对", desc: "核对图片与 OCR 识别结果并人工修改" },
-    { n: 2 as const, title: "关键数据核对", desc: "核对多方关键数据的一致性" },
+    { n: 1 as const, title: "SDCC数据对碰", desc: "《KA验收单》与《SDCC订单明细》对碰" },
+    { n: 2 as const, title: "识别结果核对", desc: "核对图片与 OCR 识别结果并人工修改" },
+    { n: 3 as const, title: "关键数据核对", desc: "核对多方关键数据的一致性" },
   ];
+
   return (
     <div className="mt-4 flex items-center gap-2">
       {items.map((it, idx) => {
