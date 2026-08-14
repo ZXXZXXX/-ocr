@@ -3957,18 +3957,21 @@ function DetailStepNav({
                   <RefreshCw className="size-3" /> 待重新核对
                 </span>
               ) : (
-                <span
-                  className={cn(
-                    "ml-auto shrink-0 rounded px-1.5 py-0.5 text-[11px]",
-                    statuses[it.n] === "success"
-                      ? "bg-[color:var(--success)]/15 text-[color:var(--success)]"
-                      : statuses[it.n] === "fail"
-                        ? "bg-destructive/15 text-destructive"
-                        : "bg-muted text-muted-foreground",
+                <span className="ml-auto shrink-0">
+                  {statuses[it.n] === "success" ? (
+                    <CheckCircle2 className="size-5 text-[color:var(--success)]" />
+                  ) : statuses[it.n] === "fail" ? (
+                    <div className="flex items-center gap-1">
+                      <XCircle className="size-5 text-destructive" />
+                      {it.n === 3 && badCount > 0 ? (
+                        <span className="text-[11px] font-medium text-destructive">{badCount} 项差异</span>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
+                      {STEP_STATUS_LABEL[it.n][statuses[it.n]]}
+                    </span>
                   )}
-                >
-                  {STEP_STATUS_LABEL[it.n][statuses[it.n]]}
-                  {it.n === 3 && statuses[3] === "fail" && badCount > 0 ? `（${badCount} 项差异）` : ""}
                 </span>
               )}
             </button>
