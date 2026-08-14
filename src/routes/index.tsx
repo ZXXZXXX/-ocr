@@ -35,7 +35,7 @@ import {
   ThumbsDown,
   ChevronLeft,
   ChevronRight,
-  RefreshCw,
+  
   ChevronDown,
   ArrowUp,
   ArrowDown,
