@@ -269,6 +269,7 @@ interface OcrRecord {
   sdccCompareDone?: boolean; // SDCC 与 KA 验收单的后台对碰是否已出结果（undefined 视为已出）
   kaVsSdccStatus?: StepStatus;
   ocrVsKaStatus?: StepStatus;
+  crossCheckStatus?: StepStatus;
   verifiedAt?: number; // 人工提交验收结论时间
   verifiedBy?: string;
   shippingSlipNo?: string; // 出货传票单号，用于搜索
@@ -437,26 +438,42 @@ function kaVsSdccStatusFor(record: OcrRecord): StepStatus {
   return groups.every((g) => groupStatus(g).pass) ? "success" : "fail";
 }
 
-// 根据当前 AI 审核结论推导两步对碰状态（算法平台未来会直接推送该字段）
-function deriveReviewStepStatuses(record: OcrRecord): OcrRecord {
-  if (record.aiVerdict === "exception" || !record.aiVerdict) {
-    // OCR 尚未出结果：第一步仍可能已完成对碰
-    return { ...record, kaVsSdccStatus: kaVsSdccStatusFor(record), ocrVsKaStatus: "no_result" };
-  }
-  const step1 = kaVsSdccStatusFor(record);
-  // 第二步只取决于 OCR 与 KA 验收单自身的对碰结果，与第一步无关
-  const step2: StepStatus = record.aiVerdict === "fail" ? "fail" : "success";
-  if (step1 === "fail") {
-    // 第一步对碰失败 → 预审结论必须为「不通过」
-    const failed: OcrRecord = { ...record, aiVerdict: "fail", kaVsSdccStatus: "fail", ocrVsKaStatus: step2 };
-    return { ...failed, aiRejectionReason: makeAiRejectionReason(failed) };
-  }
-  return {
-    ...record,
-    kaVsSdccStatus: "success",
-    ocrVsKaStatus: step2,
-  };
+// 第二步「OCR识别结果」：识别完成 / 识别失败
+function ocrStatusFor(record: OcrRecord): StepStatus {
+  if (record.status === "queued" || record.status === "recognizing") return "no_result";
+  if (record.status === "failed") return "fail";
+  if (record.failedReason || record.confidence == null || !record.results) return "fail";
+  return "success";
 }
+
+// 根据三步流程推导状态与预审结论
+// 规则：第一步无论通过与否都进入第二步；第二步失败则无法进入第三步且预审结论为「不通过」；
+// 第二步成功且第三步通过时预审结论才是「通过」，否则为「不通过」。
+function deriveReviewStepStatuses(record: OcrRecord): OcrRecord {
+  const step1 = kaVsSdccStatusFor(record);
+  const step2 = ocrStatusFor(record);
+  if (step2 !== "success") {
+    const next: OcrRecord = {
+      ...record,
+      kaVsSdccStatus: step1,
+      ocrVsKaStatus: step2,
+      crossCheckStatus: "no_result",
+      aiVerdict: step2 === "fail" ? "fail" : record.aiVerdict,
+    };
+    return step2 === "fail" ? { ...next, aiRejectionReason: makeAiRejectionReason(next) } : next;
+  }
+  const step3: StepStatus =
+    buildCrossRows(record).every((r) => crossRowConsistent(r)) ? "success" : "fail";
+  const next: OcrRecord = {
+    ...record,
+    kaVsSdccStatus: step1,
+    ocrVsKaStatus: step2,
+    crossCheckStatus: step3,
+    aiVerdict: step3 === "success" ? "pass" : "fail",
+  };
+  return step3 === "success" ? next : { ...next, aiRejectionReason: makeAiRejectionReason(next) };
+}
+
 
 // Extract plain text from a simple HTML string (handles <p>, <br>, entities)
 function htmlToText(html: string): string {
@@ -2983,6 +3000,11 @@ function DetailView({
   const shippingImages = record.images.filter((i) => i.docType === "shipping_slip");
   const [autoFocus, setAutoFocus] = useState(true);
   const [step, setStep] = useState<1 | 2 | 3>(1);
+  const ocrStepOk = (record.ocrVsKaStatus ?? "no_result") === "success";
+  useEffect(() => {
+    if (step === 3 && !ocrStepOk) setStep(2);
+  }, [step, ocrStepOk]);
+
   const crossBadCount = useMemo(
     () => buildCrossRows(record).filter((r) => !crossRowConsistent(r)).length,
     [record],
@@ -3169,7 +3191,7 @@ function DetailView({
           </div>
         </div>
       )}
-      <DetailStepNav step={step} onChange={setStep} badCount={crossBadCount} stale={crossStale} />
+      <DetailStepNav step={step} onChange={setStep} badCount={crossBadCount} stale={crossStale} record={record} />
       </SheetHeader>
 
       <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -3888,23 +3910,39 @@ function CrossCheckView({
 }
 
 
-// ---------- 详情页两步导航 ----------
+// ---------- 详情页三步导航 ----------
+const STEP_STATUS_LABEL: Record<1 | 2 | 3, Record<StepStatus, string>> = {
+  1: { success: "校验通过", fail: "校验不通过", no_result: "待校验" },
+  2: { success: "识别完成", fail: "识别失败", no_result: "待识别" },
+  3: { success: "对碰通过", fail: "对碰不通过", no_result: "待对碰" },
+};
+
 function DetailStepNav({
   step,
   onChange,
   badCount,
   stale,
+  record,
 }: {
   step: 1 | 2 | 3;
   onChange: (s: 1 | 2 | 3) => void;
   badCount: number;
   stale: boolean;
+  record: OcrRecord;
 }) {
+  const step2Status = record.ocrVsKaStatus ?? "no_result";
+  const statuses: Record<1 | 2 | 3, StepStatus> = {
+    1: record.kaVsSdccStatus ?? "no_result",
+    2: step2Status,
+    3: step2Status === "success" ? record.crossCheckStatus ?? "no_result" : "no_result",
+  };
+  const step3Disabled = step2Status !== "success";
   const items = [
-    { n: 1 as const, title: "SDCC数据对碰", desc: "《KA验收单》与《SDCC订单明细》对碰" },
-    { n: 2 as const, title: "识别结果核对", desc: "核对图片与 OCR 识别结果并人工修改" },
-    { n: 3 as const, title: "关键数据核对", desc: "核对多方关键数据的一致性" },
+    { n: 1 as const, title: "系统数据校验", desc: "《KA验收单》与《SDCC订单明细》对碰" },
+    { n: 2 as const, title: "OCR识别结果", desc: "核对图片与 OCR 识别结果并人工修改" },
+    { n: 3 as const, title: "关键数据对碰", desc: "核对多方关键数据的一致性" },
   ];
+
 
   return (
     <div className="mt-4 flex items-center gap-2">
@@ -3926,6 +3964,8 @@ function DetailStepNav({
             <button
               key={it.n}
               type="button"
+              disabled={it.n === 3 && step3Disabled}
+              title={it.n === 3 && step3Disabled ? "OCR识别失败，无法进入关键数据对碰" : undefined}
               onClick={() => onChange(it.n)}
               className={cn(
                 "flex flex-1 items-center gap-2 rounded-xl border px-4 py-2.5 text-left transition-colors",
@@ -3933,6 +3973,7 @@ function DetailStepNav({
                   ? "border-primary/40 bg-primary/5"
                   : "border-border bg-background/60 hover:bg-muted/40",
                 it.n === 3 && stale && "border-dashed border-[color:var(--warning)]/60",
+                it.n === 3 && step3Disabled && "cursor-not-allowed opacity-50 hover:bg-background/60",
               )}
             >
               <span
@@ -3949,16 +3990,25 @@ function DetailStepNav({
                 <span className="block text-xs font-medium text-foreground">{it.title}</span>
                 <span className="block truncate text-[11px] text-muted-foreground">{it.desc}</span>
               </span>
-              {it.n === 3 &&
-                (stale ? (
-                  <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded bg-[color:var(--warning)]/20 px-1.5 py-0.5 text-[11px] text-[color:var(--warning-foreground)]">
-                    <RefreshCw className="size-3" /> 待重新核对
-                  </span>
-                ) : badCount > 0 ? (
-                  <span className="ml-auto shrink-0 rounded bg-destructive/15 px-1.5 py-0.5 text-[11px] text-destructive">
-                    {badCount} 项差异
-                  </span>
-                ) : null)}
+              {it.n === 3 && stale ? (
+                <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded bg-[color:var(--warning)]/20 px-1.5 py-0.5 text-[11px] text-[color:var(--warning-foreground)]">
+                  <RefreshCw className="size-3" /> 待重新核对
+                </span>
+              ) : (
+                <span
+                  className={cn(
+                    "ml-auto shrink-0 rounded px-1.5 py-0.5 text-[11px]",
+                    statuses[it.n] === "success"
+                      ? "bg-[color:var(--success)]/15 text-[color:var(--success)]"
+                      : statuses[it.n] === "fail"
+                        ? "bg-destructive/15 text-destructive"
+                        : "bg-muted text-muted-foreground",
+                  )}
+                >
+                  {STEP_STATUS_LABEL[it.n][statuses[it.n]]}
+                  {it.n === 3 && statuses[3] === "fail" && badCount > 0 ? `（${badCount} 项差异）` : ""}
+                </span>
+              )}
             </button>
           </Fragment>
         );
