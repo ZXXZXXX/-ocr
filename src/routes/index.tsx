@@ -2988,6 +2988,8 @@ function DetailView({
 
   const [compareOpen, setCompareOpen] = useState(false);
   const [compareLoading, setCompareLoading] = useState(false);
+  const [aiReReviewOpen, setAiReReviewOpen] = useState(false);
+  const [aiReReviewOption, setAiReReviewOption] = useState<"" | "driver" | "now">("");
   const openCompare = () => {
     setCompareOpen(true);
     setCompareLoading(true);
