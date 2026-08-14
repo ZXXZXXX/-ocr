@@ -3780,16 +3780,20 @@ function KeyDataTable({ rows, sources }: { rows: CrossRow[]; sources: CrossSourc
 
 
 
-function metricConsistent(row: CrossRow, key: keyof SourceMetrics) {
-  const vals = [row.ka[key], row.sdcc[key], row.ocr[key]].filter(
-    (v): v is number => v !== null && v !== undefined,
-  );
+function metricConsistent(
+  row: CrossRow,
+  key: keyof SourceMetrics,
+  sources: CrossSource[] = CROSS_SOURCES,
+) {
+  const vals = sources
+    .map((s) => row[s.key][key])
+    .filter((v): v is number => v !== null && v !== undefined);
   if (vals.length < 2) return true;
   return vals.every((v) => v === vals[0]);
 }
 
-function crossRowConsistent(row: CrossRow) {
-  return CROSS_METRICS.every((m) => metricConsistent(row, m.key));
+function crossRowConsistent(row: CrossRow, sources: CrossSource[] = CROSS_SOURCES) {
+  return CROSS_METRICS.every((m) => metricConsistent(row, m.key, sources));
 }
 
 function CrossCheckView({
