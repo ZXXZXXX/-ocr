@@ -4517,6 +4517,7 @@ function DocPanel({
             )}
           </div>
         </div>
+        </>)}
       </div>
 
 
