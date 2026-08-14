@@ -3637,10 +3637,7 @@ function DetailStepNav({
             {idx > 0 && (
               <span
                 aria-hidden
-                className={cn(
-                  "flex shrink-0 items-center",
-                  stale ? "text-[color:var(--warning)]" : "text-muted-foreground/50",
-                )}
+                className="flex shrink-0 items-center text-muted-foreground/50"
               >
                 <ChevronRight className="size-4" />
               </span>
@@ -3656,7 +3653,6 @@ function DetailStepNav({
                 active
                   ? "border-primary/40 bg-primary/5"
                   : "border-border bg-background/60 hover:bg-muted/40",
-                it.n === 3 && stale && "border-dashed border-[color:var(--warning)]/60",
                 it.n === 3 && step3Disabled && "cursor-not-allowed opacity-50 hover:bg-background/60",
               )}
             >
@@ -3673,25 +3669,19 @@ function DetailStepNav({
               <span className="min-w-0" title={it.desc}>
                 <span className="block truncate text-[13px] font-medium text-foreground">{it.title}</span>
               </span>
-              {it.n === 3 && stale ? (
-                <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded bg-[color:var(--warning)]/20 px-2 py-0.5 text-xs text-[color:var(--warning-foreground)]">
-                  <RefreshCw className="size-3.5" /> 待重新核对
-                </span>
-              ) : (
-                <span className="ml-auto shrink-0">
-                  {statuses[it.n] === "success" ? (
-                    <CheckCircle2 className="size-6 text-[color:var(--success)]" />
-                  ) : statuses[it.n] === "fail" ? (
-                    <div className="flex items-center gap-1">
-                      <XCircle className="size-6 text-destructive" />
-                    </div>
-                  ) : (
-                    <span className="rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                      {STEP_STATUS_LABEL[it.n][statuses[it.n]]}
-                    </span>
-                  )}
-                </span>
-              )}
+              <span className="ml-auto shrink-0">
+                {statuses[it.n] === "success" ? (
+                  <CheckCircle2 className="size-6 text-[color:var(--success)]" />
+                ) : statuses[it.n] === "fail" ? (
+                  <div className="flex items-center gap-1">
+                    <XCircle className="size-6 text-destructive" />
+                  </div>
+                ) : (
+                  <span className="rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                    {STEP_STATUS_LABEL[it.n][statuses[it.n]]}
+                  </span>
+                )}
+              </span>
             </button>
           </Fragment>
         );
