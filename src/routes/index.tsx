@@ -269,6 +269,7 @@ interface OcrRecord {
   sdccCompareDone?: boolean; // SDCC 与 KA 验收单的后台对碰是否已出结果（undefined 视为已出）
   kaVsSdccStatus?: StepStatus;
   ocrVsKaStatus?: StepStatus;
+  crossCheckStatus?: StepStatus;
   verifiedAt?: number; // 人工提交验收结论时间
   verifiedBy?: string;
   shippingSlipNo?: string; // 出货传票单号，用于搜索
