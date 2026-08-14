@@ -2504,7 +2504,7 @@ function Workbench() {
                                 onClick={() => setLogRecordId(r.id)}
                               >
                                 <ScrollText className="mr-2 size-4" />
-                                查看日志
+                                日志
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 className="text-destructive focus:text-destructive"
