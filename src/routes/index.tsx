@@ -3000,6 +3000,11 @@ function DetailView({
   const shippingImages = record.images.filter((i) => i.docType === "shipping_slip");
   const [autoFocus, setAutoFocus] = useState(true);
   const [step, setStep] = useState<1 | 2 | 3>(1);
+  const ocrStepOk = (record.ocrVsKaStatus ?? "no_result") === "success";
+  useEffect(() => {
+    if (step === 3 && !ocrStepOk) setStep(2);
+  }, [step, ocrStepOk]);
+
   const crossBadCount = useMemo(
     () => buildCrossRows(record).filter((r) => !crossRowConsistent(r)).length,
     [record],
