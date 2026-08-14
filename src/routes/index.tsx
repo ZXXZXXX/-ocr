@@ -85,6 +85,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Table,
   TableBody,
   TableCell,
@@ -1907,6 +1914,7 @@ function Workbench() {
   const [detailId, setDetailId] = useState<string | null>(null);
   
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [logRecordId, setLogRecordId] = useState<string | null>(null);
 
   // Filters
   const [filterOpen, setFilterOpen] = useState(false);
@@ -2491,6 +2499,12 @@ function Workbench() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem
+                                onClick={() => setLogRecordId(r.id)}
+                              >
+                                <ScrollText className="mr-2 size-4" />
+                                查看日志
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
                                 className="text-destructive focus:text-destructive"
                                 onClick={() => setDeleteId(r.id)}
                               >
@@ -2576,6 +2590,66 @@ function Workbench() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        <Dialog open={!!logRecordId} onOpenChange={(o) => !o && setLogRecordId(null)}>
+          <DialogContent className="max-h-[80vh] max-w-2xl overflow-hidden p-0">
+            <DialogHeader className="border-b border-border px-6 py-4">
+              <DialogTitle>任务日志</DialogTitle>
+              <DialogDescription>
+                {(() => {
+                  const r = records.find((rec) => rec.id === logRecordId);
+                  return r ? `任务 #${r.id} 的处理与审核记录` : "任务处理与审核记录";
+                })()}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="overflow-auto px-6 py-4">
+              {(() => {
+                const r = records.find((rec) => rec.id === logRecordId);
+                const logs = r ? buildRecordLogs(r) : [];
+                if (logs.length === 0) {
+                  return (
+                    <div className="py-8 text-center text-sm text-muted-foreground">
+                      暂无日志
+                    </div>
+                  );
+                }
+                return (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-40">时间</TableHead>
+                        <TableHead>事件</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {logs.map((log, idx) => (
+                        <TableRow key={idx}>
+                          <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
+                            {fmtTime(log.time)}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-start gap-2">
+                              <span
+                                className={cn(
+                                  "mt-0.5 inline-block size-2 rounded-full",
+                                  log.level === "success" && "bg-[color:var(--success)]",
+                                  log.level === "error" && "bg-destructive",
+                                  log.level === "warning" && "bg-[color:var(--warning)]",
+                                  log.level === "info" && "bg-primary",
+                                )}
+                              />
+                              <span className="text-sm text-foreground">{log.message}</span>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                );
+              })()}
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {!progressDismissed && activeRecords.length > 0 && (
           <div
@@ -3587,6 +3661,132 @@ const STEP_STATUS_LABEL: Record<1 | 2 | 3, Record<StepStatus, string>> = {
   2: { success: "识别完成", fail: "识别失败", no_result: "待识别" },
   3: { success: "对碰通过", fail: "对碰不通过", no_result: "待对碰" },
 };
+
+type LogLevel = "info" | "success" | "warning" | "error";
+interface LogEntry {
+  time: number;
+  level: LogLevel;
+  message: string;
+}
+
+function buildRecordLogs(record: OcrRecord): LogEntry[] {
+  const logs: LogEntry[] = [];
+  const t0 = record.createdAt;
+
+  logs.push({ time: t0, level: "info", message: "任务创建成功，等待同步数据" });
+
+  if (record.sdccOrderNos && record.sdccOrderNos.length > 0) {
+    logs.push({
+      time: t0 + 60_000,
+      level: "info",
+      message: `同步 SDCC 订单数据：${record.sdccOrderNos.join("、")}`,
+    });
+  }
+
+  const kaVsSdcc = record.kaVsSdccStatus ?? "no_result";
+  if (kaVsSdcc === "success") {
+    logs.push({
+      time: t0 + 120_000,
+      level: "success",
+      message: "自动校验《KA验收单》与《SDCC订单明细》：校验通过",
+    });
+  } else if (kaVsSdcc === "fail") {
+    logs.push({
+      time: t0 + 120_000,
+      level: "error",
+      message: "自动校验《KA验收单》与《SDCC订单明细》：数据不一致",
+    });
+  }
+
+  if (record.images && record.images.length > 0) {
+    logs.push({
+      time: t0 + 180_000,
+      level: "info",
+      message: `上传 ${record.images.length} 张图片`,
+    });
+  } else {
+    logs.push({
+      time: t0 + 180_000,
+      level: "warning",
+      message: "图片尚未上传，等待图片数据",
+    });
+  }
+
+  if (record.status === "queued") {
+    logs.push({ time: t0 + 200_000, level: "info", message: "OCR 识别任务排队中" });
+  } else if (record.status === "recognizing") {
+    logs.push({ time: t0 + 240_000, level: "info", message: "OCR 识别进行中" });
+  } else if (record.status === "pending_review") {
+    logs.push({
+      time: t0 + 300_000,
+      level: "success",
+      message: "OCR 识别完成，进入人工审核",
+    });
+  } else if (record.status === "failed") {
+    logs.push({
+      time: t0 + 300_000,
+      level: "error",
+      message: `OCR 识别失败：${record.failedReason ?? "未知原因"}`,
+    });
+  }
+
+  const ocrVsKa = record.ocrVsKaStatus ?? "no_result";
+  if (ocrVsKa === "success") {
+    logs.push({
+      time: t0 + 360_000,
+      level: "success",
+      message: "OCR 识别结果与《KA验收单》比对：一致",
+    });
+  } else if (ocrVsKa === "fail") {
+    logs.push({
+      time: t0 + 360_000,
+      level: "warning",
+      message: "OCR 识别结果与《KA验收单》比对：存在差异",
+    });
+  }
+
+  const cross = record.crossCheckStatus ?? "no_result";
+  if (cross === "success") {
+    logs.push({
+      time: t0 + 420_000,
+      level: "success",
+      message: "关键数据一致性核对：通过",
+    });
+  } else if (cross === "fail") {
+    logs.push({
+      time: t0 + 420_000,
+      level: "error",
+      message: "关键数据一致性核对：不通过",
+    });
+  }
+
+  if (record.aiVerdict) {
+    const label = VERDICT_LABEL[record.aiVerdict];
+    if (record.aiVerdict === "exception") {
+      logs.push({
+        time: t0 + 480_000,
+        level: "warning",
+        message: `AI 预审异常：${record.aiExceptionReason ?? "未知异常"}`,
+      });
+    } else {
+      logs.push({
+        time: t0 + 480_000,
+        level: record.aiVerdict === "pass" ? "success" : "error",
+        message: `AI 预审结论：${label}`,
+      });
+    }
+  }
+
+  if (record.status === "verified" && record.verifiedAt) {
+    logs.push({
+      time: record.verifiedAt,
+      level: "success",
+      message: `人工审核完成：${record.verifiedBy ?? CURRENT_USER} 提交结论`,
+    });
+  }
+
+  return logs.sort((a, b) => a.time - b.time);
+}
 
 function DetailStepNav({
   step,
