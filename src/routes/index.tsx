@@ -35,7 +35,7 @@ import {
   ThumbsDown,
   ChevronLeft,
   ChevronRight,
-  RefreshCw,
+  
   ChevronDown,
   ArrowUp,
   ArrowDown,
@@ -2910,22 +2910,6 @@ function DetailView({
     if (step === 3 && !ocrStepOk) setStep(2);
   }, [step, ocrStepOk]);
 
-  const crossBadCount = useMemo(
-    () => buildCrossRows(record).filter((r) => !crossRowConsistent(r)).length,
-    [record],
-  );
-  const [crossStale, setCrossStale] = useState(false);
-  const [crossRunning, setCrossRunning] = useState(false);
-  const [crossCheckedAt, setCrossCheckedAt] = useState<number | null>(null);
-  function runCrossCheck() {
-    setCrossRunning(true);
-    window.setTimeout(() => {
-      setCrossRunning(false);
-      setCrossStale(false);
-      setCrossCheckedAt(Date.now());
-      toast.success("关键数据核对已重新完成");
-    }, 700);
-  }
   const [compareOpen, setCompareOpen] = useState(false);
   const [compareLoading, setCompareLoading] = useState(false);
   const openCompare = () => {
@@ -3038,7 +3022,7 @@ function DetailView({
           onChange={() => {}}
 
           topSlot={
-            <DetailStepNav step={step} onChange={setStep} badCount={crossBadCount} stale={crossStale} record={record} />
+            <DetailStepNav step={step} onChange={setStep} record={record} />
           }
           rightSlot={
             step === 1 ? (
@@ -3048,13 +3032,7 @@ function DetailView({
                 loading={false}
               />
             ) : step === 3 ? (
-              <CrossCheckView
-                record={record}
-                stale={crossStale}
-                running={crossRunning}
-                checkedAt={crossCheckedAt}
-                onRun={runCrossCheck}
-              />
+              <CrossCheckView record={record} />
             ) : undefined
           }
         />
@@ -3576,21 +3554,8 @@ function crossRowConsistent(row: CrossRow, sources: CrossSource[] = CROSS_SOURCE
   return CROSS_METRICS.every((m) => metricConsistent(row, m.key, sources));
 }
 
-function CrossCheckView({
-  record,
-  stale = false,
-  running = false,
-  checkedAt = null,
-  onRun,
-}: {
-  record: OcrRecord;
-  stale?: boolean;
-  running?: boolean;
-  checkedAt?: number | null;
-  onRun?: () => void;
-}) {
+function CrossCheckView({ record }: { record: OcrRecord }) {
   const rows = useMemo(() => buildCrossRows(record), [record]);
-  const badRows = rows.filter((r) => !crossRowConsistent(r));
 
   if (rows.length === 0) {
     return (
@@ -3605,41 +3570,11 @@ function CrossCheckView({
       <div className="flex shrink-0 items-center gap-3 border-b border-border px-6 py-3">
         <div className="text-sm font-medium text-foreground">关键数据一致性核对</div>
         <div className="text-xs text-muted-foreground">
-          以当前识别结果（含人工修改）与 KA 订单数据、SDCC 数据自动比对
-        </div>
-        <div className="ml-auto flex items-center gap-2">
-          {checkedAt && !stale && (
-            <span className="text-[11px] text-muted-foreground">核对于 {fmtTime(checkedAt)}</span>
-          )}
-          {stale && (
-            <span className="inline-flex items-center gap-1 rounded-md bg-[color:var(--warning)]/20 px-2 py-1 text-xs text-[color:var(--warning-foreground)]">
-              <AlertTriangle className="size-3.5" /> 结果已失效
-            </span>
-          )}
-          <Button
-            size="sm"
-            variant={stale ? "default" : "outline"}
-            className="h-7 gap-1.5 text-xs"
-            disabled={running || !onRun}
-            onClick={() => onRun?.()}
-          >
-            <RefreshCw className={cn("size-3.5", running && "animate-spin")} />
-            {running ? "核对中…" : stale ? "重新核对" : "重新核对"}
-          </Button>
+          以当前识别结果与 KA 订单数据、SDCC 数据自动比对
         </div>
       </div>
-      {stale && (
-        <div className="flex shrink-0 items-start gap-2 border-b border-[color:var(--warning)]/30 bg-[color:var(--warning)]/10 px-6 py-2.5 text-xs text-[color:var(--warning-foreground)]">
-          <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
-          <span className="leading-relaxed">
-            识别结果已被人工修改，以下核对结果基于修改前的数据，请点击「重新核对」后再确认。
-          </span>
-        </div>
-      )}
       <div className="relative min-h-0 flex-1 overflow-auto px-6 py-4">
-        <div className={cn(stale && "pointer-events-none opacity-45 grayscale")}>
         <KeyDataTable rows={rows} sources={CROSS_SOURCES} />
-        </div>
       </div>
     </div>
   );
@@ -3656,14 +3591,10 @@ const STEP_STATUS_LABEL: Record<1 | 2 | 3, Record<StepStatus, string>> = {
 function DetailStepNav({
   step,
   onChange,
-  badCount,
-  stale,
   record,
 }: {
   step: 1 | 2 | 3;
   onChange: (s: 1 | 2 | 3) => void;
-  badCount: number;
-  stale: boolean;
   record: OcrRecord;
 }) {
   const step2Status = record.ocrVsKaStatus ?? "no_result";
@@ -3689,10 +3620,7 @@ function DetailStepNav({
             {idx > 0 && (
               <span
                 aria-hidden
-                className={cn(
-                  "flex shrink-0 items-center",
-                  stale ? "text-[color:var(--warning)]" : "text-muted-foreground/50",
-                )}
+                className="flex shrink-0 items-center text-muted-foreground/50"
               >
                 <ChevronRight className="size-4" />
               </span>
@@ -3708,7 +3636,6 @@ function DetailStepNav({
                 active
                   ? "border-primary/40 bg-primary/5"
                   : "border-border bg-background/60 hover:bg-muted/40",
-                it.n === 3 && stale && "border-dashed border-[color:var(--warning)]/60",
                 it.n === 3 && step3Disabled && "cursor-not-allowed opacity-50 hover:bg-background/60",
               )}
             >
@@ -3725,25 +3652,19 @@ function DetailStepNav({
               <span className="min-w-0" title={it.desc}>
                 <span className="block truncate text-[13px] font-medium text-foreground">{it.title}</span>
               </span>
-              {it.n === 3 && stale ? (
-                <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded bg-[color:var(--warning)]/20 px-2 py-0.5 text-xs text-[color:var(--warning-foreground)]">
-                  <RefreshCw className="size-3.5" /> 待重新核对
-                </span>
-              ) : (
-                <span className="ml-auto shrink-0">
-                  {statuses[it.n] === "success" ? (
-                    <CheckCircle2 className="size-6 text-[color:var(--success)]" />
-                  ) : statuses[it.n] === "fail" ? (
-                    <div className="flex items-center gap-1">
-                      <XCircle className="size-6 text-destructive" />
-                    </div>
-                  ) : (
-                    <span className="rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                      {STEP_STATUS_LABEL[it.n][statuses[it.n]]}
-                    </span>
-                  )}
-                </span>
-              )}
+              <span className="ml-auto shrink-0">
+                {statuses[it.n] === "success" ? (
+                  <CheckCircle2 className="size-6 text-[color:var(--success)]" />
+                ) : statuses[it.n] === "fail" ? (
+                  <div className="flex items-center gap-1">
+                    <XCircle className="size-6 text-destructive" />
+                  </div>
+                ) : (
+                  <span className="rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                    {STEP_STATUS_LABEL[it.n][statuses[it.n]]}
+                  </span>
+                )}
+              </span>
             </button>
           </Fragment>
         );
