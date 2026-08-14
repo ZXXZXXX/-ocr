@@ -3905,23 +3905,39 @@ function CrossCheckView({
 }
 
 
-// ---------- 详情页两步导航 ----------
+// ---------- 详情页三步导航 ----------
+const STEP_STATUS_LABEL: Record<1 | 2 | 3, Record<StepStatus, string>> = {
+  1: { success: "校验通过", fail: "校验不通过", no_result: "待校验" },
+  2: { success: "识别完成", fail: "识别失败", no_result: "待识别" },
+  3: { success: "对碰通过", fail: "对碰不通过", no_result: "待对碰" },
+};
+
 function DetailStepNav({
   step,
   onChange,
   badCount,
   stale,
+  record,
 }: {
   step: 1 | 2 | 3;
   onChange: (s: 1 | 2 | 3) => void;
   badCount: number;
   stale: boolean;
+  record: OcrRecord;
 }) {
+  const step2Status = record.ocrVsKaStatus ?? "no_result";
+  const statuses: Record<1 | 2 | 3, StepStatus> = {
+    1: record.kaVsSdccStatus ?? "no_result",
+    2: step2Status,
+    3: step2Status === "success" ? record.crossCheckStatus ?? "no_result" : "no_result",
+  };
+  const step3Disabled = step2Status !== "success";
   const items = [
-    { n: 1 as const, title: "SDCC数据对碰", desc: "《KA验收单》与《SDCC订单明细》对碰" },
-    { n: 2 as const, title: "识别结果核对", desc: "核对图片与 OCR 识别结果并人工修改" },
-    { n: 3 as const, title: "关键数据核对", desc: "核对多方关键数据的一致性" },
+    { n: 1 as const, title: "系统数据校验", desc: "《KA验收单》与《SDCC订单明细》对碰" },
+    { n: 2 as const, title: "OCR识别结果", desc: "核对图片与 OCR 识别结果并人工修改" },
+    { n: 3 as const, title: "关键数据对碰", desc: "核对多方关键数据的一致性" },
   ];
+
 
   return (
     <div className="mt-4 flex items-center gap-2">
