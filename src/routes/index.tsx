@@ -3645,6 +3645,140 @@ function buildCrossRows(record: OcrRecord): CrossRow[] {
   return rows;
 }
 
+type CrossSource = { key: "ka" | "sdcc" | "ocr"; label: string };
+const CROSS_SOURCES: CrossSource[] = [
+  { key: "ka", label: "KA订单" },
+  { key: "sdcc", label: "SDCC" },
+  { key: "ocr", label: "OCR识别" },
+];
+const COMPARE_SOURCES: CrossSource[] = [
+  { key: "ka", label: "KA验收单" },
+  { key: "sdcc", label: "SDCC订单明细" },
+];
+
+// 第一步：仅 KA 与 SDCC 两方，表格格式与第三步一致
+function buildCompareRows(recordId: string, count: number): CrossRow[] {
+  const baseGroups = COMPARE_REAL_GROUPS[recordId] ?? fallbackGroups(recordId, count);
+  const groups = mergeGroupsByCode(baseGroups);
+  return groups.map((g, gi) => {
+    const kaOrder = g.ka.length ? sumField(g.ka, "order") : null;
+    const kaRecv = g.ka.length ? sumField(g.ka, "recv") : null;
+    const sdOrder = g.sd.length ? sumField(g.sd, "order") : null;
+    const sdRecv = g.sd.length ? sumField(g.sd, "recv") : null;
+    return {
+      key: `${g.barcodes.join("_") || "g"}-${gi}`,
+      code: (g.kaCodes.length ? g.kaCodes : g.sdCodes).join("、") || "-",
+      name: g.ka[0]?.name ?? g.sd[0]?.name ?? "-",
+      kaCodes: g.kaCodes,
+      barcodes: g.barcodes.filter((b) => b && b !== "未映射"),
+      sdCodes: g.sdCodes,
+      ka: { order: kaOrder, ship: null, recv: kaRecv },
+      sdcc: { order: sdOrder, ship: sdOrder, recv: sdRecv },
+      ocr: { order: null, ship: null, recv: null },
+    };
+  });
+}
+
+// 统一的关键数据表格（第一步两方 / 第三步三方）
+function KeyDataTable({ rows, sources }: { rows: CrossRow[]; sources: CrossSource[] }) {
+  const cell = (row: CrossRow, source: CrossSource["key"], key: keyof SourceMetrics) => {
+    const v = row[source][key];
+    const bad = !metricConsistent(row, key, sources);
+    return (
+      <td
+        key={`${source}-${key}`}
+        className={cn(
+          "whitespace-nowrap border border-border px-3 py-2 text-right text-sm tabular-nums",
+          bad ? "font-medium text-[color:var(--destructive)]" : "text-foreground",
+          v === null && "text-muted-foreground",
+        )}
+      >
+        {v === null ? "-" : v}
+      </td>
+    );
+  };
+
+  return (
+    <table className="w-full border-collapse text-sm">
+      <thead>
+        <tr className="bg-muted/50 text-xs text-muted-foreground">
+          <th rowSpan={2} className="border border-border px-3 py-2 text-left font-medium">
+            物料名称
+          </th>
+          <th rowSpan={2} className="border border-border px-3 py-2 text-left font-medium">
+            物料编号（KA码）
+          </th>
+          <th rowSpan={2} className="border border-border px-3 py-2 text-left font-medium">
+            产品单元条码
+          </th>
+          <th rowSpan={2} className="border border-border px-3 py-2 text-left font-medium">
+            统一产品代码
+          </th>
+          {CROSS_METRICS.map((m) => (
+            <th
+              key={m.key}
+              colSpan={sources.length}
+              className="border border-border px-3 py-2 text-center font-medium"
+            >
+              {m.label}
+            </th>
+          ))}
+        </tr>
+        <tr className="bg-muted/30 text-[11px] text-muted-foreground">
+          {CROSS_METRICS.map((m) => (
+            <Fragment key={m.key}>
+              {sources.map((s) => (
+                <th
+                  key={s.key}
+                  className="border border-border px-3 py-1.5 text-right font-normal"
+                >
+                  {s.label}
+                </th>
+              ))}
+            </Fragment>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row) => {
+          const bad = !crossRowConsistent(row, sources);
+          return (
+            <tr
+              key={row.key}
+              className="border-border"
+              style={bad ? { backgroundColor: ROW_MISMATCH_BG } : undefined}
+            >
+              <td className="max-w-[260px] truncate border border-border px-3 py-2 text-sm text-foreground">
+                {row.name}
+              </td>
+              {[row.kaCodes, row.barcodes, row.sdCodes].map((codes, ci) => (
+                <td
+                  key={ci}
+                  className="border border-border px-3 py-2 align-top font-mono text-xs text-muted-foreground"
+                >
+                  {codes.length ? (
+                    <div className="flex max-w-[180px] flex-wrap gap-x-1.5 gap-y-0.5">
+                      {codes.map((c) => (
+                        <span key={c}>{c}</span>
+                      ))}
+                    </div>
+                  ) : (
+                    "-"
+                  )}
+                </td>
+              ))}
+              {CROSS_METRICS.map((m) => (
+                <Fragment key={m.key}>{sources.map((s) => cell(row, s.key, m.key))}</Fragment>
+              ))}
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
+
+
 
 function metricConsistent(row: CrossRow, key: keyof SourceMetrics) {
   const vals = [row.ka[key], row.sdcc[key], row.ocr[key]].filter(
