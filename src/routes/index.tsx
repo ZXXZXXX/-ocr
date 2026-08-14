@@ -4005,8 +4005,6 @@ function DetailStepNav({
                 </span>
               )}
             </button>
-
-            </button>
           </Fragment>
         );
       })}
