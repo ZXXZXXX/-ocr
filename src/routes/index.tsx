@@ -2910,10 +2910,6 @@ function DetailView({
     if (step === 3 && !ocrStepOk) setStep(2);
   }, [step, ocrStepOk]);
 
-  const crossBadCount = useMemo(
-    () => buildCrossRows(record).filter((r) => !crossRowConsistent(r)).length,
-    [record],
-  );
   const [compareOpen, setCompareOpen] = useState(false);
   const [compareLoading, setCompareLoading] = useState(false);
   const openCompare = () => {
