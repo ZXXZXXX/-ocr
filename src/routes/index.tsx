@@ -2914,18 +2914,6 @@ function DetailView({
     () => buildCrossRows(record).filter((r) => !crossRowConsistent(r)).length,
     [record],
   );
-  const [crossStale, setCrossStale] = useState(false);
-  const [crossRunning, setCrossRunning] = useState(false);
-  const [crossCheckedAt, setCrossCheckedAt] = useState<number | null>(null);
-  function runCrossCheck() {
-    setCrossRunning(true);
-    window.setTimeout(() => {
-      setCrossRunning(false);
-      setCrossStale(false);
-      setCrossCheckedAt(Date.now());
-      toast.success("关键数据核对已重新完成");
-    }, 700);
-  }
   const [compareOpen, setCompareOpen] = useState(false);
   const [compareLoading, setCompareLoading] = useState(false);
   const openCompare = () => {
