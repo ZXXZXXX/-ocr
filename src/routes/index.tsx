@@ -4392,8 +4392,9 @@ function DocPanel({
         </div>
       </div>
 
-      {/* RIGHT: recognition results (always delivery_note) */}
+      {/* RIGHT: step content (step 2 = recognition results) */}
       <div className="flex flex-1 flex-col overflow-hidden" style={{ minWidth: 0 }}>
+        {rightSlot ? rightSlot : (<>
         <div className="flex h-10 items-center justify-between gap-3 border-b border-border bg-background/60 px-3 py-1.5">
           <div className="text-xs font-medium text-foreground">识别结果</div>
           {!failureReason && (
