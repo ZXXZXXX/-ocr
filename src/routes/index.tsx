@@ -1265,38 +1265,8 @@ function annotateMismatchesInDOM(
         appendEditedTag(cell);
       });
     }
-    // 差异高亮（编辑过的单元格跳过）
-    let rowHasMismatch = false;
-    qtyCols.forEach(({ key, idx }) => {
-      const cell = tr.children[idx] as HTMLElement | undefined;
-      if (!cell) return;
-      if (editedCells?.has(`${rowIdx}-${idx}`)) return;
-      if (cell.querySelector("[data-mismatch]")) {
-        rowHasMismatch = true;
-        return;
-      }
-      const val = (cell.textContent || "").trim();
-      const m = computeMismatch(rowIdx, key, val, opts);
-      if (!m) return;
-      rowHasMismatch = true;
-      cell.textContent = "";
-      const outer = document.createElement("span");
-      outer.setAttribute("data-mismatch", "");
-      outer.style.color = "#dc2626";
-      outer.appendChild(document.createTextNode(val));
-      const ann = document.createElement("span");
-      ann.setAttribute("data-annotation", "");
-      ann.setAttribute("contenteditable", "false");
-      ann.style.fontSize = "0.85em";
-      ann.style.marginLeft = "2px";
-      ann.textContent = `（${label}：${m.safeThird}）`;
-      outer.appendChild(ann);
-      cell.appendChild(outer);
-    });
-    if (rowHasMismatch) {
-      tr.setAttribute("data-row-mismatch", "");
-      tr.style.backgroundColor = ROW_MISMATCH_BG;
-    }
+    // 不再与《KA验收单》对碰：OCR 识别到什么就展示什么
+
   });
 }
 
