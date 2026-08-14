@@ -439,7 +439,8 @@ function kaVsSdccStatusFor(record: OcrRecord): StepStatus {
 
 // 第二步「OCR识别结果」：识别完成 / 识别失败
 function ocrStatusFor(record: OcrRecord): StepStatus {
-  if (record.status !== "done") return "no_result";
+  if (record.status === "queued" || record.status === "recognizing") return "no_result";
+  if (record.status === "failed") return "fail";
   if (record.failedReason || record.confidence == null || !record.results) return "fail";
   return "success";
 }
