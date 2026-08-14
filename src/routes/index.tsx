@@ -3410,9 +3410,7 @@ function CompareTable({
   count: number;
   loading: boolean;
 }) {
-  const groups = useMemo<CompareGroup[]>(() => {
-    return COMPARE_REAL_GROUPS[recordId] ?? fallbackGroups(recordId, count);
-  }, [recordId, count]);
+  const rows = useMemo(() => buildCompareRows(recordId, count), [recordId, count]);
 
   if (loading) {
     return (
@@ -3423,97 +3421,15 @@ function CompareTable({
     );
   }
 
-  const fmt = (v: number | null | undefined) => (v === null || v === undefined ? "-" : v);
+  if (rows.length === 0) {
+    return (
+      <div className="rounded-lg border border-dashed border-border p-10 text-center text-xs text-muted-foreground">
+        暂无可对碰的数据
+      </div>
+    );
+  }
 
-  return (
-    <div className="overflow-hidden rounded-lg border border-border">
-      <table className="w-full text-sm">
-        <thead className="bg-muted/50 text-xs text-muted-foreground">
-          <tr>
-            <th className="px-3 py-2 text-left font-medium">序号</th>
-            <th className="px-3 py-2 text-left font-medium">产品单元条码（69码）</th>
-            <th className="px-3 py-2 text-left font-medium">来源</th>
-            <th className="px-3 py-2 text-left font-medium">编码</th>
-            <th className="px-3 py-2 text-left font-medium">品名</th>
-            <th className="px-3 py-2 text-right font-medium">订单数量</th>
-            <th className="px-3 py-2 text-right font-medium">发货/签收数量</th>
-            <th className="px-3 py-2 text-center font-medium">对碰状态</th>
-          </tr>
-        </thead>
-        <tbody>
-          {groups.map((g, gi) => {
-            const status = groupStatus(g);
-            const bg = status.pass ? undefined : "#fde7ec";
-            const kaRows = g.ka.length > 0 ? g.ka : [null];
-            const sdRows = g.sd.length > 0 ? g.sd : [null];
-            const totalRows = kaRows.length + sdRows.length + 1; // + 合计
-            const kaSumO = sumField(g.ka, "order");
-            const kaSumR = sumField(g.ka, "recv");
-            const sdSumO = sumField(g.sd, "order");
-            const sdSumR = sumField(g.sd, "recv");
-            return (
-              <Fragment key={`${g.barcode}-${gi}`}>
-                {kaRows.map((it, i) => (
-                  <tr key={`ka-${gi}-${i}`} className="border-t border-border" style={bg ? { backgroundColor: bg } : undefined}>
-                    {i === 0 && (
-                      <>
-                        <td className="px-3 py-2 align-top text-muted-foreground" rowSpan={totalRows}>{gi + 1}</td>
-                        <td className="px-3 py-2 align-top font-mono text-xs" rowSpan={totalRows}>{g.barcode}</td>
-                      </>
-                    )}
-                    {i === 0 && (
-                      <td className="px-3 py-2 align-top text-xs font-medium text-foreground/80" rowSpan={kaRows.length}>
-                        KA验收单
-                      </td>
-                    )}
-                    <td className="px-3 py-2 font-mono text-xs">{it ? it.code : "-"}</td>
-                    <td className="px-3 py-2">{it ? it.name : <span className="text-muted-foreground">未映射</span>}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{it ? fmt(it.order) : "-"}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{it ? fmt(it.recv) : "-"}</td>
-                    {i === 0 && (
-                      <td className="px-3 py-2 text-center align-top" rowSpan={totalRows}>
-                        <span
-                          className={
-                            status.pass
-                              ? "inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-600"
-                              : "inline-flex items-center rounded-full bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-600"
-                          }
-                        >
-                          {status.reason}
-                        </span>
-                      </td>
-                    )}
-                  </tr>
-                ))}
-                {sdRows.map((it, i) => (
-                  <tr key={`sd-${gi}-${i}`} className="border-t border-border" style={bg ? { backgroundColor: bg } : undefined}>
-                    {i === 0 && (
-                      <td className="px-3 py-2 align-top text-xs font-medium text-foreground/80" rowSpan={sdRows.length}>
-                        SDCC订单明细
-                      </td>
-                    )}
-                    <td className="px-3 py-2 font-mono text-xs">{it ? it.code : "-"}</td>
-                    <td className="px-3 py-2">{it ? it.name : <span className="text-muted-foreground">未映射</span>}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{it ? fmt(it.order) : "-"}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{it ? fmt(it.recv) : "-"}</td>
-                  </tr>
-                ))}
-                <tr className="border-t border-border" style={bg ? { backgroundColor: bg } : undefined}>
-                  <td className="px-3 py-2 text-xs font-medium text-muted-foreground" colSpan={3}>合计</td>
-                  <td className="px-3 py-2 text-right text-xs tabular-nums text-muted-foreground">
-                    KA {kaSumO} / SDCC {sdSumO}
-                  </td>
-                  <td className="px-3 py-2 text-right text-xs tabular-nums text-muted-foreground">
-                    KA {kaSumR} / SDCC {sdSumR}
-                  </td>
-                </tr>
-              </Fragment>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  );
+  return <KeyDataTable rows={rows} sources={COMPARE_SOURCES} />;
 }
 
 // ---------- 第二步：多来源关键数据核对（KA订单 / SDCC / OCR识别） ----------
