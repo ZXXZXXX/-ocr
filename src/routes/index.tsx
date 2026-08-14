@@ -3810,7 +3810,7 @@ function CrossCheckView({
             </span>
           ) : (
             <span className="inline-flex items-center gap-1 rounded-md bg-destructive/15 px-2 py-1 text-xs text-destructive">
-              <XCircle className="size-3.5" /> 共 {badRows.length} 项商品数据不一致
+              <XCircle className="size-3.5" />
             </span>
           )}
           <Button
