@@ -2982,7 +2982,7 @@ function DetailView({
   const deliveryImages = record.images.filter((i) => i.docType === "delivery_note");
   const shippingImages = record.images.filter((i) => i.docType === "shipping_slip");
   const [autoFocus, setAutoFocus] = useState(true);
-  const [step, setStep] = useState<1 | 2>(1);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const crossBadCount = useMemo(
     () => buildCrossRows(record).filter((r) => !crossRowConsistent(r)).length,
     [record],
@@ -3174,6 +3174,12 @@ function DetailView({
 
       <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
         {step === 1 ? (
+          <CompareView
+            recordId={record.id}
+            count={compareCountFor(record)}
+            loading={false}
+          />
+        ) : step === 2 ? (
           <DocPanel
             deliveryPages={deliveryPages}
             deliveryImages={deliveryImages}
@@ -3889,15 +3895,17 @@ function DetailStepNav({
   badCount,
   stale,
 }: {
-  step: 1 | 2;
-  onChange: (s: 1 | 2) => void;
+  step: 1 | 2 | 3;
+  onChange: (s: 1 | 2 | 3) => void;
   badCount: number;
   stale: boolean;
 }) {
   const items = [
-    { n: 1 as const, title: "识别结果核对", desc: "核对图片与 OCR 识别结果并人工修改" },
-    { n: 2 as const, title: "关键数据核对", desc: "核对多方关键数据的一致性" },
+    { n: 1 as const, title: "SDCC数据对碰", desc: "《KA验收单》与《SDCC订单明细》对碰" },
+    { n: 2 as const, title: "识别结果核对", desc: "核对图片与 OCR 识别结果并人工修改" },
+    { n: 3 as const, title: "关键数据核对", desc: "核对多方关键数据的一致性" },
   ];
+
   return (
     <div className="mt-4 flex items-center gap-2">
       {items.map((it, idx) => {
@@ -3924,7 +3932,7 @@ function DetailStepNav({
                 active
                   ? "border-primary/40 bg-primary/5"
                   : "border-border bg-background/60 hover:bg-muted/40",
-                it.n === 2 && stale && "border-dashed border-[color:var(--warning)]/60",
+                it.n === 3 && stale && "border-dashed border-[color:var(--warning)]/60",
               )}
             >
               <span
@@ -3941,7 +3949,7 @@ function DetailStepNav({
                 <span className="block text-xs font-medium text-foreground">{it.title}</span>
                 <span className="block truncate text-[11px] text-muted-foreground">{it.desc}</span>
               </span>
-              {it.n === 2 &&
+              {it.n === 3 &&
                 (stale ? (
                   <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded bg-[color:var(--warning)]/20 px-1.5 py-0.5 text-[11px] text-[color:var(--warning-foreground)]">
                     <RefreshCw className="size-3" /> 待重新核对
@@ -3970,20 +3978,24 @@ function CompareView({
   recordId: string;
   count: number;
   loading: boolean;
-  onBack: () => void;
+  onBack?: () => void;
 }) {
   return (
     <div className="flex flex-1 flex-col overflow-hidden bg-background">
       <div className="flex h-11 items-center gap-2 border-b border-border bg-background/60 px-4">
-        <button
-          type="button"
-          onClick={onBack}
-          className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="size-4" />
-          返回
-        </button>
-        <span className="text-xs text-muted-foreground">/</span>
+        {onBack && (
+          <>
+            <button
+              type="button"
+              onClick={onBack}
+              className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft className="size-4" />
+              返回
+            </button>
+            <span className="text-xs text-muted-foreground">/</span>
+          </>
+        )}
         <span className="text-sm font-medium text-foreground">KA验收单与SDCC订单明细对碰</span>
       </div>
       <div className="flex-1 overflow-y-auto p-4">
@@ -3992,6 +4004,7 @@ function CompareView({
     </div>
   );
 }
+
 
 function DocPanel({
   deliveryPages,
