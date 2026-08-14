@@ -3026,7 +3026,7 @@ function DetailView({
           onChange={() => {}}
 
           topSlot={
-            <DetailStepNav step={step} onChange={setStep} badCount={crossBadCount} record={record} />
+            <DetailStepNav step={step} onChange={setStep} record={record} />
           }
           rightSlot={
             step === 1 ? (
