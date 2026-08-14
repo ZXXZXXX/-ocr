@@ -3963,9 +3963,6 @@ function DetailStepNav({
                   ) : statuses[it.n] === "fail" ? (
                     <div className="flex items-center gap-1">
                       <XCircle className="size-5 text-destructive" />
-                      {it.n === 3 && badCount > 0 ? (
-                        <span className="text-[11px] font-medium text-destructive">{badCount} 项差异</span>
-                      ) : null}
                     </div>
                   ) : (
                     <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
