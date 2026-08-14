@@ -3608,14 +3608,10 @@ const STEP_STATUS_LABEL: Record<1 | 2 | 3, Record<StepStatus, string>> = {
 function DetailStepNav({
   step,
   onChange,
-  badCount,
-  stale,
   record,
 }: {
   step: 1 | 2 | 3;
   onChange: (s: 1 | 2 | 3) => void;
-  badCount: number;
-  stale: boolean;
   record: OcrRecord;
 }) {
   const step2Status = record.ocrVsKaStatus ?? "no_result";
