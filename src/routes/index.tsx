@@ -3904,7 +3904,7 @@ function DetailStepNav({
               title={it.n === 3 && step3Disabled ? "OCR识别失败，无法进入关键数据对碰" : undefined}
               onClick={() => onChange(it.n)}
               className={cn(
-                "flex min-w-0 flex-1 items-center gap-1.5 rounded-lg border px-2 py-1.5 text-left transition-colors",
+                "flex min-w-0 flex-1 items-center gap-2.5 rounded-lg border px-3 py-3 text-left transition-colors",
                 active
                   ? "border-primary/40 bg-primary/5"
                   : "border-border bg-background/60 hover:bg-muted/40",
@@ -3914,7 +3914,7 @@ function DetailStepNav({
             >
               <span
                 className={cn(
-                  "flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-medium",
+                  "flex size-6 shrink-0 items-center justify-center rounded-full text-[11px] font-medium",
                   active
                     ? "bg-primary text-primary-foreground"
                     : "bg-muted text-muted-foreground",
@@ -3923,7 +3923,7 @@ function DetailStepNav({
                 {it.n}
               </span>
               <span className="min-w-0" title={it.desc}>
-                <span className="block truncate text-xs font-medium text-foreground">{it.title}</span>
+                <span className="block truncate text-[13px] font-medium text-foreground">{it.title}</span>
               </span>
               {it.n === 3 && stale ? (
                 <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded bg-[color:var(--warning)]/20 px-1.5 py-0.5 text-[11px] text-[color:var(--warning-foreground)]">
