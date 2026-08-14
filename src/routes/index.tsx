@@ -3900,9 +3900,9 @@ function DetailStepNav({
   };
   const step3Disabled = step2Status !== "success";
   const items = [
-    { n: 1 as const, title: "系统数据校验", desc: "《KA验收单》与《SDCC订单明细》对碰" },
-    { n: 2 as const, title: "OCR识别结果", desc: "核对图片与 OCR 识别结果并人工修改" },
-    { n: 3 as const, title: "关键数据对碰", desc: "核对多方关键数据的一致性" },
+    { n: 1 as const, title: "系统数据校验", desc: "自动校验《KA验收单》与《SDCC订单明细》数据" },
+    { n: 2 as const, title: "OCR识别结果", desc: "人工核对图片与 OCR 识别结果" },
+    { n: 3 as const, title: "关键数据对碰", desc: "自动核对多方关键数据的一致性" },
   ];
 
 
