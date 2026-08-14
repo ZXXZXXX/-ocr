@@ -3176,6 +3176,9 @@ function DetailView({
           onChange={(pageIdx, chunkId, v) =>
             handleEditChange("delivery_note", pageIdx, chunkId, v)
           }
+          topSlot={
+            <DetailStepNav step={step} onChange={setStep} badCount={crossBadCount} stale={crossStale} record={record} />
+          }
           rightSlot={
             step === 1 ? (
               <CompareView
