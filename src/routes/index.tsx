@@ -2103,57 +2103,6 @@ function Workbench() {
     );
   }
 
-  function mutateChunk(
-    recordId: string,
-    docType: DocType,
-    pageIdx: number,
-    chunkId: string,
-    mut: (c: Chunk) => Chunk | null,
-  ) {
-    setRecords((prev) =>
-      prev.map((r) => {
-        if (r.id !== recordId || !r.results) return r;
-        const pages = r.results[docType];
-        if (!pages) return r;
-        const newPages = pages.map((p, i) => {
-          if (i !== pageIdx) return p;
-          return {
-            ...p,
-            chunks: p.chunks.map((c) => {
-              if (c.id !== chunkId) return c;
-              return mut(c) ?? c;
-            }),
-          };
-        });
-        return { ...r, results: { ...r.results, [docType]: newPages } };
-      }),
-    );
-  }
-
-  function updateChunk(
-    recordId: string,
-    docType: DocType,
-    pageIdx: number,
-    chunkId: string,
-    newContent: string,
-  ) {
-    mutateChunk(recordId, docType, pageIdx, chunkId, (c) => {
-      if (c.content === newContent) return null;
-      return {
-        ...c,
-        content: newContent,
-        edited: true,
-        confirmed: false,
-        original: c.original ?? c.content,
-        lastEdit: { by: CURRENT_USER, at: new Date().toISOString() },
-      };
-    });
-  }
-
-
-  function replaceResults(recordId: string, results: NonNullable<OcrRecord["results"]>) {
-    setRecords((prev) => prev.map((r) => (r.id === recordId ? { ...r, results } : r)));
-  }
 
   function updateSignatureStatus(recordId: string, signatureStatus: SignatureStatus) {
     setRecords((prev) =>
