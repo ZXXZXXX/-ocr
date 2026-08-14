@@ -2413,7 +2413,7 @@ function Workbench() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/40">
-                  <TableHead className="w-[200px]">KA 订单号</TableHead>
+                  <TableHead className="w-[200px]">验收订单号</TableHead>
                   <TableHead className="w-[150px]">SDCC数据状态</TableHead>
                   <TableHead>图片状态</TableHead>
                   <TableHead>AI识别进度</TableHead>
