@@ -2982,7 +2982,7 @@ function DetailView({
   const deliveryImages = record.images.filter((i) => i.docType === "delivery_note");
   const shippingImages = record.images.filter((i) => i.docType === "shipping_slip");
   const [autoFocus, setAutoFocus] = useState(true);
-  const [step, setStep] = useState<1 | 2>(1);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const crossBadCount = useMemo(
     () => buildCrossRows(record).filter((r) => !crossRowConsistent(r)).length,
     [record],
@@ -3174,6 +3174,12 @@ function DetailView({
 
       <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
         {step === 1 ? (
+          <CompareView
+            recordId={record.id}
+            count={compareCountFor(record)}
+            loading={false}
+          />
+        ) : step === 2 ? (
           <DocPanel
             deliveryPages={deliveryPages}
             deliveryImages={deliveryImages}
@@ -3926,7 +3932,7 @@ function DetailStepNav({
                 active
                   ? "border-primary/40 bg-primary/5"
                   : "border-border bg-background/60 hover:bg-muted/40",
-                it.n === 2 && stale && "border-dashed border-[color:var(--warning)]/60",
+                it.n === 3 && stale && "border-dashed border-[color:var(--warning)]/60",
               )}
             >
               <span
@@ -3943,7 +3949,7 @@ function DetailStepNav({
                 <span className="block text-xs font-medium text-foreground">{it.title}</span>
                 <span className="block truncate text-[11px] text-muted-foreground">{it.desc}</span>
               </span>
-              {it.n === 2 &&
+              {it.n === 3 &&
                 (stale ? (
                   <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded bg-[color:var(--warning)]/20 px-1.5 py-0.5 text-[11px] text-[color:var(--warning-foreground)]">
                     <RefreshCw className="size-3" /> 待重新核对
