@@ -3554,21 +3554,8 @@ function crossRowConsistent(row: CrossRow, sources: CrossSource[] = CROSS_SOURCE
   return CROSS_METRICS.every((m) => metricConsistent(row, m.key, sources));
 }
 
-function CrossCheckView({
-  record,
-  stale = false,
-  running = false,
-  checkedAt = null,
-  onRun,
-}: {
-  record: OcrRecord;
-  stale?: boolean;
-  running?: boolean;
-  checkedAt?: number | null;
-  onRun?: () => void;
-}) {
+function CrossCheckView({ record }: { record: OcrRecord }) {
   const rows = useMemo(() => buildCrossRows(record), [record]);
-  const badRows = rows.filter((r) => !crossRowConsistent(r));
 
   if (rows.length === 0) {
     return (
