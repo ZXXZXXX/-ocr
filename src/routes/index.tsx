@@ -3195,34 +3195,35 @@ function DetailView({
       </SheetHeader>
 
       <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
-        {step === 1 ? (
-          <CompareView
-            recordId={record.id}
-            count={compareCountFor(record)}
-            loading={false}
-          />
-        ) : step === 2 ? (
-          <DocPanel
-            deliveryPages={deliveryPages}
-            deliveryImages={deliveryImages}
-            shippingImages={shippingImages}
-            editing={editing}
-            autoFocus={autoFocus}
-            setAutoFocus={setAutoFocus}
-            failureReason={record.failedReason}
-            onChange={(pageIdx, chunkId, v) =>
-              handleEditChange("delivery_note", pageIdx, chunkId, v)
-            }
-          />
-        ) : (
-          <CrossCheckView
-            record={record}
-            stale={crossStale}
-            running={crossRunning}
-            checkedAt={crossCheckedAt}
-            onRun={runCrossCheck}
-          />
-        )}
+        <DocPanel
+          deliveryPages={deliveryPages}
+          deliveryImages={deliveryImages}
+          shippingImages={shippingImages}
+          editing={editing}
+          autoFocus={autoFocus}
+          setAutoFocus={setAutoFocus}
+          failureReason={record.failedReason}
+          onChange={(pageIdx, chunkId, v) =>
+            handleEditChange("delivery_note", pageIdx, chunkId, v)
+          }
+          rightSlot={
+            step === 1 ? (
+              <CompareView
+                recordId={record.id}
+                count={compareCountFor(record)}
+                loading={false}
+              />
+            ) : step === 3 ? (
+              <CrossCheckView
+                record={record}
+                stale={crossStale}
+                running={crossRunning}
+                checkedAt={crossCheckedAt}
+                onRun={runCrossCheck}
+              />
+            ) : undefined
+          }
+        />
 
         {compareOpen && (
           <div className="absolute inset-0 z-50 flex flex-col overflow-hidden bg-[color:var(--background)] animate-in slide-in-from-right duration-200">
