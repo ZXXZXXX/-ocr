@@ -3147,6 +3147,16 @@ function DetailView({
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
+                onClick={() => {
+                  setAiReReviewOption("");
+                  setAiReReviewOpen(true);
+                }}
+                className="gap-2"
+              >
+                <Sparkles className="size-4" /> AI重新审核
+              </Button>
+              <Button
+                variant="outline"
                 onClick={() => submitVerdict("fail")}
                 className="gap-2 border-[color:var(--destructive)]/40 text-[color:var(--destructive)] hover:bg-[color:var(--destructive)]/10 hover:text-[color:var(--destructive)]"
               >
@@ -3162,6 +3172,57 @@ function DetailView({
           </div>
         </div>
       )}
+
+      <Dialog open={aiReReviewOpen} onOpenChange={setAiReReviewOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>AI重新审核</DialogTitle>
+            <DialogDescription>
+              请选择重新审核方式，未选择时无法确认
+            </DialogDescription>
+          </DialogHeader>
+          <RadioGroup
+            value={aiReReviewOption}
+            onValueChange={(v) => setAiReReviewOption(v as "driver" | "now")}
+            className="gap-3 py-2"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="driver" id="ai-review-driver" />
+              <Label htmlFor="ai-review-driver" className="cursor-pointer">
+                等待司机更新图片后重新审核
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="now" id="ai-review-now" />
+              <Label htmlFor="ai-review-now" className="cursor-pointer">
+                使用现有有效图片立即重新审核
+              </Label>
+            </div>
+          </RadioGroup>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setAiReReviewOpen(false)}
+            >
+              取消
+            </Button>
+            <Button
+              disabled={!aiReReviewOption}
+              onClick={() => {
+                setAiReReviewOpen(false);
+                toast.success(
+                  aiReReviewOption === "driver"
+                    ? "已提交：等待司机更新图片后重新审核"
+                    : "已提交：使用现有有效图片立即重新审核"
+                );
+                setAiReReviewOption("");
+              }}
+            >
+              确认
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
 
     </DetailRecordContext.Provider>
