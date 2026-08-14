@@ -437,26 +437,41 @@ function kaVsSdccStatusFor(record: OcrRecord): StepStatus {
   return groups.every((g) => groupStatus(g).pass) ? "success" : "fail";
 }
 
-// 根据当前 AI 审核结论推导两步对碰状态（算法平台未来会直接推送该字段）
-function deriveReviewStepStatuses(record: OcrRecord): OcrRecord {
-  if (record.aiVerdict === "exception" || !record.aiVerdict) {
-    // OCR 尚未出结果：第一步仍可能已完成对碰
-    return { ...record, kaVsSdccStatus: kaVsSdccStatusFor(record), ocrVsKaStatus: "no_result" };
-  }
-  const step1 = kaVsSdccStatusFor(record);
-  // 第二步只取决于 OCR 与 KA 验收单自身的对碰结果，与第一步无关
-  const step2: StepStatus = record.aiVerdict === "fail" ? "fail" : "success";
-  if (step1 === "fail") {
-    // 第一步对碰失败 → 预审结论必须为「不通过」
-    const failed: OcrRecord = { ...record, aiVerdict: "fail", kaVsSdccStatus: "fail", ocrVsKaStatus: step2 };
-    return { ...failed, aiRejectionReason: makeAiRejectionReason(failed) };
-  }
-  return {
-    ...record,
-    kaVsSdccStatus: "success",
-    ocrVsKaStatus: step2,
-  };
+// 第二步「OCR识别结果」：识别完成 / 识别失败
+function ocrStatusFor(record: OcrRecord): StepStatus {
+  if (record.status !== "done") return "no_result";
+  if (record.failedReason || record.confidence == null || !record.results) return "fail";
+  return "success";
 }
+
+// 根据三步流程推导状态与预审结论
+// 规则：第一步无论通过与否都进入第二步；第二步失败则无法进入第三步且预审结论为「不通过」；
+// 第二步成功且第三步通过时预审结论才是「通过」，否则为「不通过」。
+function deriveReviewStepStatuses(record: OcrRecord): OcrRecord {
+  const step1 = kaVsSdccStatusFor(record);
+  const step2 = ocrStatusFor(record);
+  if (step2 !== "success") {
+    const next: OcrRecord = {
+      ...record,
+      kaVsSdccStatus: step1,
+      ocrVsKaStatus: step2,
+      crossCheckStatus: "no_result",
+      aiVerdict: step2 === "fail" ? "fail" : record.aiVerdict,
+    };
+    return step2 === "fail" ? { ...next, aiRejectionReason: makeAiRejectionReason(next) } : next;
+  }
+  const step3: StepStatus =
+    buildCrossRows(record).every((r) => crossRowConsistent(r)) ? "success" : "fail";
+  const next: OcrRecord = {
+    ...record,
+    kaVsSdccStatus: step1,
+    ocrVsKaStatus: step2,
+    crossCheckStatus: step3,
+    aiVerdict: step3 === "success" ? "pass" : "fail",
+  };
+  return step3 === "success" ? next : { ...next, aiRejectionReason: makeAiRejectionReason(next) };
+}
+
 
 // Extract plain text from a simple HTML string (handles <p>, <br>, entities)
 function htmlToText(html: string): string {
