@@ -3026,7 +3026,7 @@ function DetailView({
           onChange={() => {}}
 
           topSlot={
-            <DetailStepNav step={step} onChange={setStep} badCount={crossBadCount} stale={crossStale} record={record} />
+            <DetailStepNav step={step} onChange={setStep} badCount={crossBadCount} record={record} />
           }
           rightSlot={
             step === 1 ? (
@@ -3036,13 +3036,7 @@ function DetailView({
                 loading={false}
               />
             ) : step === 3 ? (
-              <CrossCheckView
-                record={record}
-                stale={crossStale}
-                running={crossRunning}
-                checkedAt={crossCheckedAt}
-                onRun={runCrossCheck}
-              />
+              <CrossCheckView record={record} />
             ) : undefined
           }
         />
