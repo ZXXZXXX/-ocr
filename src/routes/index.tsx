@@ -3881,7 +3881,7 @@ function DetailStepNav({
 
 
   return (
-    <div className="mt-4 flex items-center gap-2">
+    <div className="flex items-center gap-1">
       {items.map((it, idx) => {
         const active = step === it.n;
         return (
@@ -3894,7 +3894,7 @@ function DetailStepNav({
                   stale ? "text-[color:var(--warning)]" : "text-muted-foreground/50",
                 )}
               >
-                <ChevronRight className="size-5" />
+                <ChevronRight className="size-4" />
               </span>
             )}
             <button
@@ -3904,7 +3904,7 @@ function DetailStepNav({
               title={it.n === 3 && step3Disabled ? "OCR识别失败，无法进入关键数据对碰" : undefined}
               onClick={() => onChange(it.n)}
               className={cn(
-                "flex flex-1 items-center gap-2 rounded-xl border px-4 py-2.5 text-left transition-colors",
+                "flex min-w-0 flex-1 items-center gap-1.5 rounded-lg border px-2 py-1.5 text-left transition-colors",
                 active
                   ? "border-primary/40 bg-primary/5"
                   : "border-border bg-background/60 hover:bg-muted/40",
@@ -3922,9 +3922,8 @@ function DetailStepNav({
               >
                 {it.n}
               </span>
-              <span className="min-w-0">
-                <span className="block text-xs font-medium text-foreground">{it.title}</span>
-                <span className="block truncate text-[11px] text-muted-foreground">{it.desc}</span>
+              <span className="min-w-0" title={it.desc}>
+                <span className="block truncate text-xs font-medium text-foreground">{it.title}</span>
               </span>
               {it.n === 3 && stale ? (
                 <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded bg-[color:var(--warning)]/20 px-1.5 py-0.5 text-[11px] text-[color:var(--warning-foreground)]">
