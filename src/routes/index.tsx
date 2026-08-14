@@ -3757,10 +3757,8 @@ function KeyDataTable({ rows, sources }: { rows: CrossRow[]; sources: CrossSourc
                   className="border border-border px-3 py-2 align-top font-mono text-xs text-muted-foreground"
                 >
                   {codes.length ? (
-                    <div className="flex max-w-[180px] flex-wrap gap-x-1.5 gap-y-0.5">
-                      {codes.map((c) => (
-                        <span key={c}>{c}</span>
-                      ))}
+                    <div className="max-w-[180px] leading-relaxed">
+                      {codes.join("，")}
                     </div>
                   ) : (
                     "-"
