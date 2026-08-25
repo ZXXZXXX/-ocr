@@ -1959,70 +1959,44 @@ function MetricCard({
     warning: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
   };
 
-  const trendPositive = trend != null && trend > 0;
-  const trendNegative = trend != null && trend < 0;
-  const trendZero = trend == null || trend === 0;
-  const trendText = trendZero ? null : `${trend > 0 ? "+" : ""}${trend}%`;
-
-  const trendBadgeClass = trendPositive
-    ? "bg-[color:var(--success)]/10 text-[color:var(--success)]"
-    : trendNegative
-      ? "bg-destructive/10 text-destructive"
-      : "bg-muted text-muted-foreground";
-
-  const trendIcon = trendZero ? (
-    <Minus className="size-3" />
-  ) : trendPositive ? (
-    <TrendingUp className="size-3" />
-  ) : (
-    <TrendingDown className="size-3" />
-  );
+  const trendIcon =
+    trend == null || trend === 0 ? (
+      <Minus className="size-3" />
+    ) : trend > 0 ? (
+      <TrendingUp className="size-3" />
+    ) : (
+      <TrendingDown className="size-3" />
+    );
+  const trendText = trend == null ? null : `${trend > 0 ? "+" : ""}${trend}%`;
+  const trendColor =
+    trend == null || trend === 0
+      ? "text-muted-foreground"
+      : trend > 0
+        ? "text-[color:var(--success)]"
+        : "text-destructive";
 
   return (
-    <div className="group flex items-center gap-3 rounded-full border border-border/70 bg-card px-4 py-2.5 transition-colors hover:border-primary/30">
-      <div
-        className={cn(
-          "grid size-8 shrink-0 place-items-center rounded-full",
-          toneClasses[tone],
-        )}
-      >
-        <Icon className="size-4" />
+    <div className="flex items-center gap-4 rounded-lg border border-border bg-card px-4 py-3">
+      <div className={cn("grid size-10 place-items-center rounded-lg", toneClasses[tone])}>
+        <Icon className="size-5" />
       </div>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-[11px] font-medium text-muted-foreground">{label}</p>
-        <div className="flex items-baseline gap-0.5">
-          <span className="text-base font-bold tracking-tight tabular-nums">{value}</span>
-          {valueSuffix && (
-            <span className="text-[11px] font-normal text-muted-foreground">{valueSuffix}</span>
+      <div className="flex flex-col">
+        <span className="text-xs text-muted-foreground">{label}</span>
+        <div className="flex items-baseline gap-1.5">
+          <span className="text-2xl font-semibold tabular-nums">
+            {value}
+            {valueSuffix}
+          </span>
+          {subLabel ? (
+            <span className="text-xs font-medium text-[color:var(--success)]">{subLabel}</span>
+          ) : (
+            <span className={cn("flex items-center gap-0.5 text-xs font-medium", trendColor)}>
+              {trendIcon}
+              {trendText}
+            </span>
           )}
         </div>
       </div>
-      {subLabel ? (
-        <span className="shrink-0 rounded-full border border-[color:var(--success)]/20 bg-[color:var(--success)]/10 px-2 py-0.5 text-[11px] font-medium text-[color:var(--success)]">
-          {subLabel}
-        </span>
-      ) : trendText ? (
-        <span
-          className={cn(
-            "inline-flex shrink-0 items-center gap-0.5 rounded-full border px-2 py-0.5 text-[11px] font-medium",
-            trendPositive && "border-[color:var(--success)]/20 bg-[color:var(--success)]/10 text-[color:var(--success)]",
-            trendNegative && "border-destructive/20 bg-destructive/10 text-destructive",
-            trendZero && "border-border bg-muted text-muted-foreground",
-          )}
-        >
-          {trendIcon}
-          {trendText}
-        </span>
-      ) : (
-        <span
-          className={cn(
-            "inline-flex shrink-0 items-center gap-0.5 rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground",
-          )}
-        >
-          {trendIcon}
-          持平
-        </span>
-      )}
     </div>
   );
 }
@@ -2034,7 +2008,6 @@ function Workbench() {
   const [progressMinimized, setProgressMinimized] = useState(false);
   const [progressDismissed, setProgressDismissed] = useState(true);
   const [detailId, setDetailId] = useState<string | null>(null);
-  const [detailMode, setDetailMode] = useState<"review" | "view">("review");
   
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [logRecordId, setLogRecordId] = useState<string | null>(null);
@@ -2356,11 +2329,11 @@ function Workbench() {
 
         <main className="mx-auto max-w-[1400px] px-6 py-6">
           {/* 关键指标统计卡：最近 30 日 */}
-          <div className="relative pb-3">
-            <div className="absolute right-0 top-0 text-[11px] text-muted-foreground">
+          <div className="relative pb-5">
+            <div className="absolute right-0 top-0 text-xs text-muted-foreground">
               最近30日
             </div>
-            <div className="grid grid-cols-4 gap-3 pt-5">
+            <div className="grid grid-cols-4 gap-4 pt-5">
               <MetricCard
                 label="验收任务总数"
                 value={metrics.total}
@@ -2411,25 +2384,6 @@ function Workbench() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Popover open={filterOpen} onOpenChange={setFilterOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className={cn(
-                        "gap-1 border border-transparent transition-colors hover:border-primary hover:bg-transparent hover:text-primary",
-                        filterActive && "border-primary/60 text-primary",
-                      )}
-                    >
-                      <Filter className="size-3.5" />
-                      筛选
-                      {filterActive && (
-                        <span className="ml-0.5 rounded-full bg-primary/15 px-1.5 text-[10px] font-medium text-primary">
-                          已启用
-                        </span>
-                      )}
-                    </Button>
-                  </PopoverTrigger>
 
                 <div className="flex items-center gap-2 px-3 py-1.5">
                   <span className="text-sm font-normal text-muted-foreground">仅查看未审核</span>
@@ -2455,7 +2409,29 @@ function Workbench() {
                   </button>
                 </div>
 
-                <PopoverContent align="end" className="w-[360px] p-0">
+
+                <Popover open={filterOpen} onOpenChange={setFilterOpen}>
+
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={cn(
+                        "gap-1 border border-transparent transition-colors hover:border-primary hover:bg-transparent hover:text-primary",
+                        filterActive && "border-primary/60 text-primary",
+                      )}
+                    >
+                      <Filter className="size-3.5" />
+                      筛选
+                      {filterActive && (
+                        <span className="ml-0.5 rounded-full bg-primary/15 px-1.5 text-[10px] font-medium text-primary">
+                          已启用
+                        </span>
+                      )}
+                    </Button>
+
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-[360px] p-0">
                     <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
                       <div className="flex items-center gap-2 text-sm font-medium">
                         <Filter className="size-4 text-primary" />
@@ -2688,7 +2664,6 @@ function Workbench() {
                               title={reviewDisabled ? "SDCC 对碰结果与图片数据均未就绪，暂不可审核" : undefined}
                               onClick={() => {
                                 if (reviewDisabled) return;
-                                setDetailMode("review");
                                 setDetailId(r.id);
                                 if (r.imageUpdated) {
                                   setRecords((prev) => prev.map((x) => x.id === r.id ? { ...x, imageUpdated: false } : x));
@@ -2706,7 +2681,6 @@ function Workbench() {
                             className="text-sm font-semibold"
                             disabled={inProgress}
                             onClick={() => {
-                              setDetailMode("view");
                               setDetailId(r.id);
                               if (r.imageUpdated) {
                                 setRecords((prev) => prev.map((x) => x.id === r.id ? { ...x, imageUpdated: false } : x));
@@ -2941,7 +2915,6 @@ function Workbench() {
             {detailRecord && (
               <DetailView
                 record={detailRecord}
-                readOnlyMode={detailMode === "view"}
                 onSignatureStatusChange={(value) => updateSignatureStatus(detailRecord.id, value)}
                 onSubmit={(verdict) => {
                   submitVerification(detailRecord.id, verdict);
@@ -3199,12 +3172,10 @@ function DetailView({
   record,
   onSignatureStatusChange,
   onSubmit,
-  readOnlyMode = false,
 }: {
   record: OcrRecord;
   onSignatureStatusChange: (value: SignatureStatus) => void;
   onSubmit: (verdict?: AiVerdict) => void;
-  readOnlyMode?: boolean;
 }) {
   const deliveryPages = record.results?.delivery_note ?? [];
   const deliveryImages = record.images.filter((i) => i.docType === "delivery_note");
@@ -3240,7 +3211,7 @@ function DetailView({
               <SheetTitle className="flex flex-wrap items-center gap-2">
                 任务详情
                 <NeutralTag>
-                  {record.status === "verified" ? "已完成审核" : readOnlyMode ? "查看" : "待审核"}
+                  {record.status === "verified" ? "已完成审核" : "待审核"}
                 </NeutralTag>
             </SheetTitle>
             {(record.aiVerdict) && (
@@ -3326,7 +3297,7 @@ function DetailView({
             <Select
               value={record.signatureStatus ?? ""}
               onValueChange={(v) => onSignatureStatusChange(v as SignatureStatus)}
-              disabled={readOnlyMode || record.status === "verified"}
+              disabled={record.status === "verified"}
             >
               <SelectTrigger className="h-8 w-[140px] text-sm">
                 <SelectValue placeholder="待识别" />
@@ -3389,7 +3360,7 @@ function DetailView({
 
 
 
-      {!readOnlyMode && record.status === "pending_review" && (
+      {record.status === "pending_review" && (
         <div className="shrink-0 border-t border-border bg-background px-6 py-3 shadow-[0_-4px_12px_-8px_rgba(0,0,0,0.15)]">
           <div className="flex items-center justify-between gap-4">
             <div className="text-xs text-muted-foreground">
