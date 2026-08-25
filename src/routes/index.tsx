@@ -3028,8 +3028,8 @@ function DetailView({
             {(record.aiVerdict) && (
               <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
                 <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground">ai识别结果：</span>
-                  <VerdictBadge value={record.aiVerdict} />
+                  <span className="text-muted-foreground">ai识别结果</span>
+                  <VerdictBadge value={record.aiVerdict} iconOnly />
                   {record.confidence != null ? (
                     <ConfidenceBadge score={record.confidence} />
                   ) : (
