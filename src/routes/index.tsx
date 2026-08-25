@@ -1930,6 +1930,41 @@ function seedRecords(): OcrRecord[] {
 
 
 
+// ---------- Metric Card ----------
+function MetricCard({
+  label,
+  value,
+  icon: Icon,
+  tone,
+  total,
+}: {
+  label: string;
+  value: number;
+  icon: React.ComponentType<{ className?: string }>;
+  tone: "success" | "primary" | "info";
+  total: number;
+}) {
+  const toneClasses = {
+    success: "bg-[color:var(--success)]/10 text-[color:var(--success)]",
+    primary: "bg-primary/10 text-primary",
+    info: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+  };
+  return (
+    <div className="flex items-center gap-4 rounded-lg border border-border bg-card px-4 py-3">
+      <div className={cn("grid size-10 place-items-center rounded-lg", toneClasses[tone])}>
+        <Icon className="size-5" />
+      </div>
+      <div className="flex flex-col">
+        <span className="text-xs text-muted-foreground">{label}</span>
+        <div className="flex items-baseline gap-1.5">
+          <span className="text-2xl font-semibold tabular-nums">{value}%</span>
+          <span className="text-xs text-muted-foreground">共 {total} 条</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ---------- Main Workbench ----------
 function Workbench() {
   const [records, setRecords] = useState<OcrRecord[]>(() => seedRecords());
