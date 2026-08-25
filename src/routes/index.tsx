@@ -13,6 +13,7 @@ import {
   XCircle,
   HelpCircle,
   AlertTriangle,
+  AlertCircle,
   Loader2,
   Sparkles,
   Trash2,
@@ -2892,8 +2893,8 @@ function VerdictBadge({ value }: { value: AiVerdict }) {
       </Badge>
     );
   return (
-    <Badge variant="status" className="w-20 justify-center gap-1 border-0 bg-[color:var(--warning)]/25 font-normal text-[color:var(--warning-foreground)]">
-      <AlertTriangle className="size-3" /> {VERDICT_LABEL[value]}
+    <Badge variant="status" className="w-20 justify-center gap-1 border-0 bg-muted font-normal text-muted-foreground">
+      <AlertCircle className="size-3" /> {VERDICT_LABEL[value]}
     </Badge>
   );
 }
