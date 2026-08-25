@@ -1485,6 +1485,11 @@ function recordSdccOrderNos(record: OcrRecord): string[] {
   return makeSdccOrderNos(record.createdAt, seed);
 }
 
+function recordCustomerOrderNo(record: OcrRecord): string {
+  return record.customerOrderNo ?? record.id;
+}
+
+
 
 function seedRecords(): OcrRecord[] {
   const now = new Date(2026, 6, 15, 0, 0, 0, 0).getTime();
