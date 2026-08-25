@@ -3174,16 +3174,22 @@ function AiReviewSteps({
 // ---------- Detail view ----------
 function DetailView({
   record,
+  initialMode = "view",
   onSignatureStatusChange,
   onSubmit,
 }: {
   record: OcrRecord;
+  initialMode?: "view" | "edit";
   onSignatureStatusChange: (value: SignatureStatus) => void;
   onSubmit: (verdict?: AiVerdict) => void;
 }) {
   const deliveryPages = record.results?.delivery_note ?? [];
   const deliveryImages = record.images.filter((i) => i.docType === "delivery_note");
   const shippingImages = record.images.filter((i) => i.docType === "shipping_slip");
+  const [editing, setEditing] = useState(initialMode === "edit");
+  useEffect(() => {
+    setEditing(initialMode === "edit");
+  }, [initialMode, record.id]);
   const [autoFocus, setAutoFocus] = useState(true);
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const ocrStepOk = (record.ocrVsKaStatus ?? "no_result") === "success";
