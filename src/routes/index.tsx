@@ -1686,7 +1686,9 @@ function seedRecords(): OcrRecord[] {
     signatureStatus: "perfect",
     aiVerdict: "pass",
     shippingSlipNo: "1383RY202604220013",
+    customerOrderNo: "CD202607175004873",
   };
+
 
   // 三个只有送货单、无出货传票的真实照片任务
   type NoSlipSeed = {
