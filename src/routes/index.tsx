@@ -3629,10 +3629,18 @@ function buildCompareRows(recordId: string, count: number): CrossRow[] {
   });
 }
 
+// 第三步 OCR 来源中，订单数量 / 实际发货数量不展示识别数量，也不参与对碰
+const HIDDEN_OCR_METRICS: (keyof SourceMetrics)[] = ["order", "ship"];
+function shouldHideOcrMetric(source: CrossSource["key"], key: keyof SourceMetrics) {
+  return source === "ocr" && HIDDEN_OCR_METRICS.includes(key);
+}
+
 // 统一的关键数据表格（第一步两方 / 第三步三方）
 function KeyDataTable({ rows, sources }: { rows: CrossRow[]; sources: CrossSource[] }) {
   const cell = (row: CrossRow, source: CrossSource["key"], key: keyof SourceMetrics) => {
     const v = row[source][key];
+    const hidden = shouldHideOcrMetric(source, key);
+    const displayV = hidden ? null : v;
     const bad = !metricConsistent(row, key, sources);
     return (
       <td
@@ -3640,10 +3648,10 @@ function KeyDataTable({ rows, sources }: { rows: CrossRow[]; sources: CrossSourc
         className={cn(
           "whitespace-nowrap border border-border px-3 py-2 text-right text-sm tabular-nums",
           bad ? "font-medium text-[color:var(--destructive)]" : "text-foreground",
-          v === null && "text-muted-foreground",
+          displayV === null && "text-muted-foreground",
         )}
       >
-        {v === null ? "-" : v}
+        {displayV === null ? "-" : displayV}
       </td>
     );
   };
@@ -3742,6 +3750,7 @@ function metricConsistent(
   sources: CrossSource[] = CROSS_SOURCES,
 ) {
   const vals = sources
+    .filter((s) => !shouldHideOcrMetric(s.key, key))
     .map((s) => row[s.key][key])
     .filter((v): v is number => v !== null && v !== undefined);
   if (vals.length < 2) return true;
