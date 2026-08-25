@@ -12,6 +12,7 @@ import {
   CheckCircle2,
   XCircle,
   HelpCircle,
+  Info,
   AlertCircle,
   AlertTriangle,
   Loader2,
@@ -3892,7 +3893,19 @@ function KeyDataTable({
             </th>
           ))}
           <th rowSpan={2} className="border border-border px-3 py-2 text-center font-medium">
-            对碰结果
+            <span className="inline-flex items-center justify-center gap-1">
+              对碰结果
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button type="button" className="inline-flex text-muted-foreground hover:text-foreground">
+                    <Info className="size-3.5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-sm">
+                  商品未映射成功时，请重点核对客户商品编码、69码和供货商商品编码。商品数量不一致时，请重点核对红色数字对应的数量数据。
+                </TooltipContent>
+              </Tooltip>
+            </span>
           </th>
         </tr>
 
@@ -4307,6 +4320,16 @@ function CompareView({
           </>
         )}
         <span className="text-sm font-medium text-foreground">双方系统数据校验</span>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button type="button" className="ml-1 inline-flex text-muted-foreground hover:text-foreground">
+              <Info className="size-4" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right" className="max-w-sm">
+            核对客户订单与供货商订单中的关键数量数据：订单数量、实际发货数量和签收数量。
+          </TooltipContent>
+        </Tooltip>
       </div>
       <div className="flex-1 overflow-y-auto p-4">
         <CompareTable recordId={recordId} count={count} loading={loading} />
