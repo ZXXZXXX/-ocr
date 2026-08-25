@@ -2683,11 +2683,11 @@ function Workbench() {
                             className="text-sm font-semibold"
                             disabled={inProgress}
                             onClick={() => {
+                              setDetailMode("view");
                               setDetailId(r.id);
                               if (r.imageUpdated) {
                                 setRecords((prev) => prev.map((x) => x.id === r.id ? { ...x, imageUpdated: false } : x));
                               }
-                              
                             }}
                           >
                             查看
