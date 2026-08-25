@@ -1979,10 +1979,10 @@ function MetricCard({
   );
 
   return (
-    <div className="group flex items-center gap-3 rounded-full border border-border bg-card px-4 py-2.5 shadow-sm transition-all hover:shadow-md hover:border-primary/20">
+    <div className="group flex items-center gap-3 rounded-full border border-border/70 bg-card px-4 py-2.5 transition-colors hover:border-primary/30">
       <div
         className={cn(
-          "grid size-8 shrink-0 place-items-center rounded-full transition-colors group-hover:brightness-95",
+          "grid size-8 shrink-0 place-items-center rounded-full",
           toneClasses[tone],
         )}
       >
@@ -1998,14 +1998,16 @@ function MetricCard({
         </div>
       </div>
       {subLabel ? (
-        <span className="shrink-0 rounded-full bg-[color:var(--success)]/10 px-2 py-0.5 text-[11px] font-medium text-[color:var(--success)]">
+        <span className="shrink-0 rounded-full border border-[color:var(--success)]/20 bg-[color:var(--success)]/10 px-2 py-0.5 text-[11px] font-medium text-[color:var(--success)]">
           {subLabel}
         </span>
       ) : trendText ? (
         <span
           className={cn(
-            "inline-flex shrink-0 items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-medium",
-            trendBadgeClass,
+            "inline-flex shrink-0 items-center gap-0.5 rounded-full border px-2 py-0.5 text-[11px] font-medium",
+            trendPositive && "border-[color:var(--success)]/20 bg-[color:var(--success)]/10 text-[color:var(--success)]",
+            trendNegative && "border-destructive/20 bg-destructive/10 text-destructive",
+            trendZero && "border-border bg-muted text-muted-foreground",
           )}
         >
           {trendIcon}
@@ -2014,8 +2016,7 @@ function MetricCard({
       ) : (
         <span
           className={cn(
-            "inline-flex shrink-0 items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-medium",
-            trendBadgeClass,
+            "inline-flex shrink-0 items-center gap-0.5 rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground",
           )}
         >
           {trendIcon}
