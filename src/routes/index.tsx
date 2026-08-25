@@ -3706,12 +3706,12 @@ function buildCrossRows(record: OcrRecord): CrossRow[] {
 type CrossSource = { key: "ka" | "sdcc" | "ocr"; label: string };
 const CROSS_SOURCES: CrossSource[] = [
   { key: "ka", label: "客户订单" },
-  { key: "sdcc", label: "供货商订单" },
+  { key: "sdcc", label: "供应商订单" },
   { key: "ocr", label: "AI识别数量" },
 ];
 const COMPARE_SOURCES: CrossSource[] = [
   { key: "ka", label: "客户订单" },
-  { key: "sdcc", label: "供货商订单" },
+  { key: "sdcc", label: "供应商订单" },
 ];
 
 // 第一步：仅 KA 与 SDCC 两方，表格格式与第三步一致
@@ -3813,7 +3813,7 @@ function KeyDataTable({
             商品条形码
           </th>
           <th rowSpan={2} className="border border-border px-3 py-2 text-left font-medium">
-            供货商商品编码
+            供应商商品编码
           </th>
           {CROSS_METRICS.map((m) => (
             <th
@@ -3834,7 +3834,7 @@ function KeyDataTable({
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-sm">
-                  商品未映射成功时，请重点核对客户商品编码、69码和供货商商品编码。商品数量不一致时，请重点核对红色数字对应的数量数据。
+                  商品未映射成功时，请重点核对客户商品编码、69码和供应商商品编码。商品数量不一致时，请重点核对红色数字对应的数量数据。
                 </TooltipContent>
               </Tooltip>
             </span>
@@ -4002,7 +4002,7 @@ function CrossCheckView({ record, editing = false }: { record: OcrRecord; editin
             </button>
           </TooltipTrigger>
           <TooltipContent side="right" className="max-w-sm">
-            核对 《客户订单》、《供货商订单》与《AI识别数量》中的关键数量数据：签收数量。
+            核对 《客户订单》、《供应商订单》与《AI识别数量》中的关键数量数据：签收数量。
           </TooltipContent>
         </Tooltip>
       </div>
@@ -4266,7 +4266,7 @@ function CompareView({
             </button>
           </TooltipTrigger>
           <TooltipContent side="right" className="max-w-sm">
-            核对 《客户订单》 与 《供货商订单》 中的关键数量数据：订单数量、实际发货数量和签收数量。
+            核对 《客户订单》 与 《供应商订单》 中的关键数量数据：订单数量、实际发货数量和签收数量。
           </TooltipContent>
         </Tooltip>
       </div>
