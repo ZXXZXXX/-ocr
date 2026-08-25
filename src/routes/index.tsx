@@ -2187,8 +2187,8 @@ function Workbench() {
               </div>
               <div className="flex items-center gap-2">
 
-                <div className="flex items-center gap-2 rounded-md border border-border bg-background px-3 py-1.5">
-                  <span className="text-sm font-medium">仅查看未审核</span>
+                <div className="group flex items-center gap-2 rounded-md bg-background px-3 py-1.5 transition-colors hover:border hover:border-primary hover:text-primary">
+                  <span className="text-sm font-medium group-hover:text-primary">仅查看未审核</span>
                   <button
                     type="button"
                     role="switch"
@@ -2215,9 +2215,12 @@ function Workbench() {
 
                   <PopoverTrigger asChild>
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="sm"
-                      className={cn("gap-1", filterActive && "border-primary/60 text-primary")}
+                      className={cn(
+                        "gap-1 border border-transparent transition-colors hover:border-primary hover:text-primary",
+                        filterActive && "border-primary/60 text-primary",
+                      )}
                     >
                       <Filter className="size-3.5" />
                       筛选
