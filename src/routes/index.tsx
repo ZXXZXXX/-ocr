@@ -45,6 +45,7 @@ import {
   Link,
   Link2Off,
   Rows2,
+  Copy,
 } from "lucide-react";
 
 
