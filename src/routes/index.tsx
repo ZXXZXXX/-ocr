@@ -2327,28 +2327,36 @@ function Workbench() {
         </header>
 
         <main className="mx-auto max-w-[1400px] px-6 py-6">
-          {/* 关键指标统计卡 */}
-          <div className="grid grid-cols-3 gap-4 pb-5">
+          {/* 关键指标统计卡：最近 30 日 */}
+          <div className="grid grid-cols-4 gap-4 pb-5">
+            <MetricCard
+              label="最近30日验收任务总数"
+              value={metrics.total}
+              valueSuffix=""
+              icon={FileText}
+              tone="warning"
+              subLabel={`+ ${metrics.todayNew} 项`}
+            />
             <MetricCard
               label="数据一致率"
               value={metrics.dataConsistent}
               icon={CheckCircle2}
               tone="success"
-              total={metrics.total}
+              trend={metrics.dataConsistentTrend}
             />
             <MetricCard
               label="AI 预审通过率"
               value={metrics.aiPass}
               icon={Sparkles}
               tone="primary"
-              total={metrics.total}
+              trend={metrics.aiPassTrend}
             />
             <MetricCard
               label="结论一致率"
               value={metrics.conclusionConsistent}
               icon={Link}
               tone="info"
-              total={metrics.total}
+              trend={metrics.conclusionConsistentTrend}
             />
           </div>
 
