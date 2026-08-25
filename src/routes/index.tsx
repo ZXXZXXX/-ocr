@@ -1959,41 +1959,68 @@ function MetricCard({
     warning: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
   };
 
-  const trendIcon =
-    trend == null || trend === 0 ? (
-      <Minus className="size-3" />
-    ) : trend > 0 ? (
-      <TrendingUp className="size-3" />
-    ) : (
-      <TrendingDown className="size-3" />
-    );
-  const trendText = trend == null ? null : `${trend > 0 ? "+" : ""}${trend}%`;
-  const trendColor =
-    trend == null || trend === 0
-      ? "text-muted-foreground"
-      : trend > 0
-        ? "text-[color:var(--success)]"
-        : "text-destructive";
+  const trendPositive = trend != null && trend > 0;
+  const trendNegative = trend != null && trend < 0;
+  const trendZero = trend == null || trend === 0;
+  const trendText = trendZero ? null : `${trend > 0 ? "+" : ""}${trend}%`;
+
+  const trendBadgeClass = trendPositive
+    ? "bg-[color:var(--success)]/10 text-[color:var(--success)]"
+    : trendNegative
+      ? "bg-destructive/10 text-destructive"
+      : "bg-muted text-muted-foreground";
+
+  const trendIcon = trendZero ? (
+    <Minus className="size-3" />
+  ) : trendPositive ? (
+    <TrendingUp className="size-3" />
+  ) : (
+    <TrendingDown className="size-3" />
+  );
 
   return (
-    <div className="flex items-center gap-4 rounded-lg border border-border bg-card px-4 py-3">
-      <div className={cn("grid size-10 place-items-center rounded-lg", toneClasses[tone])}>
-        <Icon className="size-5" />
-      </div>
-      <div className="flex flex-col">
-        <span className="text-xs text-muted-foreground">{label}</span>
-        <div className="flex items-baseline gap-1.5">
-          <span className="text-2xl font-semibold tabular-nums">
-            {value}
-            {valueSuffix}
+    <div className="group rounded-2xl border border-border bg-card p-5 shadow-sm transition-shadow hover:shadow-md">
+      <div className="mb-4 flex items-center justify-between">
+        <div
+          className={cn(
+            "grid size-11 place-items-center rounded-xl transition-colors group-hover:brightness-95",
+            toneClasses[tone],
+          )}
+        >
+          <Icon className="size-6" />
+        </div>
+        {subLabel ? (
+          <span className="rounded-full bg-[color:var(--success)]/10 px-2 py-1 text-xs font-medium text-[color:var(--success)]">
+            {subLabel}
           </span>
-          {subLabel ? (
-            <span className="text-xs font-medium text-[color:var(--success)]">{subLabel}</span>
-          ) : (
-            <span className={cn("flex items-center gap-0.5 text-xs font-medium", trendColor)}>
-              {trendIcon}
-              {trendText}
-            </span>
+        ) : trendText ? (
+          <span
+            className={cn(
+              "inline-flex items-center gap-0.5 rounded-full px-2 py-1 text-xs font-medium",
+              trendBadgeClass,
+            )}
+          >
+            {trendIcon}
+            {trendText}
+          </span>
+        ) : (
+          <span
+            className={cn(
+              "inline-flex items-center gap-0.5 rounded-full px-2 py-1 text-xs font-medium",
+              trendBadgeClass,
+            )}
+          >
+            {trendIcon}
+            持平
+          </span>
+        )}
+      </div>
+      <div>
+        <p className="mb-1 text-sm font-medium text-muted-foreground">{label}</p>
+        <div className="flex items-baseline gap-1">
+          <span className="text-3xl font-bold tracking-tight tabular-nums">{value}</span>
+          {valueSuffix && (
+            <span className="text-sm font-normal text-muted-foreground">{valueSuffix}</span>
           )}
         </div>
       </div>
