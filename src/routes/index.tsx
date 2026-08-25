@@ -3602,8 +3602,8 @@ const CROSS_SOURCES: CrossSource[] = [
   { key: "ocr", label: "OCR识别" },
 ];
 const COMPARE_SOURCES: CrossSource[] = [
-  { key: "ka", label: "KA验收单" },
-  { key: "sdcc", label: "SDCC订单明细" },
+  { key: "ka", label: "客户订单" },
+  { key: "sdcc", label: "供货商订单" },
 ];
 
 // 第一步：仅 KA 与 SDCC 两方，表格格式与第三步一致
