@@ -2164,44 +2164,71 @@ function Workbench() {
     selectedConfidenceTones.size !== 3 ||
     aiVerdictFilter !== "all";
 
-  // 列表页顶部关键指标：基于当前筛选后的记录实时计算
+  // 列表页顶部关键指标：基于最近 30 日全量记录计算
   const metrics = useMemo(() => {
-    const eligible = filteredRecords.filter(
+    const now = Date.now();
+    const oneDay = 24 * 60 * 60 * 1000;
+    const isWithinDays = (ts: number, days: number) => now - ts <= days * oneDay;
+
+    const last30 = records.filter((r) => isWithinDays(r.createdAt, 30));
+    const prev30 = records.filter(
+      (r) => r.createdAt > now - 60 * oneDay && r.createdAt <= now - 30 * oneDay,
+    );
+
+    const eligible = last30.filter(
       (r) => r.status !== "queued" && r.status !== "recognizing" && r.status !== "failed",
     );
+    const eligiblePrev = prev30.filter(
+      (r) => r.status !== "queued" && r.status !== "recognizing" && r.status !== "failed",
+    );
+
+    const calcRate = (items: OcrRecord[], getter: (r: OcrRecord) => boolean) =>
+      items.length === 0 ? 0 : Math.round((items.filter(getter).length / items.length) * 100);
+
     const withCross = eligible.filter((r) => r.ocrVsKaStatus === "success");
+    const withCrossPrev = eligiblePrev.filter((r) => r.ocrVsKaStatus === "success");
+
     const withAiVerdict = eligible.filter((r) => r.aiVerdict != null);
+    const withAiVerdictPrev = eligiblePrev.filter((r) => r.aiVerdict != null);
 
-    const dataConsistent =
-      withCross.length === 0
-        ? 0
-        : Math.round((withCross.filter((r) => r.crossCheckStatus === "success").length / withCross.length) * 100);
+    const dataConsistent = calcRate(withCross, (r) => r.crossCheckStatus === "success");
+    const dataConsistentPrev = calcRate(withCrossPrev, (r) => r.crossCheckStatus === "success");
 
-    const aiPass =
-      withAiVerdict.length === 0
-        ? 0
-        : Math.round((withAiVerdict.filter((r) => r.aiVerdict === "pass").length / withAiVerdict.length) * 100);
+    const aiPass = calcRate(withAiVerdict, (r) => r.aiVerdict === "pass");
+    const aiPassPrev = calcRate(withAiVerdictPrev, (r) => r.aiVerdict === "pass");
 
-    const conclusionConsistent =
-      withCross.length === 0
-        ? 0
-        : Math.round(
-            (withCross.filter(
-              (r) =>
-                (r.aiVerdict === "pass" && r.crossCheckStatus === "success") ||
-                (r.aiVerdict === "fail" && r.crossCheckStatus === "fail"),
-            ).length /
-              withCross.length) *
-              100,
-          );
+    const conclusionConsistent = calcRate(
+      withCross,
+      (r) =>
+        (r.aiVerdict === "pass" && r.crossCheckStatus === "success") ||
+        (r.aiVerdict === "fail" && r.crossCheckStatus === "fail"),
+    );
+    const conclusionConsistentPrev = calcRate(
+      withCrossPrev,
+      (r) =>
+        (r.aiVerdict === "pass" && r.crossCheckStatus === "success") ||
+        (r.aiVerdict === "fail" && r.crossCheckStatus === "fail"),
+    );
+
+    const trendOf = (curr: number, prev: number) => {
+      if (prev === 0) return curr === 0 ? 0 : curr;
+      return Math.round(((curr - prev) / prev) * 100);
+    };
+
+    const todayStart = new Date().setHours(0, 0, 0, 0);
+    const todayNew = last30.filter((r) => r.createdAt >= todayStart).length;
 
     return {
+      total: last30.length,
+      todayNew,
       dataConsistent,
+      dataConsistentTrend: trendOf(dataConsistent, dataConsistentPrev),
       aiPass,
+      aiPassTrend: trendOf(aiPass, aiPassPrev),
       conclusionConsistent,
-      total: eligible.length,
+      conclusionConsistentTrend: trendOf(conclusionConsistent, conclusionConsistentPrev),
     };
-  }, [filteredRecords]);
+  }, [records]);
 
   const totalPages = Math.max(1, Math.ceil(filteredRecords.length / PAGE_SIZE));
   const paginatedRecords = filteredRecords.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
