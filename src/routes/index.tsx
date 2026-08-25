@@ -4044,7 +4044,7 @@ function CompareResultBadge({ result }: { result: "一致" | "不一致" | "映�
 }
 
 
-function CrossCheckView({ record }: { record: OcrRecord }) {
+function CrossCheckView({ record, editing = false }: { record: OcrRecord; editing?: boolean }) {
   const baseRows = useMemo(() => buildCrossRows(record), [record]);
   const [ocrEdits, setOcrEdits] = useState<
     Record<string, Partial<Record<keyof SourceMetrics, number | null>>>
