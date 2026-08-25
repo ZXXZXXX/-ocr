@@ -4359,7 +4359,7 @@ function CompareView({
             </button>
           </TooltipTrigger>
           <TooltipContent side="right" className="max-w-sm">
-            核对客户订单与供货商订单中的关键数量数据：订单数量、实际发货数量和签收数量。
+            核对 《客户订单》 与 《供货商订单》 中的关键数量数据：订单数量、实际发货数量和签收数量。
           </TooltipContent>
         </Tooltip>
       </div>
