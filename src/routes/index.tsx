@@ -4010,7 +4010,33 @@ function CompareResultBadge({ result }: { result: "一致" | "不一致" | "映�
 
 
 function CrossCheckView({ record }: { record: OcrRecord }) {
-  const rows = useMemo(() => buildCrossRows(record), [record]);
+  const baseRows = useMemo(() => buildCrossRows(record), [record]);
+  const [ocrEdits, setOcrEdits] = useState<
+    Record<string, Partial<Record<keyof SourceMetrics, number | null>>>
+  >({});
+
+  useEffect(() => {
+    setOcrEdits({});
+  }, [record.id]);
+
+  const rows = useMemo(
+    () =>
+      baseRows.map((r) =>
+        ocrEdits[r.key] ? { ...r, ocr: { ...r.ocr, ...ocrEdits[r.key] } } : r,
+      ),
+    [baseRows, ocrEdits],
+  );
+
+  const handleOcrChange = (
+    rowKey: string,
+    metric: keyof SourceMetrics,
+    value: number | null,
+  ) => {
+    setOcrEdits((prev) => ({
+      ...prev,
+      [rowKey]: { ...prev[rowKey], [metric]: value },
+    }));
+  };
 
   if (rows.length === 0) {
     return (
@@ -4029,7 +4055,13 @@ function CrossCheckView({ record }: { record: OcrRecord }) {
         </div>
       </div>
       <div className="relative min-h-0 flex-1 overflow-auto px-6 py-4">
-        <KeyDataTable rows={rows} sources={CROSS_SOURCES} />
+        <KeyDataTable
+          rows={rows}
+          sources={CROSS_SOURCES}
+          editableOcr
+          onOcrChange={handleOcrChange}
+        />
+
       </div>
     </div>
   );
