@@ -3888,16 +3888,16 @@ function KeyDataTable({
       <thead>
         <tr className="bg-muted/50 text-xs text-muted-foreground">
           <th rowSpan={2} className="border border-border px-3 py-2 text-left font-medium">
-            物料名称
+            商品名称
           </th>
           <th rowSpan={2} className="border border-border px-3 py-2 text-left font-medium">
-            物料编号（KA码）
+            客户商品编码
           </th>
           <th rowSpan={2} className="border border-border px-3 py-2 text-left font-medium">
-            产品单元条码
+            商品条形码
           </th>
           <th rowSpan={2} className="border border-border px-3 py-2 text-left font-medium">
-            统一产品代码
+            供货商商品编码
           </th>
           {CROSS_METRICS.map((m) => (
             <th
