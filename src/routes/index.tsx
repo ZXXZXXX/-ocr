@@ -3815,25 +3815,56 @@ function visibleSourcesForMetric(metricKey: keyof SourceMetrics, sources: CrossS
 }
 
 // 统一的关键数据表格（第一步两方 / 第三步三方）
-function KeyDataTable({ rows, sources }: { rows: CrossRow[]; sources: CrossSource[] }) {
+function KeyDataTable({
+  rows,
+  sources,
+  editableOcr = false,
+  onOcrChange,
+}: {
+  rows: CrossRow[];
+  sources: CrossSource[];
+  editableOcr?: boolean;
+  onOcrChange?: (rowKey: string, metric: keyof SourceMetrics, value: number | null) => void;
+}) {
   const cell = (row: CrossRow, source: CrossSource["key"], key: keyof SourceMetrics) => {
     const v = row[source][key];
     const hidden = shouldHideOcrMetric(source, key);
     const displayV = hidden ? null : v;
     const bad = !metricConsistent(row, key, sources);
+    const canEdit = editableOcr && source === "ocr" && !hidden && !!onOcrChange;
     return (
       <td
         key={`${source}-${key}`}
         className={cn(
           "whitespace-nowrap border border-border px-3 py-2 text-right text-sm tabular-nums",
           bad ? "font-medium text-[color:var(--destructive)]" : "text-foreground",
-          displayV === null && "text-muted-foreground",
+          displayV === null && !canEdit && "text-muted-foreground",
         )}
       >
-        {displayV === null ? "-" : displayV}
+        {canEdit ? (
+          <input
+            type="number"
+            value={displayV === null ? "" : displayV}
+            placeholder="-"
+            onChange={(e) => {
+              const raw = e.target.value.trim();
+              onOcrChange!(row.key, key, raw === "" ? null : Number(raw));
+            }}
+            className={cn(
+              "w-16 rounded border border-transparent bg-transparent px-1 py-0.5 text-right text-sm tabular-nums outline-none",
+              "hover:border-border focus:border-primary focus:bg-background",
+              bad && "text-[color:var(--destructive)]",
+            )}
+          />
+        ) : displayV === null ? (
+          "-"
+        ) : (
+          displayV
+        )}
       </td>
     );
   };
+
 
   return (
     <table className="w-full border-collapse text-sm">
