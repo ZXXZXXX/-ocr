@@ -3673,7 +3673,11 @@ function KeyDataTable({ rows, sources }: { rows: CrossRow[]; sources: CrossSourc
               {m.label}
             </th>
           ))}
+          <th rowSpan={2} className="border border-border px-3 py-2 text-center font-medium">
+            对碰结果
+          </th>
         </tr>
+
         <tr className="bg-muted/30 text-[11px] text-muted-foreground">
           {CROSS_METRICS.map((m) => (
             <Fragment key={m.key}>
@@ -3718,7 +3722,11 @@ function KeyDataTable({ rows, sources }: { rows: CrossRow[]; sources: CrossSourc
               {CROSS_METRICS.map((m) => (
                 <Fragment key={m.key}>{sources.map((s) => cell(row, s.key, m.key))}</Fragment>
               ))}
+              <td className="border border-border px-3 py-2 text-center">
+                <CompareResultBadge result={rowCompareResult(row, sources)} />
+              </td>
             </tr>
+
           );
         })}
       </tbody>
@@ -3743,6 +3751,36 @@ function metricConsistent(
 function crossRowConsistent(row: CrossRow, sources: CrossSource[] = CROSS_SOURCES) {
   return CROSS_METRICS.every((m) => metricConsistent(row, m.key, sources));
 }
+
+function sourceHasData(row: CrossRow, source: CrossSource["key"]) {
+  const metrics = row[source];
+  return metrics.order !== null || metrics.ship !== null || metrics.recv !== null;
+}
+
+function rowCompareResult(
+  row: CrossRow,
+  sources: CrossSource[],
+): "一致" | "不一致" | "映射失败" {
+  const hasData = sources.map((s) => sourceHasData(row, s.key));
+  if (hasData.some((h) => !h)) return "映射失败";
+  if (crossRowConsistent(row, sources)) return "一致";
+  return "不一致";
+}
+
+function CompareResultBadge({ result }: { result: "一致" | "不一致" | "映射失败" }) {
+  const classes =
+    result === "一致"
+      ? "border-0 bg-[color:var(--success)]/15 font-normal text-[color:var(--success)]"
+      : result === "不一致"
+        ? "border-0 bg-destructive/15 font-normal text-destructive"
+        : "border-0 bg-muted font-normal text-muted-foreground";
+  return (
+    <Badge variant="status" className={cn("w-20 justify-center", classes)}>
+      {result}
+    </Badge>
+  );
+}
+
 
 function CrossCheckView({ record }: { record: OcrRecord }) {
   const rows = useMemo(() => buildCrossRows(record), [record]);
