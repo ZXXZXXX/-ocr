@@ -3744,6 +3744,36 @@ function crossRowConsistent(row: CrossRow, sources: CrossSource[] = CROSS_SOURCE
   return CROSS_METRICS.every((m) => metricConsistent(row, m.key, sources));
 }
 
+function sourceHasData(row: CrossRow, source: CrossSource["key"]) {
+  const metrics = row[source];
+  return metrics.order !== null || metrics.ship !== null || metrics.recv !== null;
+}
+
+function rowCompareResult(
+  row: CrossRow,
+  sources: CrossSource[],
+): "一致" | "不一致" | "映射失败" {
+  const hasData = sources.map((s) => sourceHasData(row, s.key));
+  if (hasData.some((h) => !h)) return "映射失败";
+  if (crossRowConsistent(row, sources)) return "一致";
+  return "不一致";
+}
+
+function CompareResultBadge({ result }: { result: "一致" | "不一致" | "映射失败" }) {
+  const classes =
+    result === "一致"
+      ? "border-0 bg-[color:var(--success)]/15 font-normal text-[color:var(--success)]"
+      : result === "不一致"
+        ? "border-0 bg-destructive/15 font-normal text-destructive"
+        : "border-0 bg-muted font-normal text-muted-foreground";
+  return (
+    <Badge variant="status" className={cn("w-20 justify-center", classes)}>
+      {result}
+    </Badge>
+  );
+}
+
+
 function CrossCheckView({ record }: { record: OcrRecord }) {
   const rows = useMemo(() => buildCrossRows(record), [record]);
 
