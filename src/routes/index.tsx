@@ -1979,24 +1979,24 @@ function MetricCard({
   );
 
   return (
-    <div className="group rounded-2xl border border-border bg-card p-5 shadow-sm transition-shadow hover:shadow-md">
-      <div className="mb-4 flex items-center justify-between">
+    <div className="group rounded-2xl border border-border bg-card p-4 shadow-sm transition-shadow hover:shadow-md">
+      <div className="mb-2 flex items-center justify-between">
         <div
           className={cn(
-            "grid size-11 place-items-center rounded-xl transition-colors group-hover:brightness-95",
+            "grid size-9 place-items-center rounded-lg transition-colors group-hover:brightness-95",
             toneClasses[tone],
           )}
         >
-          <Icon className="size-6" />
+          <Icon className="size-5" />
         </div>
         {subLabel ? (
-          <span className="rounded-full bg-[color:var(--success)]/10 px-2 py-1 text-xs font-medium text-[color:var(--success)]">
+          <span className="rounded-full bg-[color:var(--success)]/10 px-2 py-0.5 text-xs font-medium text-[color:var(--success)]">
             {subLabel}
           </span>
         ) : trendText ? (
           <span
             className={cn(
-              "inline-flex items-center gap-0.5 rounded-full px-2 py-1 text-xs font-medium",
+              "inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-medium",
               trendBadgeClass,
             )}
           >
@@ -2006,7 +2006,7 @@ function MetricCard({
         ) : (
           <span
             className={cn(
-              "inline-flex items-center gap-0.5 rounded-full px-2 py-1 text-xs font-medium",
+              "inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-medium",
               trendBadgeClass,
             )}
           >
@@ -2016,11 +2016,11 @@ function MetricCard({
         )}
       </div>
       <div>
-        <p className="mb-1 text-sm font-medium text-muted-foreground">{label}</p>
+        <p className="mb-0.5 text-xs font-medium text-muted-foreground">{label}</p>
         <div className="flex items-baseline gap-1">
-          <span className="text-3xl font-bold tracking-tight tabular-nums">{value}</span>
+          <span className="text-2xl font-bold tracking-tight tabular-nums">{value}</span>
           {valueSuffix && (
-            <span className="text-sm font-normal text-muted-foreground">{valueSuffix}</span>
+            <span className="text-xs font-normal text-muted-foreground">{valueSuffix}</span>
           )}
         </div>
       </div>
@@ -2357,11 +2357,11 @@ function Workbench() {
 
         <main className="mx-auto max-w-[1400px] px-6 py-6">
           {/* 关键指标统计卡：最近 30 日 */}
-          <div className="relative pb-5">
+          <div className="relative pb-4">
             <div className="absolute right-0 top-0 text-xs text-muted-foreground">
               最近30日
             </div>
-            <div className="grid grid-cols-4 gap-4 pt-5">
+            <div className="grid grid-cols-4 gap-4 pt-4">
               <MetricCard
                 label="验收任务总数"
                 value={metrics.total}
