@@ -3597,8 +3597,8 @@ function buildCrossRows(record: OcrRecord): CrossRow[] {
 
 type CrossSource = { key: "ka" | "sdcc" | "ocr"; label: string };
 const CROSS_SOURCES: CrossSource[] = [
-  { key: "ka", label: "KA订单" },
-  { key: "sdcc", label: "SDCC" },
+  { key: "ka", label: "客户订单" },
+  { key: "sdcc", label: "供货商订单" },
   { key: "ocr", label: "OCR识别" },
 ];
 const COMPARE_SOURCES: CrossSource[] = [
