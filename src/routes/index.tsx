@@ -3922,13 +3922,9 @@ function DetailStepNav({
                 {statuses[it.n] === "success" ? (
                   <CheckCircle2 className="size-6 text-[color:var(--success)]" />
                 ) : statuses[it.n] === "fail" ? (
-                  <div className="flex items-center gap-1">
-                    <XCircle className="size-6 text-destructive" />
-                  </div>
+                  <XCircle className="size-6 text-destructive" />
                 ) : (
-                  <span className="rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                    {STEP_STATUS_LABEL[it.n][statuses[it.n]]}
-                  </span>
+                  <AlertCircle className="size-6 text-muted-foreground" />
                 )}
               </span>
             </button>
