@@ -3873,12 +3873,18 @@ function KeyDataTable({ rows, sources }: { rows: CrossRow[]; sources: CrossSourc
       </thead>
       <tbody>
         {rows.map((row) => {
-          const bad = !crossRowConsistent(row, sources);
+          const result = rowCompareResult(row, sources);
+          const rowBg =
+            result === "映射失败"
+              ? ROW_MAPPING_FAILED_BG
+              : result === "不一致"
+                ? ROW_MISMATCH_BG
+                : undefined;
           return (
             <tr
               key={row.key}
               className="border-border"
-              style={bad ? { backgroundColor: ROW_MISMATCH_BG } : undefined}
+              style={rowBg ? { backgroundColor: rowBg } : undefined}
             >
               <td className="max-w-[260px] truncate border border-border px-3 py-2 text-sm text-foreground">
                 {row.name}
