@@ -2009,6 +2009,7 @@ function Workbench() {
   const [progressMinimized, setProgressMinimized] = useState(false);
   const [progressDismissed, setProgressDismissed] = useState(true);
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [detailMode, setDetailMode] = useState<"view" | "edit">("view");
   
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [logRecordId, setLogRecordId] = useState<string | null>(null);
@@ -2665,11 +2666,11 @@ function Workbench() {
                               title={reviewDisabled ? "SDCC 对碰结果与图片数据均未就绪，暂不可审核" : undefined}
                               onClick={() => {
                                 if (reviewDisabled) return;
+                                setDetailMode("edit");
                                 setDetailId(r.id);
                                 if (r.imageUpdated) {
                                   setRecords((prev) => prev.map((x) => x.id === r.id ? { ...x, imageUpdated: false } : x));
                                 }
-                                
                               }}
                             >
                               审核
@@ -2682,11 +2683,11 @@ function Workbench() {
                             className="text-sm font-semibold"
                             disabled={inProgress}
                             onClick={() => {
+                              setDetailMode("view");
                               setDetailId(r.id);
                               if (r.imageUpdated) {
                                 setRecords((prev) => prev.map((x) => x.id === r.id ? { ...x, imageUpdated: false } : x));
                               }
-                              
                             }}
                           >
                             查看
@@ -2908,7 +2909,7 @@ function Workbench() {
           </div>
         )}
 
-        <Sheet open={!!detailRecord} onOpenChange={(o) => { if (!o) setDetailId(null); }}>
+        <Sheet open={!!detailRecord} onOpenChange={(o) => { if (!o) { setDetailId(null); setDetailMode("view"); } }}>
           <SheetContent
             side="right"
             className="inset-0 flex h-screen w-screen max-w-none flex-col gap-0 border-0 p-0 sm:max-w-none [&>button]:hidden"
@@ -2916,10 +2917,12 @@ function Workbench() {
             {detailRecord && (
               <DetailView
                 record={detailRecord}
+                initialMode={detailMode}
                 onSignatureStatusChange={(value) => updateSignatureStatus(detailRecord.id, value)}
                 onSubmit={(verdict) => {
                   submitVerification(detailRecord.id, verdict);
                   setDetailId(null);
+                  setDetailMode("view");
                 }}
               />
 
@@ -3171,16 +3174,22 @@ function AiReviewSteps({
 // ---------- Detail view ----------
 function DetailView({
   record,
+  initialMode = "view",
   onSignatureStatusChange,
   onSubmit,
 }: {
   record: OcrRecord;
+  initialMode?: "view" | "edit";
   onSignatureStatusChange: (value: SignatureStatus) => void;
   onSubmit: (verdict?: AiVerdict) => void;
 }) {
   const deliveryPages = record.results?.delivery_note ?? [];
   const deliveryImages = record.images.filter((i) => i.docType === "delivery_note");
   const shippingImages = record.images.filter((i) => i.docType === "shipping_slip");
+  const [editing, setEditing] = useState(initialMode === "edit");
+  useEffect(() => {
+    setEditing(initialMode === "edit");
+  }, [initialMode, record.id]);
   const [autoFocus, setAutoFocus] = useState(true);
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const ocrStepOk = (record.ocrVsKaStatus ?? "no_result") === "success";
@@ -3298,7 +3307,7 @@ function DetailView({
             <Select
               value={record.signatureStatus ?? ""}
               onValueChange={(v) => onSignatureStatusChange(v as SignatureStatus)}
-              disabled={record.status === "verified"}
+              disabled={record.status === "verified" || !editing}
             >
               <SelectTrigger className="h-8 w-[140px] text-sm">
                 <SelectValue placeholder="待识别" />
@@ -3320,7 +3329,7 @@ function DetailView({
           deliveryPages={deliveryPages}
           deliveryImages={deliveryImages}
           shippingImages={shippingImages}
-          editing={false}
+          editing={editing}
           autoFocus={autoFocus}
           setAutoFocus={setAutoFocus}
           failureReason={record.failedReason}
@@ -3337,7 +3346,7 @@ function DetailView({
                 loading={false}
               />
             ) : step === 3 ? (
-              <CrossCheckView record={record} />
+              <CrossCheckView record={record} editing={editing} />
             ) : undefined
           }
         />
@@ -3365,32 +3374,45 @@ function DetailView({
         <div className="shrink-0 border-t border-border bg-background px-6 py-3 shadow-[0_-4px_12px_-8px_rgba(0,0,0,0.15)]">
           <div className="flex items-center justify-between gap-4">
             <div className="text-xs text-muted-foreground">
-              请确认 OCR 识别结果与签收状态，选择审核结论
+              {editing
+                ? "请确认 OCR 识别结果与签收状态，选择审核结论"
+                : "当前处于查看态，点击开始审核进入编辑态"}
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setAiReReviewOption("");
-                  setAiReReviewOpen(true);
-                }}
-                className="gap-2"
-              >
-                <Sparkles className="size-4" /> AI重新审核
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => submitVerdict("fail")}
-                className="gap-2 border-[color:var(--destructive)]/40 text-[color:var(--destructive)] hover:bg-[color:var(--destructive)]/10 hover:text-[color:var(--destructive)]"
-              >
-                <ThumbsDown className="size-4" /> 不通过
-              </Button>
-              <Button
-                onClick={() => submitVerdict("pass")}
-                className="gap-2 bg-[color:var(--success)] text-white hover:bg-[color:var(--success)]/90"
-              >
-                <ThumbsUp className="size-4" /> 通过
-              </Button>
+              {editing ? (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setAiReReviewOption("");
+                      setAiReReviewOpen(true);
+                    }}
+                    className="gap-2"
+                  >
+                    <Sparkles className="size-4" /> AI重新审核
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => submitVerdict("fail")}
+                    className="gap-2 border-[color:var(--destructive)]/40 text-[color:var(--destructive)] hover:bg-[color:var(--destructive)]/10 hover:text-[color:var(--destructive)]"
+                  >
+                    <ThumbsDown className="size-4" /> 不通过
+                  </Button>
+                  <Button
+                    onClick={() => submitVerdict("pass")}
+                    className="gap-2 bg-[color:var(--success)] text-white hover:bg-[color:var(--success)]/90"
+                  >
+                    <ThumbsUp className="size-4" /> 通过
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  onClick={() => setEditing(true)}
+                  className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+                >
+                  <Pencil className="size-4" /> 开始审核
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -4022,7 +4044,7 @@ function CompareResultBadge({ result }: { result: "一致" | "不一致" | "映�
 }
 
 
-function CrossCheckView({ record }: { record: OcrRecord }) {
+function CrossCheckView({ record, editing = false }: { record: OcrRecord; editing?: boolean }) {
   const baseRows = useMemo(() => buildCrossRows(record), [record]);
   const [ocrEdits, setOcrEdits] = useState<
     Record<string, Partial<Record<keyof SourceMetrics, number | null>>>
@@ -4081,7 +4103,7 @@ function CrossCheckView({ record }: { record: OcrRecord }) {
         <KeyDataTable
           rows={rows}
           sources={CROSS_SOURCES}
-          editableOcr
+          editableOcr={editing}
           onOcrChange={handleOcrChange}
         />
 
