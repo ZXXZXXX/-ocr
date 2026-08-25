@@ -3727,11 +3727,6 @@ function CrossCheckView({ record }: { record: OcrRecord }) {
 
 
 // ---------- 详情页三步导航 ----------
-const STEP_STATUS_LABEL: Record<1 | 2 | 3, Record<StepStatus, string>> = {
-  1: { success: "校验通过", fail: "校验不通过", no_result: "待校验" },
-  2: { success: "识别完成", fail: "识别失败", no_result: "待识别" },
-  3: { success: "对碰通过", fail: "对碰不通过", no_result: "待对碰" },
-};
 
 type LogLevel = "info" | "success" | "warning" | "error";
 interface LogEntry {
