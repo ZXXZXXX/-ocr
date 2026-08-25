@@ -3374,32 +3374,45 @@ function DetailView({
         <div className="shrink-0 border-t border-border bg-background px-6 py-3 shadow-[0_-4px_12px_-8px_rgba(0,0,0,0.15)]">
           <div className="flex items-center justify-between gap-4">
             <div className="text-xs text-muted-foreground">
-              请确认 OCR 识别结果与签收状态，选择审核结论
+              {editing
+                ? "请确认 OCR 识别结果与签收状态，选择审核结论"
+                : "当前处于查看态，点击开始审核进入编辑态"}
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setAiReReviewOption("");
-                  setAiReReviewOpen(true);
-                }}
-                className="gap-2"
-              >
-                <Sparkles className="size-4" /> AI重新审核
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => submitVerdict("fail")}
-                className="gap-2 border-[color:var(--destructive)]/40 text-[color:var(--destructive)] hover:bg-[color:var(--destructive)]/10 hover:text-[color:var(--destructive)]"
-              >
-                <ThumbsDown className="size-4" /> 不通过
-              </Button>
-              <Button
-                onClick={() => submitVerdict("pass")}
-                className="gap-2 bg-[color:var(--success)] text-white hover:bg-[color:var(--success)]/90"
-              >
-                <ThumbsUp className="size-4" /> 通过
-              </Button>
+              {editing ? (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setAiReReviewOption("");
+                      setAiReReviewOpen(true);
+                    }}
+                    className="gap-2"
+                  >
+                    <Sparkles className="size-4" /> AI重新审核
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => submitVerdict("fail")}
+                    className="gap-2 border-[color:var(--destructive)]/40 text-[color:var(--destructive)] hover:bg-[color:var(--destructive)]/10 hover:text-[color:var(--destructive)]"
+                  >
+                    <ThumbsDown className="size-4" /> 不通过
+                  </Button>
+                  <Button
+                    onClick={() => submitVerdict("pass")}
+                    className="gap-2 bg-[color:var(--success)] text-white hover:bg-[color:var(--success)]/90"
+                  >
+                    <ThumbsUp className="size-4" /> 通过
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  onClick={() => setEditing(true)}
+                  className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+                >
+                  <Pencil className="size-4" /> 开始审核
+                </Button>
+              )}
             </div>
           </div>
         </div>
