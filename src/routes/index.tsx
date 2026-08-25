@@ -1217,6 +1217,7 @@ function computeMismatch(
 }
 
 const ROW_MISMATCH_BG = "#fde7ec";
+const ROW_MAPPING_FAILED_BG = "#f3f4f6";
 
 function clearTableAnnotations(root: HTMLElement) {
   root.querySelectorAll("[data-annotation]").forEach((n) => n.remove());
