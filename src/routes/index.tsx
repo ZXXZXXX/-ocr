@@ -12,6 +12,7 @@ import {
   CheckCircle2,
   XCircle,
   HelpCircle,
+  AlertCircle,
   AlertTriangle,
   Loader2,
   Sparkles,
