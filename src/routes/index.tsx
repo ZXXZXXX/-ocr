@@ -2355,11 +2355,11 @@ function Workbench() {
 
         <main className="mx-auto max-w-[1400px] px-6 py-6">
           {/* 关键指标统计卡：最近 30 日 */}
-          <div className="relative pb-4">
-            <div className="absolute right-0 top-0 text-xs text-muted-foreground">
+          <div className="relative pb-3">
+            <div className="absolute right-0 top-0 text-[11px] text-muted-foreground">
               最近30日
             </div>
-            <div className="grid grid-cols-4 gap-4 pt-4">
+            <div className="grid grid-cols-4 gap-3 pt-5">
               <MetricCard
                 label="验收任务总数"
                 value={metrics.total}
