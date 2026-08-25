@@ -2710,7 +2710,7 @@ function Workbench() {
         <Sheet open={!!detailRecord} onOpenChange={(o) => { if (!o) setDetailId(null); }}>
           <SheetContent
             side="right"
-            className="flex w-[80vw] flex-col gap-0 p-0 sm:max-w-[80vw] [&>button]:hidden"
+            className="inset-0 flex h-screen w-screen max-w-none flex-col gap-0 border-0 p-0 sm:max-w-none [&>button]:hidden"
           >
             {detailRecord && (
               <DetailView
