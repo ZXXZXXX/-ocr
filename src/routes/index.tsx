@@ -3863,7 +3863,7 @@ function KeyDataTable({ rows, sources }: { rows: CrossRow[]; sources: CrossSourc
         <tr className="bg-muted/30 text-[11px] text-muted-foreground">
           {CROSS_METRICS.map((m) => (
             <Fragment key={m.key}>
-              {sources.map((s) => (
+              {visibleSourcesForMetric(m.key, sources).map((s) => (
                 <th
                   key={s.key}
                   className="border border-border px-3 py-1.5 text-right font-normal"
