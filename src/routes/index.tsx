@@ -2387,31 +2387,6 @@ function Workbench() {
               </div>
               <div className="flex items-center gap-2">
 
-                <div className="flex items-center gap-2 px-3 py-1.5">
-                  <span className="text-sm font-normal text-muted-foreground">仅查看未审核</span>
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={quickStatus === "unreviewed"}
-                    aria-label="仅查看未审核"
-                    onClick={() =>
-                      setQuickStatus(quickStatus === "unreviewed" ? "all" : "unreviewed")
-                    }
-                    className={cn(
-                      "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors",
-                      quickStatus === "unreviewed" ? "bg-primary" : "bg-input",
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        "pointer-events-none block size-4 rounded-full bg-background shadow transition-transform",
-                        quickStatus === "unreviewed" ? "translate-x-4" : "translate-x-0",
-                      )}
-                    />
-                  </button>
-                </div>
-
-
                 <Popover open={filterOpen} onOpenChange={setFilterOpen}>
 
                   <PopoverTrigger asChild>
@@ -2540,6 +2515,30 @@ function Workbench() {
                     </div>
                   </PopoverContent>
                 </Popover>
+
+<div className="flex items-center gap-2 px-3 py-1.5">
+                  <span className="text-sm font-normal text-muted-foreground">仅查看未审核</span>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={quickStatus === "unreviewed"}
+                    aria-label="仅查看未审核"
+                    onClick={() =>
+                      setQuickStatus(quickStatus === "unreviewed" ? "all" : "unreviewed")
+                    }
+                    className={cn(
+                      "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors",
+                      quickStatus === "unreviewed" ? "bg-primary" : "bg-input",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "pointer-events-none block size-4 rounded-full bg-background shadow transition-transform",
+                        quickStatus === "unreviewed" ? "translate-x-4" : "translate-x-0",
+                      )}
+                    />
+                  </button>
+                </div>
               </div>
             </div>
 
