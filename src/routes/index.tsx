@@ -1979,51 +1979,49 @@ function MetricCard({
   );
 
   return (
-    <div className="group rounded-2xl border border-border bg-card p-4 shadow-sm transition-shadow hover:shadow-md">
-      <div className="mb-2 flex items-center justify-between">
-        <div
+    <div className="group flex items-center gap-3 rounded-full border border-border bg-card px-4 py-2.5 shadow-sm transition-all hover:shadow-md hover:border-primary/20">
+      <div
+        className={cn(
+          "grid size-8 shrink-0 place-items-center rounded-full transition-colors group-hover:brightness-95",
+          toneClasses[tone],
+        )}
+      >
+        <Icon className="size-4" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[11px] font-medium text-muted-foreground">{label}</p>
+        <div className="flex items-baseline gap-0.5">
+          <span className="text-base font-bold tracking-tight tabular-nums">{value}</span>
+          {valueSuffix && (
+            <span className="text-[11px] font-normal text-muted-foreground">{valueSuffix}</span>
+          )}
+        </div>
+      </div>
+      {subLabel ? (
+        <span className="shrink-0 rounded-full bg-[color:var(--success)]/10 px-2 py-0.5 text-[11px] font-medium text-[color:var(--success)]">
+          {subLabel}
+        </span>
+      ) : trendText ? (
+        <span
           className={cn(
-            "grid size-9 place-items-center rounded-lg transition-colors group-hover:brightness-95",
-            toneClasses[tone],
+            "inline-flex shrink-0 items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-medium",
+            trendBadgeClass,
           )}
         >
-          <Icon className="size-5" />
-        </div>
-        {subLabel ? (
-          <span className="rounded-full bg-[color:var(--success)]/10 px-2 py-0.5 text-xs font-medium text-[color:var(--success)]">
-            {subLabel}
-          </span>
-        ) : trendText ? (
-          <span
-            className={cn(
-              "inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-medium",
-              trendBadgeClass,
-            )}
-          >
-            {trendIcon}
-            {trendText}
-          </span>
-        ) : (
-          <span
-            className={cn(
-              "inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-medium",
-              trendBadgeClass,
-            )}
-          >
-            {trendIcon}
-            持平
-          </span>
-        )}
-      </div>
-      <div>
-        <p className="mb-0.5 text-xs font-medium text-muted-foreground">{label}</p>
-        <div className="flex items-baseline gap-1">
-          <span className="text-2xl font-bold tracking-tight tabular-nums">{value}</span>
-          {valueSuffix && (
-            <span className="text-xs font-normal text-muted-foreground">{valueSuffix}</span>
+          {trendIcon}
+          {trendText}
+        </span>
+      ) : (
+        <span
+          className={cn(
+            "inline-flex shrink-0 items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-medium",
+            trendBadgeClass,
           )}
-        </div>
-      </div>
+        >
+          {trendIcon}
+          持平
+        </span>
+      )}
     </div>
   );
 }
