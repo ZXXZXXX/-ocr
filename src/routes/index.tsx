@@ -3053,12 +3053,12 @@ function DetailView({
             <div className="mt-2 flex flex-col gap-1.5 text-xs">
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="text-muted-foreground">客户订单号</span>
+                  <span className="text-muted-foreground">客户订单号：</span>
                   <span className="font-mono">{recordCustomerOrderNo(record)}</span>
                 </span>
                 <span className="text-border">|</span>
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="text-muted-foreground">同步时间</span>
+                  <span className="text-muted-foreground">同步时间：</span>
                   <span>{fmtDateTimeCN(record.createdAt)}</span>
                 </span>
                 {record.verifiedAt && (
@@ -3068,7 +3068,7 @@ function DetailView({
                 )}
               </div>
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                <span className="text-muted-foreground">供应商订单号</span>
+                <span className="text-muted-foreground">供应商订单号：</span>
                 <span>{recordSdccOrderNos(record).join("，")}</span>
                 <span className="text-muted-foreground">共 {recordSdccOrderNos(record).length} 个</span>
                 <button
@@ -3084,6 +3084,7 @@ function DetailView({
                 </button>
               </div>
             </div>
+
 
           </div>
           <div className="flex items-center gap-2">
