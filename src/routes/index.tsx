@@ -2909,7 +2909,7 @@ function Workbench() {
           </div>
         )}
 
-        <Sheet open={!!detailRecord} onOpenChange={(o) => { if (!o) setDetailId(null); }}>
+        <Sheet open={!!detailRecord} onOpenChange={(o) => { if (!o) { setDetailId(null); setDetailMode("view"); } }}>
           <SheetContent
             side="right"
             className="inset-0 flex h-screen w-screen max-w-none flex-col gap-0 border-0 p-0 sm:max-w-none [&>button]:hidden"
@@ -2917,10 +2917,12 @@ function Workbench() {
             {detailRecord && (
               <DetailView
                 record={detailRecord}
+                initialMode={detailMode}
                 onSignatureStatusChange={(value) => updateSignatureStatus(detailRecord.id, value)}
                 onSubmit={(verdict) => {
                   submitVerification(detailRecord.id, verdict);
                   setDetailId(null);
+                  setDetailMode("view");
                 }}
               />
 
