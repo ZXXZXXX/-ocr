@@ -3091,10 +3091,11 @@ function DetailView({
           </div>
           <div className="flex items-center gap-2">
             <SheetClose asChild>
-              <Button variant="outline" size="icon" className="shrink-0" aria-label="关闭">
+              <Button variant="ghost" size="icon" className="shrink-0 hover:bg-transparent" aria-label="关闭">
                 <X className="size-4" />
               </Button>
             </SheetClose>
+
           </div>
         </div>
       {record.status === "pending_review" && record.aiVerdict === "exception" && (
