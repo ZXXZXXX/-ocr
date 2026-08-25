@@ -2666,11 +2666,11 @@ function Workbench() {
                               title={reviewDisabled ? "SDCC 对碰结果与图片数据均未就绪，暂不可审核" : undefined}
                               onClick={() => {
                                 if (reviewDisabled) return;
+                                setDetailMode("edit");
                                 setDetailId(r.id);
                                 if (r.imageUpdated) {
                                   setRecords((prev) => prev.map((x) => x.id === r.id ? { ...x, imageUpdated: false } : x));
                                 }
-                                
                               }}
                             >
                               审核
