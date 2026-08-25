@@ -2419,12 +2419,10 @@ function Workbench() {
                         <RecognitionProgressBadge status={r.status} noImages={noImages} confidence={r.confidence} />
                       </TableCell>
                       <TableCell>
-                        {noImages ? (
-                          <EmptyBadge className="w-12" />
-                        ) : r.confidence != null ? (
-                          <ConfidenceBadge score={r.confidence} />
+                        {noImages || r.confidence == null ? (
+                          <span className="text-sm text-muted-foreground">-</span>
                         ) : (
-                          <EmptyBadge className="w-12" />
+                          <ConfidenceBadge score={r.confidence} />
                         )}
                       </TableCell>
                       <TableCell className="text-sm text-foreground">
