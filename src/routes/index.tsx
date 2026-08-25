@@ -3275,12 +3275,19 @@ function DetailView({
 
           </div>
           <div className="flex items-center gap-2">
+            {record.status === "pending_review" && !editing && (
+              <Button
+                onClick={() => setEditing(true)}
+                className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                <Pencil className="size-4" /> 开始审核
+              </Button>
+            )}
             <SheetClose asChild>
               <Button variant="ghost" size="icon" className="shrink-0 hover:bg-transparent" aria-label="关闭">
                 <X className="size-4" />
               </Button>
             </SheetClose>
-
           </div>
         </div>
       {record.status === "pending_review" && record.aiVerdict === "exception" && (
