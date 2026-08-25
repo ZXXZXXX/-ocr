@@ -2094,6 +2094,45 @@ function Workbench() {
     selectedConfidenceTones.size !== 3 ||
     aiVerdictFilter !== "all";
 
+  // 列表页顶部关键指标：基于当前筛选后的记录实时计算
+  const metrics = useMemo(() => {
+    const eligible = filteredRecords.filter(
+      (r) => r.status !== "queued" && r.status !== "recognizing" && r.status !== "failed",
+    );
+    const withCross = eligible.filter((r) => r.ocrVsKaStatus === "success");
+    const withAiVerdict = eligible.filter((r) => r.aiVerdict != null);
+
+    const dataConsistent =
+      withCross.length === 0
+        ? 0
+        : Math.round((withCross.filter((r) => r.crossCheckStatus === "success").length / withCross.length) * 100);
+
+    const aiPass =
+      withAiVerdict.length === 0
+        ? 0
+        : Math.round((withAiVerdict.filter((r) => r.aiVerdict === "pass").length / withAiVerdict.length) * 100);
+
+    const conclusionConsistent =
+      withCross.length === 0
+        ? 0
+        : Math.round(
+            (withCross.filter(
+              (r) =>
+                (r.aiVerdict === "pass" && r.crossCheckStatus === "success") ||
+                (r.aiVerdict === "fail" && r.crossCheckStatus === "fail"),
+            ).length /
+              withCross.length) *
+              100,
+          );
+
+    return {
+      dataConsistent,
+      aiPass,
+      conclusionConsistent,
+      total: eligible.length,
+    };
+  }, [filteredRecords]);
+
   const totalPages = Math.max(1, Math.ceil(filteredRecords.length / PAGE_SIZE));
   const paginatedRecords = filteredRecords.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
