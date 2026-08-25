@@ -4306,7 +4306,7 @@ function CompareView({
             <span className="text-xs text-muted-foreground">/</span>
           </>
         )}
-        <span className="text-sm font-medium text-foreground">KA验收单与SDCC订单明细对碰</span>
+        <span className="text-sm font-medium text-foreground">双方系统数据校验</span>
       </div>
       <div className="flex-1 overflow-y-auto p-4">
         <CompareTable recordId={recordId} count={count} loading={loading} />
