@@ -3849,7 +3849,7 @@ function KeyDataTable({ rows, sources }: { rows: CrossRow[]; sources: CrossSourc
           {CROSS_METRICS.map((m) => (
             <th
               key={m.key}
-              colSpan={sources.length}
+              colSpan={visibleSourcesForMetric(m.key, sources).length}
               className="border border-border px-3 py-2 text-center font-medium"
             >
               {m.label}
