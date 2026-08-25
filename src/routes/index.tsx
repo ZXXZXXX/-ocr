@@ -12,6 +12,7 @@ import {
   CheckCircle2,
   XCircle,
   HelpCircle,
+  AlertCircle,
   AlertTriangle,
   Loader2,
   Sparkles,
@@ -3726,11 +3727,6 @@ function CrossCheckView({ record }: { record: OcrRecord }) {
 
 
 // ---------- 详情页三步导航 ----------
-const STEP_STATUS_LABEL: Record<1 | 2 | 3, Record<StepStatus, string>> = {
-  1: { success: "校验通过", fail: "校验不通过", no_result: "待校验" },
-  2: { success: "识别完成", fail: "识别失败", no_result: "待识别" },
-  3: { success: "对碰通过", fail: "对碰不通过", no_result: "待对碰" },
-};
 
 type LogLevel = "info" | "success" | "warning" | "error";
 interface LogEntry {
@@ -3926,13 +3922,9 @@ function DetailStepNav({
                 {statuses[it.n] === "success" ? (
                   <CheckCircle2 className="size-6 text-[color:var(--success)]" />
                 ) : statuses[it.n] === "fail" ? (
-                  <div className="flex items-center gap-1">
-                    <XCircle className="size-6 text-destructive" />
-                  </div>
+                  <XCircle className="size-6 text-destructive" />
                 ) : (
-                  <span className="rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                    {STEP_STATUS_LABEL[it.n][statuses[it.n]]}
-                  </span>
+                  <AlertCircle className="size-6 text-muted-foreground" />
                 )}
               </span>
             </button>
