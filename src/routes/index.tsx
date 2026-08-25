@@ -4084,7 +4084,7 @@ function CrossCheckView({ record, editing = false }: { record: OcrRecord; editin
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <div className="flex shrink-0 items-center gap-3 border-b border-border px-6 py-3">
-        <div className="text-sm font-medium text-foreground">关键数据一致性核对</div>
+        <div className="text-sm font-medium text-foreground">三方关键数据对碰</div>
         <Tooltip>
           <TooltipTrigger asChild>
             <button type="button" className="inline-flex text-muted-foreground hover:text-foreground">
@@ -4095,9 +4095,6 @@ function CrossCheckView({ record, editing = false }: { record: OcrRecord; editin
             核对 《客户订单》、《供货商订单》与《AI识别数量》中的关键数量数据：签收数量。
           </TooltipContent>
         </Tooltip>
-        <div className="text-xs text-muted-foreground">
-          以当前识别结果与 KA 订单数据、SDCC 数据自动比对
-        </div>
       </div>
       <div className="relative min-h-0 flex-1 overflow-auto px-6 py-4">
         <KeyDataTable
