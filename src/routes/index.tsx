@@ -2345,7 +2345,7 @@ function Workbench() {
                 subLabel={`+ ${metrics.todayNew} 项`}
               />
               <MetricCard
-                label="数据一致率"
+                label="系统数据一致率"
                 value={metrics.dataConsistent}
                 icon={CheckCircle2}
                 tone="success"
