@@ -3722,7 +3722,11 @@ function KeyDataTable({ rows, sources }: { rows: CrossRow[]; sources: CrossSourc
               {CROSS_METRICS.map((m) => (
                 <Fragment key={m.key}>{sources.map((s) => cell(row, s.key, m.key))}</Fragment>
               ))}
+              <td className="border border-border px-3 py-2 text-center">
+                <CompareResultBadge result={rowCompareResult(row, sources)} />
+              </td>
             </tr>
+
           );
         })}
       </tbody>
