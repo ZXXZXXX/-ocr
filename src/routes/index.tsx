@@ -3891,6 +3891,20 @@ function DetailStepNav({
     { n: 3, icon: Scale, desc: "自动核对多方关键数据的一致性" },
   ];
 
+  const stepStatusIcon = (n: 1 | 2 | 3, status: StepStatus) => {
+    if (status === "success") {
+      return <CheckCircle2 className="size-6 text-[color:var(--success)]" />;
+    }
+    if (status === "fail") {
+      // 第二步 OCR 识别异常（图片质量/列无法匹配）使用浅灰色感叹号
+      if (n === 2 && record.aiVerdict === "exception") {
+        return <AlertCircle className="size-6 text-muted-foreground" />;
+      }
+      return <XCircle className="size-6 text-[color:var(--destructive)]" />;
+    }
+    return <CircleDashed className="size-6 text-muted-foreground/60" />;
+  };
+
   return (
     <div className="flex items-center gap-1">
       {items.map((it, idx) => {
@@ -3931,15 +3945,7 @@ function DetailStepNav({
               >
                 <StepIcon className="size-4" />
               </span>
-              <span className="shrink-0">
-                {status === "success" ? (
-                  <CheckCircle2 className="size-6 text-[color:var(--success)]" />
-                ) : status === "fail" ? (
-                  <XCircle className="size-6 text-destructive" />
-                ) : (
-                  <CircleDashed className="size-6 text-muted-foreground/60" />
-                )}
-              </span>
+              <span className="shrink-0">{stepStatusIcon(it.n, status)}</span>
             </button>
           </Fragment>
         );
