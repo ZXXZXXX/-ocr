@@ -2035,6 +2035,7 @@ function Workbench() {
   const [progressMinimized, setProgressMinimized] = useState(false);
   const [progressDismissed, setProgressDismissed] = useState(true);
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [detailMode, setDetailMode] = useState<"review" | "view">("review");
   
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [logRecordId, setLogRecordId] = useState<string | null>(null);
@@ -2691,6 +2692,7 @@ function Workbench() {
                               title={reviewDisabled ? "SDCC 对碰结果与图片数据均未就绪，暂不可审核" : undefined}
                               onClick={() => {
                                 if (reviewDisabled) return;
+                                setDetailMode("review");
                                 setDetailId(r.id);
                                 if (r.imageUpdated) {
                                   setRecords((prev) => prev.map((x) => x.id === r.id ? { ...x, imageUpdated: false } : x));
@@ -2708,6 +2710,7 @@ function Workbench() {
                             className="text-sm font-semibold"
                             disabled={inProgress}
                             onClick={() => {
+                              setDetailMode("view");
                               setDetailId(r.id);
                               if (r.imageUpdated) {
                                 setRecords((prev) => prev.map((x) => x.id === r.id ? { ...x, imageUpdated: false } : x));
@@ -2942,6 +2945,7 @@ function Workbench() {
             {detailRecord && (
               <DetailView
                 record={detailRecord}
+                readOnlyMode={detailMode === "view"}
                 onSignatureStatusChange={(value) => updateSignatureStatus(detailRecord.id, value)}
                 onSubmit={(verdict) => {
                   submitVerification(detailRecord.id, verdict);
@@ -3199,10 +3203,12 @@ function DetailView({
   record,
   onSignatureStatusChange,
   onSubmit,
+  readOnlyMode = false,
 }: {
   record: OcrRecord;
   onSignatureStatusChange: (value: SignatureStatus) => void;
   onSubmit: (verdict?: AiVerdict) => void;
+  readOnlyMode?: boolean;
 }) {
   const deliveryPages = record.results?.delivery_note ?? [];
   const deliveryImages = record.images.filter((i) => i.docType === "delivery_note");
@@ -3238,7 +3244,7 @@ function DetailView({
               <SheetTitle className="flex flex-wrap items-center gap-2">
                 任务详情
                 <NeutralTag>
-                  {record.status === "verified" ? "已完成审核" : "待审核"}
+                  {record.status === "verified" ? "已完成审核" : readOnlyMode ? "查看" : "待审核"}
                 </NeutralTag>
             </SheetTitle>
             {(record.aiVerdict) && (
@@ -3324,7 +3330,7 @@ function DetailView({
             <Select
               value={record.signatureStatus ?? ""}
               onValueChange={(v) => onSignatureStatusChange(v as SignatureStatus)}
-              disabled={record.status === "verified"}
+              disabled={readOnlyMode || record.status === "verified"}
             >
               <SelectTrigger className="h-8 w-[140px] text-sm">
                 <SelectValue placeholder="待识别" />
@@ -3387,7 +3393,7 @@ function DetailView({
 
 
 
-      {record.status === "pending_review" && (
+      {!readOnlyMode && record.status === "pending_review" && (
         <div className="shrink-0 border-t border-border bg-background px-6 py-3 shadow-[0_-4px_12px_-8px_rgba(0,0,0,0.15)]">
           <div className="flex items-center justify-between gap-4">
             <div className="text-xs text-muted-foreground">
