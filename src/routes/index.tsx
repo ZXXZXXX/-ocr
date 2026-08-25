@@ -3804,6 +3804,10 @@ const HIDDEN_OCR_METRICS: (keyof SourceMetrics)[] = ["order", "ship"];
 function shouldHideOcrMetric(source: CrossSource["key"], key: keyof SourceMetrics) {
   return source === "ocr" && HIDDEN_OCR_METRICS.includes(key);
 }
+function visibleSourcesForMetric(metricKey: keyof SourceMetrics, sources: CrossSource[]) {
+  if (metricKey === "recv") return sources;
+  return sources.filter((s) => s.key !== "ocr");
+}
 
 // 统一的关键数据表格（第一步两方 / 第三步三方）
 function KeyDataTable({ rows, sources }: { rows: CrossRow[]; sources: CrossSource[] }) {
@@ -3845,7 +3849,7 @@ function KeyDataTable({ rows, sources }: { rows: CrossRow[]; sources: CrossSourc
           {CROSS_METRICS.map((m) => (
             <th
               key={m.key}
-              colSpan={sources.length}
+              colSpan={visibleSourcesForMetric(m.key, sources).length}
               className="border border-border px-3 py-2 text-center font-medium"
             >
               {m.label}
@@ -3859,7 +3863,7 @@ function KeyDataTable({ rows, sources }: { rows: CrossRow[]; sources: CrossSourc
         <tr className="bg-muted/30 text-[11px] text-muted-foreground">
           {CROSS_METRICS.map((m) => (
             <Fragment key={m.key}>
-              {sources.map((s) => (
+              {visibleSourcesForMetric(m.key, sources).map((s) => (
                 <th
                   key={s.key}
                   className="border border-border px-3 py-1.5 text-right font-normal"
@@ -3904,7 +3908,9 @@ function KeyDataTable({ rows, sources }: { rows: CrossRow[]; sources: CrossSourc
                 </td>
               ))}
               {CROSS_METRICS.map((m) => (
-                <Fragment key={m.key}>{sources.map((s) => cell(row, s.key, m.key))}</Fragment>
+                <Fragment key={m.key}>
+                  {visibleSourcesForMetric(m.key, sources).map((s) => cell(row, s.key, m.key))}
+                </Fragment>
               ))}
               <td className="border border-border px-3 py-2 text-center">
                 <CompareResultBadge result={rowCompareResult(row, sources)} />
