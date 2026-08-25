@@ -2215,9 +2215,12 @@ function Workbench() {
 
                   <PopoverTrigger asChild>
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="sm"
-                      className={cn("gap-1", filterActive && "border-primary/60 text-primary")}
+                      className={cn(
+                        "gap-1 border border-transparent transition-colors hover:border-primary hover:text-primary",
+                        filterActive && "border-primary/60 text-primary",
+                      )}
                     >
                       <Filter className="size-3.5" />
                       筛选
