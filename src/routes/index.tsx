@@ -2345,7 +2345,7 @@ function Workbench() {
                 subLabel={`+ ${metrics.todayNew} 项`}
               />
               <MetricCard
-                label="数据一致率"
+                label="系统数据一致率"
                 value={metrics.dataConsistent}
                 icon={CheckCircle2}
                 tone="success"
@@ -2547,7 +2547,7 @@ function Workbench() {
               <TableHeader>
                 <TableRow className="bg-muted/40">
                   <TableHead className="w-[200px]">验收订单号</TableHead>
-                  <TableHead className="w-[150px]">订单数据校验</TableHead>
+                  <TableHead className="w-[150px]">系统数据校验</TableHead>
                   <TableHead>图片状态</TableHead>
                   <TableHead>AI识别进度</TableHead>
                   <TableHead>AI置信度</TableHead>
