@@ -4103,7 +4103,7 @@ function CrossCheckView({ record, editing = false }: { record: OcrRecord; editin
         <KeyDataTable
           rows={rows}
           sources={CROSS_SOURCES}
-          editableOcr
+          editableOcr={editing}
           onOcrChange={handleOcrChange}
         />
 
