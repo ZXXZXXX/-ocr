@@ -185,13 +185,8 @@ const AI_FAILURE_CHANCE = 0.1; // 模拟识别失败概率
 type DocType = "delivery_note" | "shipping_slip";
 type Status = "queued" | "recognizing" | "pending_review" | "verified" | "failed";
 const MAX_CONCURRENT_OCR = 3;
-type SignatureStatus = "perfect" | "partial";
 type AiVerdict = "pass" | "fail" | "exception";
 
-const SIGNATURE_LABEL: Record<SignatureStatus, string> = {
-  perfect: "完美签收",
-  partial: "部分签收",
-};
 const VERDICT_LABEL: Record<AiVerdict, string> = {
   pass: "通过",
   fail: "不通过",
@@ -277,7 +272,6 @@ interface OcrRecord {
   sdccOrderNos?: string[]; // SDCC 订单号，一个任务可能包含多个
 
 
-  signatureStatus?: SignatureStatus;
   aiVerdict?: AiVerdict; // 识别完成后由AI给出
   aiRejectionReason?: AiRejectionReason; // AI 不通过原因
   aiExceptionReason?: string; // AI 审核异常原因（如 "物料数据列无法匹配" / "物流签收数据缺失"）
@@ -1501,7 +1495,6 @@ function seedRecords(): OcrRecord[] {
   type Seed = {
     minutesAgo: number;
     mode?: "high" | "mid" | "low";
-    signatureStatus?: SignatureStatus;
     status: Extract<Status, "pending_review" | "verified" | "failed">;
     aiVerdict?: AiVerdict;
     failedReason?: string;
@@ -1518,7 +1511,6 @@ function seedRecords(): OcrRecord[] {
     {
       minutesAgo: 4,
       mode: "high",
-      signatureStatus: "perfect",
       status: "pending_review",
       aiVerdict: "pass",
       imageUpdated: true,
@@ -1526,14 +1518,12 @@ function seedRecords(): OcrRecord[] {
     {
       minutesAgo: 45,
       mode: "mid",
-      signatureStatus: "partial",
       status: "pending_review",
       aiVerdict: "exception",
     },
     {
       minutesAgo: 180,
       mode: "low",
-      signatureStatus: "partial",
       status: "pending_review",
       aiVerdict: "fail",
       imageUpdated: true,
@@ -1542,7 +1532,6 @@ function seedRecords(): OcrRecord[] {
     {
       minutesAgo: 320,
       mode: "high",
-      signatureStatus: "perfect",
       status: "verified",
       aiVerdict: "pass",
     },
@@ -1555,7 +1544,6 @@ function seedRecords(): OcrRecord[] {
     {
       // 图片未上传，但 SDCC 对碰已出结果 → 可进入审核，识别结果为空
       minutesAgo: 140,
-      signatureStatus: "partial",
       status: "pending_review",
       noImages: true,
       sdccCompareDone: true,
@@ -1563,7 +1551,6 @@ function seedRecords(): OcrRecord[] {
     {
       // SDCC 对碰尚未出结果，且无图片 → 状态列显示「-」，不可审核
       minutesAgo: 20,
-      signatureStatus: "partial",
       status: "pending_review",
       noImages: true,
       sdccCompareDone: false,
@@ -1626,9 +1613,8 @@ function seedRecords(): OcrRecord[] {
       results,
       driver: who.driver,
       plateNo: who.plate,
-      signatureStatus: s.signatureStatus,
-      aiVerdict: isFailed || !images.length || !s.signatureStatus ? undefined : s.aiVerdict,
-      aiExceptionReason: !images.length || !s.signatureStatus ? undefined : s.aiExceptionReason,
+      aiVerdict: isFailed || !images.length ? undefined : s.aiVerdict,
+      aiExceptionReason: !images.length ? undefined : s.aiExceptionReason,
       failedReason: isFailed ? s.failedReason : undefined,
       verifiedAt: s.status === "verified" ? now - (s.minutesAgo - 10) * 60_000 : undefined,
       verifiedBy: s.status === "verified" ? CURRENT_USER : undefined,
@@ -1636,7 +1622,7 @@ function seedRecords(): OcrRecord[] {
       imageUpdated: !isEmptyImage && s.imageUpdated ? true : undefined,
       sdccCompareDone: s.sdccCompareDone,
     };
-    const canOutputVerdict = hasResults && !!s.signatureStatus && images.length > 0;
+    const canOutputVerdict = hasResults && images.length > 0;
     return { ...record, aiRejectionReason: canOutputVerdict ? makeAiRejectionReason(record) : undefined };
 
   });
@@ -1693,7 +1679,6 @@ function seedRecords(): OcrRecord[] {
     results: realResults,
     driver: "王峰",
     plateNo: "鲁DD8791",
-    signatureStatus: "perfect",
     aiVerdict: "pass",
     shippingSlipNo: "1383RY202604220013",
     customerOrderNo: "CD202607175004873",
@@ -1711,7 +1696,6 @@ function seedRecords(): OcrRecord[] {
     driver: string;
     plateNo: string;
     aiVerdict: AiVerdict;
-    signatureStatus: SignatureStatus;
     idSeed: number;
   };
   const noSlipSeeds: NoSlipSeed[] = [
@@ -1725,7 +1709,6 @@ function seedRecords(): OcrRecord[] {
       driver: "麦吾兰·塞麦提",
       plateNo: "新A9JU80",
       aiVerdict: "pass",
-      signatureStatus: "perfect",
       idSeed: 3_180_034,
     },
     {
@@ -1738,7 +1721,6 @@ function seedRecords(): OcrRecord[] {
       driver: "何钦扩",
       plateNo: "粤S·47188",
       aiVerdict: "pass",
-      signatureStatus: "partial",
       idSeed: 3_260_287,
     },
     {
@@ -1751,7 +1733,6 @@ function seedRecords(): OcrRecord[] {
       driver: "姜金凤",
       plateNo: "津B·22838",
       aiVerdict: "fail",
-      signatureStatus: "partial",
       idSeed: 3_260_522,
     },
   ];
@@ -1788,7 +1769,6 @@ function seedRecords(): OcrRecord[] {
       results,
       driver: s.driver,
       plateNo: s.plateNo,
-      signatureStatus: s.signatureStatus,
       aiVerdict: s.aiVerdict,
     };
     return { ...record, aiRejectionReason: makeAiRejectionReason(record) };
@@ -1845,7 +1825,6 @@ function seedRecords(): OcrRecord[] {
     results: tongyiResults,
     driver: "向涛军",
     plateNo: "湘A·88231",
-    signatureStatus: "perfect",
     aiVerdict: "pass",
   };
   const tongyiRecordFinal: OcrRecord = {
@@ -1918,7 +1897,6 @@ function seedRecords(): OcrRecord[] {
     results: lingshiResults,
     driver: "李虎",
     plateNo: "川A·B4507",
-    signatureStatus: "perfect",
     aiVerdict: "pass",
   };
   const lingshiRecordFinal: OcrRecord = {
@@ -2267,7 +2245,6 @@ function Workbench() {
       taskId: id,
       verifiedBy: CURRENT_USER,
       verifiedAt: new Date().toISOString(),
-      signatureStatus: target.signatureStatus,
       aiVerdict: finalVerdict,
     });
     toast.success(
@@ -2276,11 +2253,6 @@ function Workbench() {
   }
 
 
-  function updateSignatureStatus(recordId: string, signatureStatus: SignatureStatus) {
-    setRecords((prev) =>
-      prev.map((r) => (r.id === recordId ? { ...r, signatureStatus } : r)),
-    );
-  }
 
 
 
@@ -2551,7 +2523,6 @@ function Workbench() {
                   <TableHead>图片状态</TableHead>
                   <TableHead>AI识别进度</TableHead>
                   <TableHead>AI置信度</TableHead>
-                  <TableHead>签收状态</TableHead>
                   <TableHead>AI预审结论</TableHead>
                   <TableHead>最终审核结论</TableHead>
                   <TableHead
@@ -2624,15 +2595,6 @@ function Workbench() {
                           <span className="text-sm text-muted-foreground">-</span>
                         ) : (
                           <ConfidenceBadge score={r.confidence} />
-                        )}
-                      </TableCell>
-                      <TableCell className="text-sm text-foreground">
-                        {noImages || r.status === "failed" || r.status === "queued" || r.status === "recognizing" ? (
-                          "-"
-                        ) : r.signatureStatus ? (
-                          SIGNATURE_LABEL[r.signatureStatus]
-                        ) : (
-                          "—"
                         )}
                       </TableCell>
                       <TableCell>
@@ -2917,7 +2879,6 @@ function Workbench() {
               <DetailView
                 record={detailRecord}
                 initialMode={detailMode}
-                onSignatureStatusChange={(value) => updateSignatureStatus(detailRecord.id, value)}
                 onSubmit={(verdict) => {
                   submitVerification(detailRecord.id, verdict);
                   setDetailId(null);
@@ -3063,21 +3024,6 @@ function AuditConclusionBadge({ status, aiVerdict }: { status: Status; aiVerdict
   );
 }
 
-function SignatureBadge({ value }: { value: SignatureStatus | undefined }) {
-  if (!value) return <EmptyBadge className="w-16" />;
-  if (value === "perfect")
-    return (
-      <Badge variant="status" className="gap-1 border-0 bg-[color:var(--success)]/15 font-normal text-[color:var(--success)]">
-        <CheckCircle2 className="size-3" /> {SIGNATURE_LABEL[value]}
-      </Badge>
-    );
-  return (
-    <Badge variant="status" className="gap-1 border-0 bg-[color:var(--warning)]/25 font-normal text-[color:var(--warning-foreground)]">
-      <AlertTriangle className="size-3" /> {SIGNATURE_LABEL[value]}
-    </Badge>
-  );
-}
-
 function VerdictBadge({ value }: { value: AiVerdict }) {
   if (value === "pass")
     return (
@@ -3174,12 +3120,10 @@ function AiReviewSteps({
 function DetailView({
   record,
   initialMode = "view",
-  onSignatureStatusChange,
   onSubmit,
 }: {
   record: OcrRecord;
   initialMode?: "view" | "edit";
-  onSignatureStatusChange: (value: SignatureStatus) => void;
   onSubmit: (verdict?: AiVerdict) => void;
 }) {
   const deliveryPages = record.results?.delivery_note ?? [];
@@ -3303,33 +3247,6 @@ function DetailView({
       
       </SheetHeader>
 
-      {record.status !== "failed" && record.status !== "queued" && record.status !== "recognizing" && record.images && record.images.length > 0 && (
-        <div className="shrink-0 border-b border-border bg-background px-6 py-3">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-foreground">签收状态</span>
-              <span className="text-xs text-muted-foreground">人工确认实际签收情况</span>
-            </div>
-            <Select
-              value={record.signatureStatus ?? ""}
-              onValueChange={(v) => onSignatureStatusChange(v as SignatureStatus)}
-              disabled={record.status === "verified" || !editing}
-            >
-              <SelectTrigger className="h-8 w-[140px] text-sm">
-                <SelectValue placeholder="待识别" />
-              </SelectTrigger>
-              <SelectContent>
-                {(Object.keys(SIGNATURE_LABEL) as SignatureStatus[]).map((k) => (
-                  <SelectItem key={k} value={k} className="text-sm">
-                    {SIGNATURE_LABEL[k]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      )}
-
       <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
         <DocPanel
           deliveryPages={deliveryPages}
@@ -3380,7 +3297,7 @@ function DetailView({
         <div className="shrink-0 border-t border-border bg-background px-6 py-3 shadow-[0_-4px_12px_-8px_rgba(0,0,0,0.15)]">
           <div className="flex items-center justify-between gap-4">
             <div className="text-xs text-muted-foreground">
-              请确认 OCR 识别结果与签收状态，选择审核结论
+              请确认 OCR 识别结果，选择审核结论
             </div>
             <div className="flex items-center gap-2">
               <Button
