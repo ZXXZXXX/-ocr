@@ -35,7 +35,6 @@ import {
   ThumbsDown,
   ChevronLeft,
   ChevronRight,
-  
   ChevronDown,
   ArrowUp,
   ArrowDown,
@@ -44,6 +43,10 @@ import {
   Link,
   Link2Off,
   Rows2,
+  Database,
+  ScanLine,
+  Scale,
+  CircleDashed,
 } from "lucide-react";
 
 
