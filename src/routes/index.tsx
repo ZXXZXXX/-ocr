@@ -3329,7 +3329,7 @@ function DetailView({
           deliveryPages={deliveryPages}
           deliveryImages={deliveryImages}
           shippingImages={shippingImages}
-          editing={false}
+          editing={editing}
           autoFocus={autoFocus}
           setAutoFocus={setAutoFocus}
           failureReason={record.failedReason}
@@ -3346,7 +3346,7 @@ function DetailView({
                 loading={false}
               />
             ) : step === 3 ? (
-              <CrossCheckView record={record} />
+              <CrossCheckView record={record} editing={editing} />
             ) : undefined
           }
         />
