@@ -45,6 +45,7 @@ import {
   Link,
   Link2Off,
   Rows2,
+  Copy,
 } from "lucide-react";
 
 
@@ -268,7 +269,9 @@ interface OcrRecord {
   // 新增：任务级字段
   driver: string;
   plateNo: string;
+  customerOrderNo?: string; // 客户订单号
   sdccOrderNos?: string[]; // SDCC 订单号，一个任务可能包含多个
+
 
   signatureStatus?: SignatureStatus;
   aiVerdict?: AiVerdict; // 识别完成后由AI给出
@@ -337,6 +340,18 @@ const fmtTime = (t: number) =>
     hour: "2-digit",
     minute: "2-digit",
   });
+
+const fmtDateTimeCN = (t: number) =>
+  new Date(t).toLocaleString("zh-CN", {
+    hour12: false,
+    timeZone: "Asia/Shanghai",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
 
 
 function confidenceTone(c?: number) {
@@ -1470,6 +1485,11 @@ function recordSdccOrderNos(record: OcrRecord): string[] {
   return makeSdccOrderNos(record.createdAt, seed);
 }
 
+function recordCustomerOrderNo(record: OcrRecord): string {
+  return record.customerOrderNo ?? record.id;
+}
+
+
 
 function seedRecords(): OcrRecord[] {
   const now = new Date(2026, 6, 15, 0, 0, 0, 0).getTime();
@@ -1671,7 +1691,9 @@ function seedRecords(): OcrRecord[] {
     signatureStatus: "perfect",
     aiVerdict: "pass",
     shippingSlipNo: "1383RY202604220013",
+    customerOrderNo: "CD202607175004873",
   };
+
 
   // 三个只有送货单、无出货传票的真实照片任务
   type NoSlipSeed = {
@@ -3028,22 +3050,42 @@ function DetailView({
                 </div>
               </div>
             )}
-            <SheetDescription className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs">
-              <span>#{record.id}</span>
-              <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                <span className="text-muted-foreground">SDCC订单号</span>
-                {recordSdccOrderNos(record).map((no) => (
-                  <span key={no}>{no}</span>
-                ))}
-              </span>
-
-              <span>同步 {fmtTime(record.createdAt)}</span>
-              {record.verifiedAt && (
-                <span className="text-[color:var(--success)]">
-                  已验收 {fmtTime(record.verifiedAt)} · {record.verifiedBy}
+            <div className="mt-2 flex flex-col gap-1.5 text-xs">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="text-muted-foreground">客户订单号：</span>
+                  <span className="font-mono">{recordCustomerOrderNo(record)}</span>
                 </span>
-              )}
-            </SheetDescription>
+                <span className="text-border">|</span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="text-muted-foreground">同步时间：</span>
+                  <span>{fmtDateTimeCN(record.createdAt)}</span>
+                </span>
+                {record.verifiedAt && (
+                  <span className="inline-flex items-center gap-1.5 text-[color:var(--success)]">
+                    <span>已验收 {fmtTime(record.verifiedAt)} · {record.verifiedBy}</span>
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <span className="text-muted-foreground">供应商订单号：</span>
+                <span>{recordSdccOrderNos(record).join("，")}</span>
+                <span className="text-muted-foreground">共 {recordSdccOrderNos(record).length} 个</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const text = recordSdccOrderNos(record).join("，");
+                    navigator.clipboard.writeText(text).then(() => toast.success("已复制供应商订单号"));
+                  }}
+                  className="inline-flex items-center gap-0.5 text-muted-foreground hover:text-primary"
+                  aria-label="复制供应商订单号"
+                >
+                  <Copy className="size-3.5" />
+                </button>
+              </div>
+            </div>
+
+
           </div>
           <div className="flex items-center gap-2">
             <SheetClose asChild>
