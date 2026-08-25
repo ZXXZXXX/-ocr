@@ -2465,31 +2465,6 @@ function Workbench() {
               </div>
             </div>
 
-            {/* 关键指标统计卡 */}
-            <div className="grid grid-cols-3 gap-4 border-b border-border bg-muted/20 px-5 py-4">
-              <MetricCard
-                label="数据一致率"
-                value={metrics.dataConsistent}
-                icon={CheckCircle2}
-                tone="success"
-                total={metrics.total}
-              />
-              <MetricCard
-                label="AI 预审通过率"
-                value={metrics.aiPass}
-                icon={Sparkles}
-                tone="primary"
-                total={metrics.total}
-              />
-              <MetricCard
-                label="结论一致率"
-                value={metrics.conclusionConsistent}
-                icon={Link}
-                tone="info"
-                total={metrics.total}
-              />
-            </div>
-
             <div className="flex-1 overflow-auto">
             <Table>
               <TableHeader>
