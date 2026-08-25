@@ -42,6 +42,9 @@ import {
   ArrowDown,
   ArrowLeft,
   ArrowRight,
+  TrendingUp,
+  TrendingDown,
+  Minus,
   Link,
   Link2Off,
   Rows2,
@@ -1934,21 +1937,43 @@ function seedRecords(): OcrRecord[] {
 function MetricCard({
   label,
   value,
+  valueSuffix = "%",
   icon: Icon,
   tone,
-  total,
+  trend,
+  subLabel,
 }: {
   label: string;
   value: number;
+  valueSuffix?: string;
   icon: React.ComponentType<{ className?: string }>;
-  tone: "success" | "primary" | "info";
-  total: number;
+  tone: "success" | "primary" | "info" | "warning";
+  trend?: number;
+  subLabel?: string;
 }) {
   const toneClasses = {
     success: "bg-[color:var(--success)]/10 text-[color:var(--success)]",
     primary: "bg-primary/10 text-primary",
     info: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+    warning: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
   };
+
+  const trendIcon =
+    trend == null || trend === 0 ? (
+      <Minus className="size-3" />
+    ) : trend > 0 ? (
+      <TrendingUp className="size-3" />
+    ) : (
+      <TrendingDown className="size-3" />
+    );
+  const trendText = trend == null ? null : `${trend > 0 ? "+" : ""}${trend}%`;
+  const trendColor =
+    trend == null || trend === 0
+      ? "text-muted-foreground"
+      : trend > 0
+        ? "text-[color:var(--success)]"
+        : "text-destructive";
+
   return (
     <div className="flex items-center gap-4 rounded-lg border border-border bg-card px-4 py-3">
       <div className={cn("grid size-10 place-items-center rounded-lg", toneClasses[tone])}>
@@ -1957,8 +1982,18 @@ function MetricCard({
       <div className="flex flex-col">
         <span className="text-xs text-muted-foreground">{label}</span>
         <div className="flex items-baseline gap-1.5">
-          <span className="text-2xl font-semibold tabular-nums">{value}%</span>
-          <span className="text-xs text-muted-foreground">共 {total} 条</span>
+          <span className="text-2xl font-semibold tabular-nums">
+            {value}
+            {valueSuffix}
+          </span>
+          {subLabel ? (
+            <span className="text-xs font-medium text-[color:var(--success)]">{subLabel}</span>
+          ) : (
+            <span className={cn("flex items-center gap-0.5 text-xs font-medium", trendColor)}>
+              {trendIcon}
+              {trendText}
+            </span>
+          )}
         </div>
       </div>
     </div>
@@ -2129,44 +2164,71 @@ function Workbench() {
     selectedConfidenceTones.size !== 3 ||
     aiVerdictFilter !== "all";
 
-  // 列表页顶部关键指标：基于当前筛选后的记录实时计算
+  // 列表页顶部关键指标：基于最近 30 日全量记录计算
   const metrics = useMemo(() => {
-    const eligible = filteredRecords.filter(
+    const now = Date.now();
+    const oneDay = 24 * 60 * 60 * 1000;
+    const isWithinDays = (ts: number, days: number) => now - ts <= days * oneDay;
+
+    const last30 = records.filter((r) => isWithinDays(r.createdAt, 30));
+    const prev30 = records.filter(
+      (r) => r.createdAt > now - 60 * oneDay && r.createdAt <= now - 30 * oneDay,
+    );
+
+    const eligible = last30.filter(
       (r) => r.status !== "queued" && r.status !== "recognizing" && r.status !== "failed",
     );
+    const eligiblePrev = prev30.filter(
+      (r) => r.status !== "queued" && r.status !== "recognizing" && r.status !== "failed",
+    );
+
+    const calcRate = (items: OcrRecord[], getter: (r: OcrRecord) => boolean) =>
+      items.length === 0 ? 0 : Math.round((items.filter(getter).length / items.length) * 100);
+
     const withCross = eligible.filter((r) => r.ocrVsKaStatus === "success");
+    const withCrossPrev = eligiblePrev.filter((r) => r.ocrVsKaStatus === "success");
+
     const withAiVerdict = eligible.filter((r) => r.aiVerdict != null);
+    const withAiVerdictPrev = eligiblePrev.filter((r) => r.aiVerdict != null);
 
-    const dataConsistent =
-      withCross.length === 0
-        ? 0
-        : Math.round((withCross.filter((r) => r.crossCheckStatus === "success").length / withCross.length) * 100);
+    const dataConsistent = calcRate(withCross, (r) => r.crossCheckStatus === "success");
+    const dataConsistentPrev = calcRate(withCrossPrev, (r) => r.crossCheckStatus === "success");
 
-    const aiPass =
-      withAiVerdict.length === 0
-        ? 0
-        : Math.round((withAiVerdict.filter((r) => r.aiVerdict === "pass").length / withAiVerdict.length) * 100);
+    const aiPass = calcRate(withAiVerdict, (r) => r.aiVerdict === "pass");
+    const aiPassPrev = calcRate(withAiVerdictPrev, (r) => r.aiVerdict === "pass");
 
-    const conclusionConsistent =
-      withCross.length === 0
-        ? 0
-        : Math.round(
-            (withCross.filter(
-              (r) =>
-                (r.aiVerdict === "pass" && r.crossCheckStatus === "success") ||
-                (r.aiVerdict === "fail" && r.crossCheckStatus === "fail"),
-            ).length /
-              withCross.length) *
-              100,
-          );
+    const conclusionConsistent = calcRate(
+      withCross,
+      (r) =>
+        (r.aiVerdict === "pass" && r.crossCheckStatus === "success") ||
+        (r.aiVerdict === "fail" && r.crossCheckStatus === "fail"),
+    );
+    const conclusionConsistentPrev = calcRate(
+      withCrossPrev,
+      (r) =>
+        (r.aiVerdict === "pass" && r.crossCheckStatus === "success") ||
+        (r.aiVerdict === "fail" && r.crossCheckStatus === "fail"),
+    );
+
+    const trendOf = (curr: number, prev: number) => {
+      if (prev === 0) return curr === 0 ? 0 : curr;
+      return Math.round(((curr - prev) / prev) * 100);
+    };
+
+    const todayStart = new Date().setHours(0, 0, 0, 0);
+    const todayNew = last30.filter((r) => r.createdAt >= todayStart).length;
 
     return {
+      total: last30.length,
+      todayNew,
       dataConsistent,
+      dataConsistentTrend: trendOf(dataConsistent, dataConsistentPrev),
       aiPass,
+      aiPassTrend: trendOf(aiPass, aiPassPrev),
       conclusionConsistent,
-      total: eligible.length,
+      conclusionConsistentTrend: trendOf(conclusionConsistent, conclusionConsistentPrev),
     };
-  }, [filteredRecords]);
+  }, [records]);
 
   const totalPages = Math.max(1, Math.ceil(filteredRecords.length / PAGE_SIZE));
   const paginatedRecords = filteredRecords.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -2265,28 +2327,36 @@ function Workbench() {
         </header>
 
         <main className="mx-auto max-w-[1400px] px-6 py-6">
-          {/* 关键指标统计卡 */}
-          <div className="grid grid-cols-3 gap-4 pb-5">
+          {/* 关键指标统计卡：最近 30 日 */}
+          <div className="grid grid-cols-4 gap-4 pb-5">
+            <MetricCard
+              label="最近30日验收任务总数"
+              value={metrics.total}
+              valueSuffix=""
+              icon={FileText}
+              tone="warning"
+              subLabel={`+ ${metrics.todayNew} 项`}
+            />
             <MetricCard
               label="数据一致率"
               value={metrics.dataConsistent}
               icon={CheckCircle2}
               tone="success"
-              total={metrics.total}
+              trend={metrics.dataConsistentTrend}
             />
             <MetricCard
               label="AI 预审通过率"
               value={metrics.aiPass}
               icon={Sparkles}
               tone="primary"
-              total={metrics.total}
+              trend={metrics.aiPassTrend}
             />
             <MetricCard
               label="结论一致率"
               value={metrics.conclusionConsistent}
               icon={Link}
               tone="info"
-              total={metrics.total}
+              trend={metrics.conclusionConsistentTrend}
             />
           </div>
 
