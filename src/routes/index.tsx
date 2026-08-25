@@ -3804,6 +3804,10 @@ const HIDDEN_OCR_METRICS: (keyof SourceMetrics)[] = ["order", "ship"];
 function shouldHideOcrMetric(source: CrossSource["key"], key: keyof SourceMetrics) {
   return source === "ocr" && HIDDEN_OCR_METRICS.includes(key);
 }
+function visibleSourcesForMetric(metricKey: keyof SourceMetrics, sources: CrossSource[]) {
+  if (metricKey === "recv") return sources;
+  return sources.filter((s) => s.key !== "ocr");
+}
 
 // 统一的关键数据表格（第一步两方 / 第三步三方）
 function KeyDataTable({ rows, sources }: { rows: CrossRow[]; sources: CrossSource[] }) {
