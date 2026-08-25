@@ -1937,21 +1937,43 @@ function seedRecords(): OcrRecord[] {
 function MetricCard({
   label,
   value,
+  valueSuffix = "%",
   icon: Icon,
   tone,
-  total,
+  trend,
+  subLabel,
 }: {
   label: string;
   value: number;
+  valueSuffix?: string;
   icon: React.ComponentType<{ className?: string }>;
-  tone: "success" | "primary" | "info";
-  total: number;
+  tone: "success" | "primary" | "info" | "warning";
+  trend?: number;
+  subLabel?: string;
 }) {
   const toneClasses = {
     success: "bg-[color:var(--success)]/10 text-[color:var(--success)]",
     primary: "bg-primary/10 text-primary",
     info: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+    warning: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
   };
+
+  const trendIcon =
+    trend == null || trend === 0 ? (
+      <Minus className="size-3" />
+    ) : trend > 0 ? (
+      <TrendingUp className="size-3" />
+    ) : (
+      <TrendingDown className="size-3" />
+    );
+  const trendText = trend == null ? null : `${trend > 0 ? "+" : ""}${trend}%`;
+  const trendColor =
+    trend == null || trend === 0
+      ? "text-muted-foreground"
+      : trend > 0
+        ? "text-[color:var(--success)]"
+        : "text-destructive";
+
   return (
     <div className="flex items-center gap-4 rounded-lg border border-border bg-card px-4 py-3">
       <div className={cn("grid size-10 place-items-center rounded-lg", toneClasses[tone])}>
@@ -1960,8 +1982,18 @@ function MetricCard({
       <div className="flex flex-col">
         <span className="text-xs text-muted-foreground">{label}</span>
         <div className="flex items-baseline gap-1.5">
-          <span className="text-2xl font-semibold tabular-nums">{value}%</span>
-          <span className="text-xs text-muted-foreground">共 {total} 条</span>
+          <span className="text-2xl font-semibold tabular-nums">
+            {value}
+            {valueSuffix}
+          </span>
+          {subLabel ? (
+            <span className="text-xs font-medium text-[color:var(--success)]">{subLabel}</span>
+          ) : (
+            <span className={cn("flex items-center gap-0.5 text-xs font-medium", trendColor)}>
+              {trendIcon}
+              {trendText}
+            </span>
+          )}
         </div>
       </div>
     </div>
