@@ -1930,6 +1930,41 @@ function seedRecords(): OcrRecord[] {
 
 
 
+// ---------- Metric Card ----------
+function MetricCard({
+  label,
+  value,
+  icon: Icon,
+  tone,
+  total,
+}: {
+  label: string;
+  value: number;
+  icon: React.ComponentType<{ className?: string }>;
+  tone: "success" | "primary" | "info";
+  total: number;
+}) {
+  const toneClasses = {
+    success: "bg-[color:var(--success)]/10 text-[color:var(--success)]",
+    primary: "bg-primary/10 text-primary",
+    info: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+  };
+  return (
+    <div className="flex items-center gap-4 rounded-lg border border-border bg-card px-4 py-3">
+      <div className={cn("grid size-10 place-items-center rounded-lg", toneClasses[tone])}>
+        <Icon className="size-5" />
+      </div>
+      <div className="flex flex-col">
+        <span className="text-xs text-muted-foreground">{label}</span>
+        <div className="flex items-baseline gap-1.5">
+          <span className="text-2xl font-semibold tabular-nums">{value}%</span>
+          <span className="text-xs text-muted-foreground">共 {total} 条</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ---------- Main Workbench ----------
 function Workbench() {
   const [records, setRecords] = useState<OcrRecord[]>(() => seedRecords());
@@ -2093,6 +2128,45 @@ function Workbench() {
     !!dateTo ||
     selectedConfidenceTones.size !== 3 ||
     aiVerdictFilter !== "all";
+
+  // 列表页顶部关键指标：基于当前筛选后的记录实时计算
+  const metrics = useMemo(() => {
+    const eligible = filteredRecords.filter(
+      (r) => r.status !== "queued" && r.status !== "recognizing" && r.status !== "failed",
+    );
+    const withCross = eligible.filter((r) => r.ocrVsKaStatus === "success");
+    const withAiVerdict = eligible.filter((r) => r.aiVerdict != null);
+
+    const dataConsistent =
+      withCross.length === 0
+        ? 0
+        : Math.round((withCross.filter((r) => r.crossCheckStatus === "success").length / withCross.length) * 100);
+
+    const aiPass =
+      withAiVerdict.length === 0
+        ? 0
+        : Math.round((withAiVerdict.filter((r) => r.aiVerdict === "pass").length / withAiVerdict.length) * 100);
+
+    const conclusionConsistent =
+      withCross.length === 0
+        ? 0
+        : Math.round(
+            (withCross.filter(
+              (r) =>
+                (r.aiVerdict === "pass" && r.crossCheckStatus === "success") ||
+                (r.aiVerdict === "fail" && r.crossCheckStatus === "fail"),
+            ).length /
+              withCross.length) *
+              100,
+          );
+
+    return {
+      dataConsistent,
+      aiPass,
+      conclusionConsistent,
+      total: eligible.length,
+    };
+  }, [filteredRecords]);
 
   const totalPages = Math.max(1, Math.ceil(filteredRecords.length / PAGE_SIZE));
   const paginatedRecords = filteredRecords.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -2364,6 +2438,31 @@ function Workbench() {
                   </PopoverContent>
                 </Popover>
               </div>
+            </div>
+
+            {/* 关键指标统计卡 */}
+            <div className="grid grid-cols-3 gap-4 border-b border-border bg-muted/20 px-5 py-4">
+              <MetricCard
+                label="数据一致率"
+                value={metrics.dataConsistent}
+                icon={CheckCircle2}
+                tone="success"
+                total={metrics.total}
+              />
+              <MetricCard
+                label="AI 预审通过率"
+                value={metrics.aiPass}
+                icon={Sparkles}
+                tone="primary"
+                total={metrics.total}
+              />
+              <MetricCard
+                label="结论一致率"
+                value={metrics.conclusionConsistent}
+                icon={Link}
+                tone="info"
+                total={metrics.total}
+              />
             </div>
 
             <div className="flex-1 overflow-auto">
