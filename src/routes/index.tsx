@@ -2879,22 +2879,29 @@ function SignatureBadge({ value }: { value: SignatureStatus | undefined }) {
   );
 }
 
-function VerdictBadge({ value }: { value: AiVerdict }) {
+function VerdictBadge({ value, iconOnly }: { value: AiVerdict; iconOnly?: boolean }) {
+  const iconClass = iconOnly ? "size-5" : "size-3";
   if (value === "pass")
-    return (
+    return iconOnly ? (
+      <CheckCircle2 className={cn(iconClass, "text-[color:var(--success)]")} />
+    ) : (
       <Badge variant="status" className="w-20 justify-center gap-1 border-0 bg-[color:var(--success)]/15 font-normal text-[color:var(--success)]">
-        <CheckCircle2 className="size-3" /> {VERDICT_LABEL[value]}
+        <CheckCircle2 className={iconClass} /> {VERDICT_LABEL[value]}
       </Badge>
     );
   if (value === "fail")
-    return (
+    return iconOnly ? (
+      <XCircle className={cn(iconClass, "text-[color:var(--destructive)]")} />
+    ) : (
       <Badge variant="status" className="w-20 justify-center gap-1 border-0 bg-destructive/15 font-normal text-destructive">
-        <X className="size-3" /> {VERDICT_LABEL[value]}
+        <XCircle className={iconClass} /> {VERDICT_LABEL[value]}
       </Badge>
     );
-  return (
+  return iconOnly ? (
+    <AlertCircle className={cn(iconClass, "text-muted-foreground")} />
+  ) : (
     <Badge variant="status" className="w-20 justify-center gap-1 border-0 bg-muted font-normal text-muted-foreground">
-      <AlertCircle className="size-3" /> {VERDICT_LABEL[value]}
+      <AlertCircle className={iconClass} /> {VERDICT_LABEL[value]}
     </Badge>
   );
 }
