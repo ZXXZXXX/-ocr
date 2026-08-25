@@ -2343,7 +2343,7 @@ function Workbench() {
               <TableHeader>
                 <TableRow className="bg-muted/40">
                   <TableHead className="w-[200px]">验收订单号</TableHead>
-                  <TableHead className="w-[150px]">SDCC数据状态</TableHead>
+                  <TableHead className="w-[150px]">系统数据一致性</TableHead>
                   <TableHead>图片状态</TableHead>
                   <TableHead>AI识别进度</TableHead>
                   <TableHead>AI置信度</TableHead>
