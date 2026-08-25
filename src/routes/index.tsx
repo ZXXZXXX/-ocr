@@ -3307,7 +3307,7 @@ function DetailView({
             <Select
               value={record.signatureStatus ?? ""}
               onValueChange={(v) => onSignatureStatusChange(v as SignatureStatus)}
-              disabled={record.status === "verified"}
+              disabled={record.status === "verified" || !editing}
             >
               <SelectTrigger className="h-8 w-[140px] text-sm">
                 <SelectValue placeholder="待识别" />
