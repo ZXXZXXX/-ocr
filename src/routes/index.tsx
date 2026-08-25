@@ -3673,7 +3673,11 @@ function KeyDataTable({ rows, sources }: { rows: CrossRow[]; sources: CrossSourc
               {m.label}
             </th>
           ))}
+          <th rowSpan={2} className="border border-border px-3 py-2 text-center font-medium">
+            对碰结果
+          </th>
         </tr>
+
         <tr className="bg-muted/30 text-[11px] text-muted-foreground">
           {CROSS_METRICS.map((m) => (
             <Fragment key={m.key}>
