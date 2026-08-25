@@ -66,6 +66,15 @@ import lingshiShippingAsset from "@/assets/lingshi_shipping.png.asset.json";
 
 import { Button } from "@/components/ui/button";
 import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from "@/components/ui/sheet";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -2698,19 +2707,25 @@ function Workbench() {
           </div>
         )}
 
-        {detailRecord && (
-          <div className="fixed inset-0 z-50 flex flex-col bg-background">
-            <DetailView
-              record={detailRecord}
-              onBack={() => setDetailId(null)}
-              onSignatureStatusChange={(value) => updateSignatureStatus(detailRecord.id, value)}
-              onSubmit={(verdict) => {
-                submitVerification(detailRecord.id, verdict);
-                setDetailId(null);
-              }}
-            />
-          </div>
-        )}
+        <Sheet open={!!detailRecord} onOpenChange={(o) => { if (!o) setDetailId(null); }}>
+          <SheetContent
+            side="right"
+            className="flex w-[80vw] flex-col gap-0 p-0 sm:max-w-[80vw] [&>button]:hidden"
+          >
+            {detailRecord && (
+              <DetailView
+                record={detailRecord}
+                onSignatureStatusChange={(value) => updateSignatureStatus(detailRecord.id, value)}
+                onSubmit={(verdict) => {
+                  submitVerification(detailRecord.id, verdict);
+                  setDetailId(null);
+                }}
+              />
+
+            )}
+          </SheetContent>
+
+        </Sheet>
 
         <Toaster position="top-center" richColors />
       </div>
@@ -2955,12 +2970,10 @@ function AiReviewSteps({
 // ---------- Detail view ----------
 function DetailView({
   record,
-  onBack,
   onSignatureStatusChange,
   onSubmit,
 }: {
   record: OcrRecord;
-  onBack: () => void;
   onSignatureStatusChange: (value: SignatureStatus) => void;
   onSubmit: (verdict?: AiVerdict) => void;
 }) {
@@ -2992,19 +3005,15 @@ function DetailView({
   return (
     <DetailRecordContext.Provider value={{ recordId: record.id, aiRejectionReason: record.aiRejectionReason, aiExceptionReason: record.aiExceptionReason, recordStatus: record.status, aiVerdict: record.aiVerdict }}>
     <>
-      <div className="shrink-0 border-b border-border px-6 py-4">
+      <SheetHeader className="border-b border-border px-6 py-4">
         <div className="flex items-start justify-between gap-4">
-          <div className="flex min-w-0 items-start gap-3">
-            <Button variant="ghost" size="icon" className="mt-0.5 shrink-0" aria-label="返回" onClick={onBack}>
-              <ArrowLeft className="size-4" />
-            </Button>
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2 text-lg font-semibold">
+          <div className="min-w-0">
+              <SheetTitle className="flex flex-wrap items-center gap-2">
                 任务详情
                 <NeutralTag>
                   {record.status === "verified" ? "已完成审核" : "待审核"}
                 </NeutralTag>
-            </div>
+            </SheetTitle>
             {(record.aiVerdict) && (
               <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
                 <div className="flex items-center gap-2">
@@ -3018,7 +3027,7 @@ function DetailView({
                 </div>
               </div>
             )}
-            <div className="mt-1 flex text-muted-foreground flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs">
+            <SheetDescription className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-xs">
               <span>#{record.id}</span>
               <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
                 <span className="text-muted-foreground">SDCC订单号</span>
@@ -3033,8 +3042,14 @@ function DetailView({
                   已验收 {fmtTime(record.verifiedAt)} · {record.verifiedBy}
                 </span>
               )}
-            </div>
-            </div>
+            </SheetDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            <SheetClose asChild>
+              <Button variant="outline" size="icon" className="shrink-0" aria-label="关闭">
+                <X className="size-4" />
+              </Button>
+            </SheetClose>
           </div>
         </div>
       {record.status === "pending_review" && record.aiVerdict === "exception" && (
@@ -3049,7 +3064,7 @@ function DetailView({
         </div>
       )}
       
-      </div>
+      </SheetHeader>
 
       {record.status !== "failed" && record.status !== "queued" && record.status !== "recognizing" && record.images && record.images.length > 0 && (
         <div className="shrink-0 border-b border-border bg-background px-6 py-3">
