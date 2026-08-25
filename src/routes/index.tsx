@@ -2879,22 +2879,29 @@ function SignatureBadge({ value }: { value: SignatureStatus | undefined }) {
   );
 }
 
-function VerdictBadge({ value }: { value: AiVerdict }) {
+function VerdictBadge({ value, iconOnly }: { value: AiVerdict; iconOnly?: boolean }) {
+  const iconClass = iconOnly ? "size-5" : "size-3";
   if (value === "pass")
-    return (
+    return iconOnly ? (
+      <CheckCircle2 className={cn(iconClass, "text-[color:var(--success)]")} />
+    ) : (
       <Badge variant="status" className="w-20 justify-center gap-1 border-0 bg-[color:var(--success)]/15 font-normal text-[color:var(--success)]">
-        <CheckCircle2 className="size-3" /> {VERDICT_LABEL[value]}
+        <CheckCircle2 className={iconClass} /> {VERDICT_LABEL[value]}
       </Badge>
     );
   if (value === "fail")
-    return (
+    return iconOnly ? (
+      <XCircle className={cn(iconClass, "text-[color:var(--destructive)]")} />
+    ) : (
       <Badge variant="status" className="w-20 justify-center gap-1 border-0 bg-destructive/15 font-normal text-destructive">
-        <X className="size-3" /> {VERDICT_LABEL[value]}
+        <XCircle className={iconClass} /> {VERDICT_LABEL[value]}
       </Badge>
     );
-  return (
+  return iconOnly ? (
+    <AlertCircle className={cn(iconClass, "text-muted-foreground")} />
+  ) : (
     <Badge variant="status" className="w-20 justify-center gap-1 border-0 bg-muted font-normal text-muted-foreground">
-      <AlertCircle className="size-3" /> {VERDICT_LABEL[value]}
+      <AlertCircle className={iconClass} /> {VERDICT_LABEL[value]}
     </Badge>
   );
 }
@@ -3021,8 +3028,8 @@ function DetailView({
             {(record.aiVerdict) && (
               <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
                 <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground">ai识别结果：</span>
-                  <VerdictBadge value={record.aiVerdict} />
+                  <span className="text-muted-foreground">ai识别结果</span>
+                  <VerdictBadge value={record.aiVerdict} iconOnly />
                   {record.confidence != null ? (
                     <ConfidenceBadge score={record.confidence} />
                   ) : (
@@ -3884,6 +3891,20 @@ function DetailStepNav({
     { n: 3, icon: Scale, desc: "自动核对多方关键数据的一致性" },
   ];
 
+  const stepStatusIcon = (n: 1 | 2 | 3, status: StepStatus) => {
+    if (status === "success") {
+      return <CheckCircle2 className="size-6 text-[color:var(--success)]" />;
+    }
+    if (status === "fail") {
+      // 第二步 OCR 识别异常（图片质量/列无法匹配）使用浅灰色感叹号
+      if (n === 2 && record.aiVerdict === "exception") {
+        return <AlertCircle className="size-6 text-muted-foreground" />;
+      }
+      return <XCircle className="size-6 text-[color:var(--destructive)]" />;
+    }
+    return <CircleDashed className="size-6 text-muted-foreground/60" />;
+  };
+
   return (
     <div className="flex items-center gap-1">
       {items.map((it, idx) => {
@@ -3924,15 +3945,7 @@ function DetailStepNav({
               >
                 <StepIcon className="size-4" />
               </span>
-              <span className="shrink-0">
-                {status === "success" ? (
-                  <CheckCircle2 className="size-6 text-[color:var(--success)]" />
-                ) : status === "fail" ? (
-                  <XCircle className="size-6 text-destructive" />
-                ) : (
-                  <CircleDashed className="size-6 text-muted-foreground/60" />
-                )}
-              </span>
+              <span className="shrink-0">{stepStatusIcon(it.n, status)}</span>
             </button>
           </Fragment>
         );
