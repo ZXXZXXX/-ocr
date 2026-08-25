@@ -2242,7 +2242,7 @@ function Workbench() {
                       variant="ghost"
                       size="sm"
                       className={cn(
-                        "gap-1 border border-transparent transition-colors hover:border-primary hover:text-primary",
+                        "gap-1 border border-transparent transition-colors hover:border-primary hover:bg-transparent hover:text-primary",
                         filterActive && "border-primary/60 text-primary",
                       )}
                     >
@@ -2254,6 +2254,7 @@ function Workbench() {
                         </span>
                       )}
                     </Button>
+
                   </PopoverTrigger>
                   <PopoverContent align="end" className="w-[360px] p-0">
                     <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
