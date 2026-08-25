@@ -341,6 +341,18 @@ const fmtTime = (t: number) =>
     minute: "2-digit",
   });
 
+const fmtDateTimeCN = (t: number) =>
+  new Date(t).toLocaleString("zh-CN", {
+    hour12: false,
+    timeZone: "Asia/Shanghai",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+
 
 function confidenceTone(c?: number) {
   if (c == null) return "high"; // absent = treat as clean
