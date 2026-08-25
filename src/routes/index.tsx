@@ -2412,6 +2412,26 @@ function Workbench() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
+                <Popover open={filterOpen} onOpenChange={setFilterOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={cn(
+                        "gap-1 border border-transparent transition-colors hover:border-primary hover:bg-transparent hover:text-primary",
+                        filterActive && "border-primary/60 text-primary",
+                      )}
+                    >
+                      <Filter className="size-3.5" />
+                      筛选
+                      {filterActive && (
+                        <span className="ml-0.5 rounded-full bg-primary/15 px-1.5 text-[10px] font-medium text-primary">
+                          已启用
+                        </span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                </Popover>
 
                 <div className="flex items-center gap-2 px-3 py-1.5">
                   <span className="text-sm font-normal text-muted-foreground">仅查看未审核</span>
@@ -2437,28 +2457,7 @@ function Workbench() {
                   </button>
                 </div>
 
-
-                <Popover open={filterOpen} onOpenChange={setFilterOpen}>
-
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className={cn(
-                        "gap-1 border border-transparent transition-colors hover:border-primary hover:bg-transparent hover:text-primary",
-                        filterActive && "border-primary/60 text-primary",
-                      )}
-                    >
-                      <Filter className="size-3.5" />
-                      筛选
-                      {filterActive && (
-                        <span className="ml-0.5 rounded-full bg-primary/15 px-1.5 text-[10px] font-medium text-primary">
-                          已启用
-                        </span>
-                      )}
-                    </Button>
-
-                  </PopoverTrigger>
+                <PopoverContent align="end" className="w-[360px] p-0">
                   <PopoverContent align="end" className="w-[360px] p-0">
                     <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
                       <div className="flex items-center gap-2 text-sm font-medium">
