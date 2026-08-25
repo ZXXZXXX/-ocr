@@ -3877,17 +3877,18 @@ function DetailStepNav({
     3: step2Status === "success" ? record.crossCheckStatus ?? "no_result" : "no_result",
   };
   const step3Disabled = step2Status !== "success";
-  const items = [
-    { n: 1 as const, title: "系统数据校验", desc: "自动校验《KA验收单》与《SDCC订单明细》数据" },
-    { n: 2 as const, title: "OCR识别结果", desc: "人工核对图片与 OCR 识别结果" },
-    { n: 3 as const, title: "关键数据对碰", desc: "自动核对多方关键数据的一致性" },
+  const items: { n: 1 | 2 | 3; icon: React.ElementType; desc: string }[] = [
+    { n: 1, icon: Database, desc: "自动校验《KA验收单》与《SDCC订单明细》数据" },
+    { n: 2, icon: ScanLine, desc: "人工核对图片与 OCR 识别结果" },
+    { n: 3, icon: Scale, desc: "自动核对多方关键数据的一致性" },
   ];
-
 
   return (
     <div className="flex items-center gap-1">
       {items.map((it, idx) => {
         const active = step === it.n;
+        const StepIcon = it.icon;
+        const status = statuses[it.n];
         return (
           <Fragment key={it.n}>
             {idx > 0 && (
@@ -3902,10 +3903,10 @@ function DetailStepNav({
               key={it.n}
               type="button"
               disabled={it.n === 3 && step3Disabled}
-              title={it.n === 3 && step3Disabled ? "OCR识别失败，无法进入关键数据对碰" : undefined}
+              title={it.n === 3 && step3Disabled ? "OCR识别失败，无法进入关键数据对碰" : it.desc}
               onClick={() => onChange(it.n)}
               className={cn(
-                "flex min-w-0 flex-1 items-center gap-2.5 rounded-lg border px-3 py-3 text-left transition-colors",
+                "flex min-w-0 flex-1 items-center justify-center gap-2.5 rounded-lg border px-3 py-3 text-left transition-colors",
                 active
                   ? "border-primary/40 bg-primary/5"
                   : "border-border bg-background/60 hover:bg-muted/40",
@@ -3914,35 +3915,27 @@ function DetailStepNav({
             >
               <span
                 className={cn(
-                  "flex size-6 shrink-0 items-center justify-center rounded-full text-[11px] font-medium",
+                  "flex size-7 shrink-0 items-center justify-center rounded-full",
                   active
                     ? "bg-primary text-primary-foreground"
                     : "bg-muted text-muted-foreground",
                 )}
               >
-                {it.n}
+                <StepIcon className="size-4" />
               </span>
-              <span className="min-w-0" title={it.desc}>
-                <span className="block truncate text-[13px] font-medium text-foreground">{it.title}</span>
-              </span>
-              <span className="ml-auto shrink-0">
-                {statuses[it.n] === "success" ? (
+              <span className="shrink-0">
+                {status === "success" ? (
                   <CheckCircle2 className="size-6 text-[color:var(--success)]" />
-                ) : statuses[it.n] === "fail" ? (
-                  <div className="flex items-center gap-1">
-                    <XCircle className="size-6 text-destructive" />
-                  </div>
+                ) : status === "fail" ? (
+                  <XCircle className="size-6 text-destructive" />
                 ) : (
-                  <span className="rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                    {STEP_STATUS_LABEL[it.n][statuses[it.n]]}
-                  </span>
+                  <CircleDashed className="size-6 text-muted-foreground/60" />
                 )}
               </span>
             </button>
           </Fragment>
         );
       })}
-
     </div>
   );
 }
