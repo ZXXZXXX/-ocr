@@ -2205,11 +2205,15 @@ function Workbench() {
       total: last30.length,
       todayNew,
       dataConsistent,
-      dataConsistentTrend: trendOf(dataConsistent, dataConsistentPrev),
+      dataConsistentTrend: trendOf(dataConsistent, dataConsistentPrev, withCrossPrev.length),
       aiPass,
-      aiPassTrend: trendOf(aiPass, aiPassPrev),
+      aiPassTrend: trendOf(aiPass, aiPassPrev, withAiVerdictPrev.length),
       conclusionConsistent,
-      conclusionConsistentTrend: trendOf(conclusionConsistent, conclusionConsistentPrev),
+      conclusionConsistentTrend: trendOf(
+        conclusionConsistent,
+        conclusionConsistentPrev,
+        withCrossPrev.length,
+      ),
     };
   }, [records]);
 
