@@ -3287,8 +3287,7 @@ function DetailView({
           rightSlot={
             step === 1 ? (
               <CompareView
-                recordId={record.id}
-                count={compareCountFor(record)}
+                record={record}
                 loading={false}
               />
             ) : step === 3 ? (
@@ -3305,8 +3304,7 @@ function DetailView({
         {compareOpen && (
           <div className="absolute inset-0 z-50 flex flex-col overflow-hidden bg-[color:var(--background)] animate-in slide-in-from-right duration-200">
             <CompareView
-              recordId={record.id}
-              count={compareCountFor(record)}
+              record={record}
               loading={compareLoading}
               onBack={() => setCompareOpen(false)}
             />
@@ -3413,7 +3411,7 @@ function DetailView({
 }
 
 // ---------- Compare table (KA验收单 vs SDCC订单明细，按 69 码聚合) ----------
-type CompareItem = { code: string; name: string; order: number | null; recv: number | null };
+type CompareItem = { code: string; name: string; order: number | null; recv: number | null; ship?: number | null; orderNo?: string };
 type CompareGroup = { barcode: string; ka: CompareItem[]; sd: CompareItem[] };
 
 // 真实对碰数据：#CD202606224769631（严格按用户提供的 Excel，按产品单元条码 = 69码 聚合）
@@ -3488,15 +3486,13 @@ function groupStatus(g: CompareGroup) {
 }
 
 function CompareTable({
-  recordId,
-  count,
+  record,
   loading,
 }: {
-  recordId: string;
-  count: number;
+  record: OcrRecord;
   loading: boolean;
 }) {
-  const rows = useMemo(() => buildCompareRows(recordId, count), [recordId, count]);
+  const rows = useMemo(() => buildCompareRows(record), [record]);
 
   if (loading) {
     return (
@@ -3515,7 +3511,7 @@ function CompareTable({
     );
   }
 
-  return <KeyDataTable rows={rows} sources={COMPARE_SOURCES} customerOrderNo={recordId} />;
+  return <KeyDataTable rows={rows} sources={COMPARE_SOURCES} customerOrderNo={recordCustomerOrderNo(record)} />;
 }
 
 // ---------- 第二步：多来源关键数据核对（KA订单 / SDCC / OCR识别） ----------
@@ -3665,7 +3661,15 @@ function mergeGroupsByCode(groups: CompareGroup[]): MergedGroup[] {
 function buildCrossRows(record: OcrRecord): CrossRow[] {
   const baseGroups =
     COMPARE_REAL_GROUPS[record.id] ?? fallbackGroups(record.id, compareCountFor(record));
-  const groups = mergeGroupsByCode(baseGroups);
+  const sdOrderNos = recordSdccOrderNos(record);
+  const groups = mergeGroupsByCode(baseGroups).map((g) => ({
+    ...g,
+    sd: g.sd.map((it, i) => ({
+      ...it,
+      ship: it.ship ?? it.order,
+      orderNo: it.orderNo ?? sdOrderNos[i % sdOrderNos.length],
+    })),
+  }));
   const ocrRows = extractOcrProductRows(record);
   const usedOcr = new Set<number>();
   // 组内可能对应多条 OCR 明细行，全部汇总
@@ -3749,9 +3753,17 @@ const COMPARE_SOURCES: CrossSource[] = [
 ];
 
 // 第一步：仅 KA 与 SDCC 两方，表格格式与第三步一致
-function buildCompareRows(recordId: string, count: number): CrossRow[] {
-  const baseGroups = COMPARE_REAL_GROUPS[recordId] ?? fallbackGroups(recordId, count);
-  const groups = mergeGroupsByCode(baseGroups);
+function buildCompareRows(record: OcrRecord): CrossRow[] {
+  const baseGroups = COMPARE_REAL_GROUPS[record.id] ?? fallbackGroups(record.id, compareCountFor(record));
+  const sdOrderNos = recordSdccOrderNos(record);
+  const groups = mergeGroupsByCode(baseGroups).map((g) => ({
+    ...g,
+    sd: g.sd.map((it, i) => ({
+      ...it,
+      ship: it.ship ?? it.order,
+      orderNo: it.orderNo ?? sdOrderNos[i % sdOrderNos.length],
+    })),
+  }));
   return groups.map((g, gi) => {
     const kaOrder = g.ka.length ? sumField(g.ka, "order") : null;
     const kaRecv = g.ka.length ? sumField(g.ka, "recv") : null;
@@ -3972,6 +3984,15 @@ function RawSourceDialog({
       <span className="flex-1 tabular-nums">签收 {recv ?? "-"}</span>
     </div>
   );
+  const sdByOrder = useMemo(() => {
+    const map = new Map<string, CompareItem[]>();
+    row?.rawSd?.forEach((it) => {
+      const key = it.orderNo ?? "未分组";
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(it);
+    });
+    return map;
+  }, [row?.rawSd]);
   return (
     <Dialog open={!!row} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-2xl">
@@ -3994,8 +4015,13 @@ function RawSourceDialog({
           <section>
             <div className="mb-1 text-sm font-medium text-foreground">供应商订单</div>
             {row?.rawSd?.length
-              ? row.rawSd.map((i, idx) => (
-                  <Fragment key={`sd-${idx}`}>{line(i.code, i.order, i.order, i.recv)}</Fragment>
+              ? Array.from(sdByOrder.entries()).map(([orderNo, items]) => (
+                  <div key={orderNo} className="mt-2">
+                    <div className="mb-1 text-xs text-muted-foreground">订单编号：{orderNo}</div>
+                    {items.map((i, idx) => (
+                      <Fragment key={`sd-${orderNo}-${idx}`}>{line(i.code, i.order, i.ship ?? i.order, i.recv)}</Fragment>
+                    ))}
+                  </div>
                 ))
               : <div className="py-2 text-xs text-muted-foreground">无数据</div>}
           </section>
@@ -4336,13 +4362,11 @@ function DetailStepNav({
 
 
 function CompareView({
-  recordId,
-  count,
+  record,
   loading,
   onBack,
 }: {
-  recordId: string;
-  count: number;
+  record: OcrRecord;
   loading: boolean;
   onBack?: () => void;
 }) {
@@ -4375,7 +4399,7 @@ function CompareView({
         </Tooltip>
       </div>
       <div className="flex-1 overflow-y-auto p-4">
-        <CompareTable recordId={recordId} count={count} loading={loading} />
+        <CompareTable record={record} loading={loading} />
       </div>
     </div>
   );
