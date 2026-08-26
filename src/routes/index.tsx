@@ -3487,7 +3487,7 @@ function CompareTable({
     );
   }
 
-  return <KeyDataTable rows={rows} sources={COMPARE_SOURCES} />;
+  return <KeyDataTable rows={rows} sources={COMPARE_SOURCES} customerOrderNo={recordId} />;
 }
 
 // ---------- 第二步：多来源关键数据核对（KA订单 / SDCC / OCR识别） ----------
@@ -3502,6 +3502,8 @@ type CrossRow = {
   ka: SourceMetrics;
   sdcc: SourceMetrics;
   ocr: SourceMetrics;
+  rawKa?: CompareItem[];
+  rawSd?: CompareItem[];
 };
 
 const CROSS_METRICS = [
@@ -3681,6 +3683,8 @@ function buildCrossRows(record: OcrRecord): CrossRow[] {
       ka: { order: kaOrder, ship: null, recv: kaRecv },
       sdcc: { order: sdOrder, ship: sdOrder, recv: sdRecv },
       ocr: matched?.metrics ?? { order: null, ship: null, recv: null },
+      rawKa: g.ka,
+      rawSd: g.sd,
     };
   });
 
@@ -3733,6 +3737,8 @@ function buildCompareRows(recordId: string, count: number): CrossRow[] {
       ka: { order: kaOrder, ship: null, recv: kaRecv },
       sdcc: { order: sdOrder, ship: sdOrder, recv: sdRecv },
       ocr: { order: null, ship: null, recv: null },
+      rawKa: g.ka,
+      rawSd: g.sd,
     };
   });
 }
@@ -3753,12 +3759,15 @@ function KeyDataTable({
   sources,
   editableOcr = false,
   onOcrChange,
+  customerOrderNo,
 }: {
   rows: CrossRow[];
   sources: CrossSource[];
   editableOcr?: boolean;
   onOcrChange?: (rowKey: string, metric: keyof SourceMetrics, value: number | null) => void;
+  customerOrderNo?: string;
 }) {
+  const [rawRow, setRawRow] = useState<CrossRow | null>(null);
   const cell = (row: CrossRow, source: CrossSource["key"], key: keyof SourceMetrics) => {
     const v = row[source][key];
     const hidden = shouldHideOcrMetric(source, key);
@@ -3800,6 +3809,8 @@ function KeyDataTable({
 
 
   return (
+    <>
+    <RawSourceDialog row={rawRow} customerOrderNo={customerOrderNo} onClose={() => setRawRow(null)} />
     <table className="w-full border-collapse text-sm">
       <thead>
         <tr className="bg-muted/50 text-xs text-muted-foreground">
@@ -3872,7 +3883,14 @@ function KeyDataTable({
               style={rowBg ? { backgroundColor: rowBg } : undefined}
             >
               <td className="max-w-[260px] truncate border border-border px-3 py-2 text-sm text-foreground">
-                {row.name}
+                <button
+                  type="button"
+                  onClick={() => setRawRow(row)}
+                  className="max-w-full truncate text-left text-primary underline-offset-2 hover:underline"
+                  title={row.name}
+                >
+                  {row.name}
+                </button>
               </td>
               {[row.kaCodes, row.barcodes, row.sdCodes].map((codes, ci) => (
                 <td
@@ -3902,6 +3920,58 @@ function KeyDataTable({
         })}
       </tbody>
     </table>
+    </>
+  );
+}
+
+// 商品名称点击后：展示该商品在客户订单 / 供应商订单中的原始（未合并）数据
+function RawSourceDialog({
+  row,
+  customerOrderNo,
+  onClose,
+}: {
+  row: CrossRow | null;
+  customerOrderNo?: string;
+  onClose: () => void;
+}) {
+  const line = (code: string, order: number | null, ship: number | null, recv: number | null) => (
+    <div className="flex items-center gap-3 border-b border-border/60 py-1.5 text-sm last:border-b-0">
+      <span className="w-32 shrink-0 font-mono text-xs text-muted-foreground">{code || "-"}</span>
+      <span className="flex-1 tabular-nums">订单 {order ?? "-"}</span>
+      <span className="flex-1 tabular-nums">实际发货 {ship ?? "-"}</span>
+      <span className="flex-1 tabular-nums">签收 {recv ?? "-"}</span>
+    </div>
+  );
+  return (
+    <Dialog open={!!row} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>系统原始数据</DialogTitle>
+          <DialogDescription>{row?.name ?? ""}</DialogDescription>
+        </DialogHeader>
+        <div className="max-h-[60vh] space-y-5 overflow-auto">
+          <section>
+            <div className="mb-1 text-sm font-medium text-foreground">客户订单</div>
+            {customerOrderNo ? (
+              <div className="mb-1 text-xs text-muted-foreground">订单编号：{customerOrderNo}</div>
+            ) : null}
+            {row?.rawKa?.length
+              ? row.rawKa.map((i, idx) => (
+                  <Fragment key={`ka-${idx}`}>{line(i.code, i.order, null, i.recv)}</Fragment>
+                ))
+              : <div className="py-2 text-xs text-muted-foreground">无数据</div>}
+          </section>
+          <section>
+            <div className="mb-1 text-sm font-medium text-foreground">供应商订单</div>
+            {row?.rawSd?.length
+              ? row.rawSd.map((i, idx) => (
+                  <Fragment key={`sd-${idx}`}>{line(i.code, i.order, i.order, i.recv)}</Fragment>
+                ))
+              : <div className="py-2 text-xs text-muted-foreground">无数据</div>}
+          </section>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -4012,6 +4082,7 @@ function CrossCheckView({ record, editing = false }: { record: OcrRecord; editin
           sources={CROSS_SOURCES}
           editableOcr={editing}
           onOcrChange={handleOcrChange}
+          customerOrderNo={record.id}
         />
 
       </div>
