@@ -1928,7 +1928,7 @@ function MetricCard({
   valueSuffix?: string;
   icon: React.ComponentType<{ className?: string }>;
   tone: "success" | "primary" | "info" | "warning";
-  trend?: number;
+  trend?: number | null;
   subLabel?: string;
 }) {
   const toneClasses = {
