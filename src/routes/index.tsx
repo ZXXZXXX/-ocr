@@ -3759,12 +3759,15 @@ function KeyDataTable({
   sources,
   editableOcr = false,
   onOcrChange,
+  customerOrderNo,
 }: {
   rows: CrossRow[];
   sources: CrossSource[];
   editableOcr?: boolean;
   onOcrChange?: (rowKey: string, metric: keyof SourceMetrics, value: number | null) => void;
+  customerOrderNo?: string;
 }) {
+  const [rawRow, setRawRow] = useState<CrossRow | null>(null);
   const cell = (row: CrossRow, source: CrossSource["key"], key: keyof SourceMetrics) => {
     const v = row[source][key];
     const hidden = shouldHideOcrMetric(source, key);
