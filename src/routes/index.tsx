@@ -3737,6 +3737,8 @@ function buildCompareRows(recordId: string, count: number): CrossRow[] {
       ka: { order: kaOrder, ship: null, recv: kaRecv },
       sdcc: { order: sdOrder, ship: sdOrder, recv: sdRecv },
       ocr: { order: null, ship: null, recv: null },
+      rawKa: g.ka,
+      rawSd: g.sd,
     };
   });
 }
