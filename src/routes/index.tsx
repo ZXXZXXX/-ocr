@@ -1938,17 +1938,17 @@ function MetricCard({
     warning: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
   };
 
-  const trendIcon =
-    trend == null || trend === 0 ? (
-      <Minus className="size-3" />
-    ) : trend > 0 ? (
-      <TrendingUp className="size-3" />
-    ) : (
-      <TrendingDown className="size-3" />
-    );
-  const trendText = trend == null ? null : `${trend > 0 ? "+" : ""}${trend}%`;
+  const hasTrend = trend != null;
+  const trendIcon = !hasTrend ? null : trend === 0 ? (
+    <Minus className="size-3" />
+  ) : trend > 0 ? (
+    <TrendingUp className="size-3" />
+  ) : (
+    <TrendingDown className="size-3" />
+  );
+  const trendText = hasTrend ? `${trend > 0 ? "+" : ""}${trend}%` : "无对比数据";
   const trendColor =
-    trend == null || trend === 0
+    !hasTrend || trend === 0
       ? "text-muted-foreground"
       : trend > 0
         ? "text-[color:var(--success)]"
