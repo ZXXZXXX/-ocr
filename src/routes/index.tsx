@@ -3127,10 +3127,14 @@ function DetailView({
   record,
   initialMode = "view",
   onSubmit,
+  ocrEdits,
+  onOcrEditsChange,
 }: {
   record: OcrRecord;
   initialMode?: "view" | "edit";
   onSubmit: (verdict?: AiVerdict) => void;
+  ocrEdits: OcrEditMap;
+  onOcrEditsChange: (next: OcrEditMap) => void;
 }) {
   const deliveryPages = record.results?.delivery_note ?? [];
   const deliveryImages = record.images.filter((i) => i.docType === "delivery_note");
