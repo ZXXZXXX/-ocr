@@ -1988,6 +1988,8 @@ function Workbench() {
   const [progressDismissed, setProgressDismissed] = useState(true);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [detailMode, setDetailMode] = useState<"view" | "edit">("view");
+  // 人工修正的 AI 识别数量，按任务 ID 保存，切换步骤或重新打开任务时保留
+  const [ocrEditsByRecord, setOcrEditsByRecord] = useState<Record<string, OcrEditMap>>({});
   
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [logRecordId, setLogRecordId] = useState<string | null>(null);
