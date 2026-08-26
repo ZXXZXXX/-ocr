@@ -3920,6 +3920,58 @@ function KeyDataTable({
         })}
       </tbody>
     </table>
+    </>
+  );
+}
+
+// 商品名称点击后：展示该商品在客户订单 / 供应商订单中的原始（未合并）数据
+function RawSourceDialog({
+  row,
+  customerOrderNo,
+  onClose,
+}: {
+  row: CrossRow | null;
+  customerOrderNo?: string;
+  onClose: () => void;
+}) {
+  const line = (code: string, order: number | null, ship: number | null, recv: number | null) => (
+    <div className="flex items-center gap-3 border-b border-border/60 py-1.5 text-sm last:border-b-0">
+      <span className="w-32 shrink-0 font-mono text-xs text-muted-foreground">{code || "-"}</span>
+      <span className="flex-1 tabular-nums">订单 {order ?? "-"}</span>
+      <span className="flex-1 tabular-nums">实际发货 {ship ?? "-"}</span>
+      <span className="flex-1 tabular-nums">签收 {recv ?? "-"}</span>
+    </div>
+  );
+  return (
+    <Dialog open={!!row} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>系统原始数据</DialogTitle>
+          <DialogDescription>{row?.name ?? ""}</DialogDescription>
+        </DialogHeader>
+        <div className="max-h-[60vh] space-y-5 overflow-auto">
+          <section>
+            <div className="mb-1 text-sm font-medium text-foreground">客户订单</div>
+            {customerOrderNo ? (
+              <div className="mb-1 text-xs text-muted-foreground">订单编号：{customerOrderNo}</div>
+            ) : null}
+            {row?.rawKa?.length
+              ? row.rawKa.map((i, idx) => (
+                  <Fragment key={`ka-${idx}`}>{line(i.code, i.order, null, i.recv)}</Fragment>
+                ))
+              : <div className="py-2 text-xs text-muted-foreground">无数据</div>}
+          </section>
+          <section>
+            <div className="mb-1 text-sm font-medium text-foreground">供应商订单</div>
+            {row?.rawSd?.length
+              ? row.rawSd.map((i, idx) => (
+                  <Fragment key={`sd-${idx}`}>{line(i.code, i.order, i.order, i.recv)}</Fragment>
+                ))
+              : <div className="py-2 text-xs text-muted-foreground">无数据</div>}
+          </section>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
