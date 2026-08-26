@@ -4030,15 +4030,18 @@ function CompareResultBadge({ result }: { result: "一致" | "不一致" | "映�
 }
 
 
-function CrossCheckView({ record, editing = false }: { record: OcrRecord; editing?: boolean }) {
+function CrossCheckView({
+  record,
+  editing = false,
+  ocrEdits,
+  onOcrEditsChange,
+}: {
+  record: OcrRecord;
+  editing?: boolean;
+  ocrEdits: OcrEditMap;
+  onOcrEditsChange: (next: OcrEditMap) => void;
+}) {
   const baseRows = useMemo(() => buildCrossRows(record), [record]);
-  const [ocrEdits, setOcrEdits] = useState<
-    Record<string, Partial<Record<keyof SourceMetrics, number | null>>>
-  >({});
-
-  useEffect(() => {
-    setOcrEdits({});
-  }, [record.id]);
 
   const rows = useMemo(
     () =>
@@ -4053,10 +4056,10 @@ function CrossCheckView({ record, editing = false }: { record: OcrRecord; editin
     metric: keyof SourceMetrics,
     value: number | null,
   ) => {
-    setOcrEdits((prev) => ({
-      ...prev,
-      [rowKey]: { ...prev[rowKey], [metric]: value },
-    }));
+    onOcrEditsChange({
+      ...ocrEdits,
+      [rowKey]: { ...ocrEdits[rowKey], [metric]: value },
+    });
   };
 
   if (rows.length === 0) {
