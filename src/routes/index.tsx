@@ -3502,6 +3502,8 @@ type CrossRow = {
   ka: SourceMetrics;
   sdcc: SourceMetrics;
   ocr: SourceMetrics;
+  rawKa?: CompareItem[];
+  rawSd?: CompareItem[];
 };
 
 const CROSS_METRICS = [
