@@ -3881,7 +3881,14 @@ function KeyDataTable({
               style={rowBg ? { backgroundColor: rowBg } : undefined}
             >
               <td className="max-w-[260px] truncate border border-border px-3 py-2 text-sm text-foreground">
-                {row.name}
+                <button
+                  type="button"
+                  onClick={() => setRawRow(row)}
+                  className="max-w-full truncate text-left text-primary underline-offset-2 hover:underline"
+                  title={row.name}
+                >
+                  {row.name}
+                </button>
               </td>
               {[row.kaCodes, row.barcodes, row.sdCodes].map((codes, ci) => (
                 <td
