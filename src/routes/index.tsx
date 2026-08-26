@@ -3245,7 +3245,12 @@ function DetailView({
               </Button>
             )}
             <SheetClose asChild>
-              <Button variant="ghost" size="icon" className="shrink-0 hover:bg-transparent" aria-label="关闭">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="shrink-0 border-0 bg-transparent shadow-none hover:bg-transparent hover:text-foreground focus-visible:ring-0"
+                aria-label="关闭"
+              >
                 <X className="size-4" />
               </Button>
             </SheetClose>
