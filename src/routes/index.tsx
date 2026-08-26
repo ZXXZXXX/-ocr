@@ -2191,8 +2191,10 @@ function Workbench() {
         (r.aiVerdict === "fail" && r.crossCheckStatus === "fail"),
     );
 
-    const trendOf = (curr: number, prev: number) => {
-      if (prev === 0) return curr === 0 ? 0 : curr;
+    // 上一个 30 日窗口无可比样本时不展示趋势，避免把当前值当成增长率
+    const trendOf = (curr: number, prev: number, prevSample: number) => {
+      if (prevSample === 0) return null;
+      if (prev === 0) return curr === 0 ? 0 : 100;
       return Math.round(((curr - prev) / prev) * 100);
     };
 
