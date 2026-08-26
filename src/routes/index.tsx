@@ -4082,6 +4082,7 @@ function CrossCheckView({ record, editing = false }: { record: OcrRecord; editin
           sources={CROSS_SOURCES}
           editableOcr={editing}
           onOcrChange={handleOcrChange}
+          customerOrderNo={record.id}
         />
 
       </div>
