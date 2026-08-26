@@ -2885,6 +2885,10 @@ function Workbench() {
               <DetailView
                 record={detailRecord}
                 initialMode={detailMode}
+                ocrEdits={ocrEditsByRecord[detailRecord.id] ?? EMPTY_OCR_EDITS}
+                onOcrEditsChange={(next) =>
+                  setOcrEditsByRecord((prev) => ({ ...prev, [detailRecord.id]: next }))
+                }
                 onSubmit={(verdict) => {
                   submitVerification(detailRecord.id, verdict);
                   setDetailId(null);
