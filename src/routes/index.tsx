@@ -3279,7 +3279,12 @@ function DetailView({
                 loading={false}
               />
             ) : step === 3 ? (
-              <CrossCheckView record={record} editing={editing} />
+              <CrossCheckView
+                record={record}
+                editing={editing}
+                ocrEdits={ocrEdits}
+                onOcrEditsChange={onOcrEditsChange}
+              />
             ) : undefined
           }
         />
