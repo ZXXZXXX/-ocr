@@ -1914,6 +1914,8 @@ function seedRecords(): OcrRecord[] {
 
 
 // ---------- Metric Card ----------
+const EMPTY_OCR_EDITS: OcrEditMap = {};
+
 function MetricCard({
   label,
   value,
