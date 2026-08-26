@@ -4522,6 +4522,51 @@ function DocPanel({
           </div>
         </div>
 
+        {imageLayout === "single" && (
+          <div className="flex items-center gap-2 overflow-x-auto border-b border-border bg-background/40 px-3 py-2">
+            {(showingShipping ? filteredShippingImages : filteredDeliveryImages).length ? (
+              (showingShipping ? filteredShippingImages : filteredDeliveryImages).map((img, idx) => {
+                const active = idx === (showingShipping ? shippingIdx : deliveryImgIdx);
+                return (
+                  <button
+                    key={img.id}
+                    type="button"
+                    title={img.name}
+                    onClick={() =>
+                      showingShipping ? setShippingIdx(idx) : setDeliveryImgIdx(idx)
+                    }
+                    className={cn(
+                      "relative h-14 w-20 shrink-0 overflow-hidden rounded border bg-background transition-colors",
+                      active
+                        ? "border-primary ring-1 ring-primary"
+                        : "border-border hover:border-primary/60",
+                    )}
+                  >
+                    <img
+                      src={img.url}
+                      alt={img.name}
+                      className={cn(
+                        "h-full w-full object-cover",
+                        img.isValid === false && "opacity-40 grayscale",
+                      )}
+                      loading="lazy"
+                    />
+                    <span className="absolute bottom-0 left-0 rounded-tr bg-black/55 px-1 text-[10px] leading-4 text-white tabular-nums">
+                      {idx + 1}
+                    </span>
+                    {img.isValid === false && (
+                      <span className="absolute right-0 top-0 rounded-bl bg-destructive px-1 text-[10px] leading-4 text-destructive-foreground">
+                        无效
+                      </span>
+                    )}
+                  </button>
+                );
+              })
+            ) : (
+              <span className="text-[11px] text-muted-foreground">暂无图片</span>
+            )}
+          </div>
+        )}
 
         {imageLayout === "split" ? (
           <div className="flex-1 flex flex-col overflow-hidden">
