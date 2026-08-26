@@ -3809,6 +3809,8 @@ function KeyDataTable({
 
 
   return (
+    <>
+    <RawSourceDialog row={rawRow} customerOrderNo={customerOrderNo} onClose={() => setRawRow(null)} />
     <table className="w-full border-collapse text-sm">
       <thead>
         <tr className="bg-muted/50 text-xs text-muted-foreground">
