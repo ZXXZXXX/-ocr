@@ -1914,6 +1914,8 @@ function seedRecords(): OcrRecord[] {
 
 
 // ---------- Metric Card ----------
+const EMPTY_OCR_EDITS: OcrEditMap = {};
+
 function MetricCard({
   label,
   value,
@@ -1928,7 +1930,7 @@ function MetricCard({
   valueSuffix?: string;
   icon: React.ComponentType<{ className?: string }>;
   tone: "success" | "primary" | "info" | "warning";
-  trend?: number;
+  trend?: number | null;
   subLabel?: string;
 }) {
   const toneClasses = {
@@ -1938,17 +1940,17 @@ function MetricCard({
     warning: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
   };
 
-  const trendIcon =
-    trend == null || trend === 0 ? (
-      <Minus className="size-3" />
-    ) : trend > 0 ? (
-      <TrendingUp className="size-3" />
-    ) : (
-      <TrendingDown className="size-3" />
-    );
-  const trendText = trend == null ? null : `${trend > 0 ? "+" : ""}${trend}%`;
+  const hasTrend = trend != null;
+  const trendIcon = !hasTrend ? null : trend === 0 ? (
+    <Minus className="size-3" />
+  ) : trend > 0 ? (
+    <TrendingUp className="size-3" />
+  ) : (
+    <TrendingDown className="size-3" />
+  );
+  const trendText = hasTrend ? `${trend > 0 ? "+" : ""}${trend}%` : "无对比数据";
   const trendColor =
-    trend == null || trend === 0
+    !hasTrend || trend === 0
       ? "text-muted-foreground"
       : trend > 0
         ? "text-[color:var(--success)]"
@@ -1988,6 +1990,8 @@ function Workbench() {
   const [progressDismissed, setProgressDismissed] = useState(true);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [detailMode, setDetailMode] = useState<"view" | "edit">("view");
+  // 人工修正的 AI 识别数量，按任务 ID 保存，切换步骤或重新打开任务时保留
+  const [ocrEditsByRecord, setOcrEditsByRecord] = useState<Record<string, OcrEditMap>>({});
   
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [logRecordId, setLogRecordId] = useState<string | null>(null);
@@ -2191,8 +2195,10 @@ function Workbench() {
         (r.aiVerdict === "fail" && r.crossCheckStatus === "fail"),
     );
 
-    const trendOf = (curr: number, prev: number) => {
-      if (prev === 0) return curr === 0 ? 0 : curr;
+    // 上一个 30 日窗口无可比样本时不展示趋势，避免把当前值当成增长率
+    const trendOf = (curr: number, prev: number, prevSample: number) => {
+      if (prevSample === 0) return null;
+      if (prev === 0) return curr === 0 ? 0 : 100;
       return Math.round(((curr - prev) / prev) * 100);
     };
 
@@ -2203,11 +2209,15 @@ function Workbench() {
       total: last30.length,
       todayNew,
       dataConsistent,
-      dataConsistentTrend: trendOf(dataConsistent, dataConsistentPrev),
+      dataConsistentTrend: trendOf(dataConsistent, dataConsistentPrev, withCrossPrev.length),
       aiPass,
-      aiPassTrend: trendOf(aiPass, aiPassPrev),
+      aiPassTrend: trendOf(aiPass, aiPassPrev, withAiVerdictPrev.length),
       conclusionConsistent,
-      conclusionConsistentTrend: trendOf(conclusionConsistent, conclusionConsistentPrev),
+      conclusionConsistentTrend: trendOf(
+        conclusionConsistent,
+        conclusionConsistentPrev,
+        withCrossPrev.length,
+      ),
     };
   }, [records]);
 
@@ -2879,6 +2889,10 @@ function Workbench() {
               <DetailView
                 record={detailRecord}
                 initialMode={detailMode}
+                ocrEdits={ocrEditsByRecord[detailRecord.id] ?? EMPTY_OCR_EDITS}
+                onOcrEditsChange={(next) =>
+                  setOcrEditsByRecord((prev) => ({ ...prev, [detailRecord.id]: next }))
+                }
                 onSubmit={(verdict) => {
                   submitVerification(detailRecord.id, verdict);
                   setDetailId(null);
@@ -3121,10 +3135,14 @@ function DetailView({
   record,
   initialMode = "view",
   onSubmit,
+  ocrEdits,
+  onOcrEditsChange,
 }: {
   record: OcrRecord;
   initialMode?: "view" | "edit";
   onSubmit: (verdict?: AiVerdict) => void;
+  ocrEdits: OcrEditMap;
+  onOcrEditsChange: (next: OcrEditMap) => void;
 }) {
   const deliveryPages = record.results?.delivery_note ?? [];
   const deliveryImages = record.images.filter((i) => i.docType === "delivery_note");
@@ -3269,7 +3287,12 @@ function DetailView({
                 loading={false}
               />
             ) : step === 3 ? (
-              <CrossCheckView record={record} editing={editing} />
+              <CrossCheckView
+                record={record}
+                editing={editing}
+                ocrEdits={ocrEdits}
+                onOcrEditsChange={onOcrEditsChange}
+              />
             ) : undefined
           }
         />
@@ -3492,6 +3515,8 @@ function CompareTable({
 
 // ---------- 第二步：多来源关键数据核对（KA订单 / SDCC / OCR识别） ----------
 type SourceMetrics = { order: number | null; ship: number | null; recv: number | null };
+// 人工修正的 AI 识别数量：rowKey -> 指标 -> 值（在任务详情外层保存，切换步骤/重开任务不丢失）
+type OcrEditMap = Record<string, Partial<Record<keyof SourceMetrics, number | null>>>;
 type CrossRow = {
   key: string;
   code: string;
@@ -4024,15 +4049,18 @@ function CompareResultBadge({ result }: { result: "一致" | "不一致" | "映�
 }
 
 
-function CrossCheckView({ record, editing = false }: { record: OcrRecord; editing?: boolean }) {
+function CrossCheckView({
+  record,
+  editing = false,
+  ocrEdits,
+  onOcrEditsChange,
+}: {
+  record: OcrRecord;
+  editing?: boolean;
+  ocrEdits: OcrEditMap;
+  onOcrEditsChange: (next: OcrEditMap) => void;
+}) {
   const baseRows = useMemo(() => buildCrossRows(record), [record]);
-  const [ocrEdits, setOcrEdits] = useState<
-    Record<string, Partial<Record<keyof SourceMetrics, number | null>>>
-  >({});
-
-  useEffect(() => {
-    setOcrEdits({});
-  }, [record.id]);
 
   const rows = useMemo(
     () =>
@@ -4047,10 +4075,10 @@ function CrossCheckView({ record, editing = false }: { record: OcrRecord; editin
     metric: keyof SourceMetrics,
     value: number | null,
   ) => {
-    setOcrEdits((prev) => ({
-      ...prev,
-      [rowKey]: { ...prev[rowKey], [metric]: value },
-    }));
+    onOcrEditsChange({
+      ...ocrEdits,
+      [rowKey]: { ...ocrEdits[rowKey], [metric]: value },
+    });
   };
 
   if (rows.length === 0) {
