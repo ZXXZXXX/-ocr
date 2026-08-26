@@ -3487,7 +3487,7 @@ function CompareTable({
     );
   }
 
-  return <KeyDataTable rows={rows} sources={COMPARE_SOURCES} />;
+  return <KeyDataTable rows={rows} sources={COMPARE_SOURCES} customerOrderNo={recordId} />;
 }
 
 // ---------- 第二步：多来源关键数据核对（KA订单 / SDCC / OCR识别） ----------
