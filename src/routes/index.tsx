@@ -3498,6 +3498,8 @@ function CompareTable({
 
 // ---------- 第二步：多来源关键数据核对（KA订单 / SDCC / OCR识别） ----------
 type SourceMetrics = { order: number | null; ship: number | null; recv: number | null };
+// 人工修正的 AI 识别数量：rowKey -> 指标 -> 值（在任务详情外层保存，切换步骤/重开任务不丢失）
+type OcrEditMap = Record<string, Partial<Record<keyof SourceMetrics, number | null>>>;
 type CrossRow = {
   key: string;
   code: string;
