@@ -4141,7 +4141,7 @@ function CrossCheckView({
           sources={CROSS_SOURCES}
           editableOcr={editing}
           onOcrChange={handleOcrChange}
-          customerOrderNo={record.id}
+          customerOrderNo={recordCustomerOrderNo(record)}
         />
 
       </div>
